@@ -162,11 +162,11 @@ async function main() {
   await prisma.setting.createMany({
     data: [
       { key: "vatRate", value: "0.05" },
-      { key: "companyName", value: "ProcureFlow Legal Translation & Typing Center" },
+      { key: "companyName", value: "TypeDesk Legal Translation & Typing Center" },
       { key: "companyTrn", value: "100385926400003" },
       { key: "companyAddress", value: "Office 1204, Al Attar Business Tower, Sheikh Zayed Road, Dubai, UAE" },
       { key: "companyPhone", value: "+971 4 332 1180" },
-      { key: "companyEmail", value: "info@procureflow.ae" },
+      { key: "companyEmail", value: "info@typedesk.ae" },
       { key: "invoiceTerms", value: "Payment due within 15 days. Government fees are non-refundable. Bank: Emirates NBD · IBAN AE07 0260 0010 1532 7818 901" },
     ],
   });
@@ -175,11 +175,11 @@ async function main() {
   console.log("Seeding users…");
   const passwordHash = await bcrypt.hash("Password123!", 10);
   const userSeeds = [
-    { name: "Saeed Al Falasi", email: "admin@procureflow.ae", role: "ADMIN", department: "MANAGEMENT", phone: "+971 50 410 2201" },
-    { name: "Reem Haddad", email: "manager@procureflow.ae", role: "MANAGER", department: "MANAGEMENT", phone: "+971 55 318 7742" },
-    { name: "Vikram Iyer", email: "finance@procureflow.ae", role: "FINANCE", department: "FINANCE", phone: "+971 52 609 1134" },
-    { name: "Joanna Dela Cruz", email: "typist@procureflow.ae", role: "STAFF", department: "TYPING", phone: "+971 56 227 9083" },
-    { name: "Karim Mansour", email: "translator@procureflow.ae", role: "STAFF", department: "TRANSLATION", phone: "+971 54 771 3350" },
+    { name: "Saeed Al Falasi", email: "admin@typedesk.ae", role: "ADMIN", department: "MANAGEMENT", phone: "+971 50 410 2201" },
+    { name: "Reem Haddad", email: "manager@typedesk.ae", role: "MANAGER", department: "MANAGEMENT", phone: "+971 55 318 7742" },
+    { name: "Vikram Iyer", email: "finance@typedesk.ae", role: "FINANCE", department: "FINANCE", phone: "+971 52 609 1134" },
+    { name: "Joanna Dela Cruz", email: "typist@typedesk.ae", role: "STAFF", department: "TYPING", phone: "+971 56 227 9083" },
+    { name: "Karim Mansour", email: "translator@typedesk.ae", role: "STAFF", department: "TRANSLATION", phone: "+971 54 771 3350" },
   ] as const;
   const users = await Promise.all(
     userSeeds.map((u) => prisma.user.create({ data: { ...u, passwordHash, lastLoginAt: subDays(NOW, int(0, 3)) } })),

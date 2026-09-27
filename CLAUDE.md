@@ -1,4 +1,4 @@
-# ProcureFlow (TypeDesk) — project guide
+# TypeDesk — project guide
 
 Business management app for a UAE translation & typing center. Built phase by phase (see the phase prompts); keep each phase shippable.
 
@@ -19,6 +19,12 @@ Business management app for a UAE translation & typing center. Built phase by ph
 - Data access for pages lives in `server/queries/*`; mutations are server actions in `server/actions/*`. Every action: auth check → role check → Zod validation → mutation → `revalidatePath`.
 - Work order revisions never reset status: a delivered order with an open revision stays `DELIVERED` with `hasOpenRevision = true`.
 
+## Auth & layout
+- `auth.config.ts` — proxy-safe Auth.js config (JWT session with `id/role/department`, `authorized` callback does route gating). `auth.ts` adds the Credentials provider (bcrypt, per-email lockout). `proxy.ts` runs it on every request.
+- `lib/auth/permissions.ts` is the single source of role rules (`can(role, perm)`, route → permission map). Update it, not individual pages.
+- `lib/auth/session.ts`: `requirePagePermission()` in pages (redirects to `/login` or `/forbidden`), `requirePermission()` in server actions (throws). Both re-read the user from the DB, so deactivation applies immediately.
+- App pages live under `app/(app)/` inside `AppShell` (sidebar nav from `lib/nav.ts`, filtered by role). Sections not built yet are `[[...slug]]` placeholder pages — delete the placeholder when building the real route.
+
 ## Roles & permissions
 | Area | ADMIN | MANAGER | FINANCE | STAFF |
 |---|---|---|---|---|
@@ -34,9 +40,19 @@ Business management app for a UAE translation & typing center. Built phase by ph
 
 ## Seed logins
 All seeded users use password `Password123!` (development only):
-`admin@procureflow.ae` (ADMIN), `manager@procureflow.ae` (MANAGER), `finance@procureflow.ae` (FINANCE), `typist@procureflow.ae` and `translator@procureflow.ae` (STAFF).
+`admin@typedesk.ae` (ADMIN), `manager@typedesk.ae` (MANAGER), `finance@typedesk.ae` (FINANCE), `typist@typedesk.ae` and `translator@typedesk.ae` (STAFF).
 
 ## Commands
 - `npm run dev` · `npm run build` · `npm run lint` · `npm run typecheck`
 - `npm run db:migrate` (dev migration) · `npm run db:seed` · `npm run db:reset` (drop, migrate, seed)
 - Local Postgres: `docker compose up -d db`, or point `DATABASE_URL` at an existing server.
+
+<!-- BEGIN:nextjs-agent-rules -->
+
+# This is NOT the Next.js you know
+
+This version has breaking changes — APIs, conventions, and file structure may all differ from your training data. Read the relevant guide in `node_modules/next/dist/docs/` (resolved from this file's directory; in monorepos the `next` package may not be visible from the repo root) before writing any code. Heed deprecation notices.
+
+This block is written and re-added by `next dev` — verify at `node_modules/next/dist/server/lib/generate-agent-files.js`. Removing it from a diff only re-creates the uncommitted change; committing it with your work keeps the tree clean.
+
+<!-- END:nextjs-agent-rules -->

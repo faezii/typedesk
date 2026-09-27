@@ -2,7 +2,7 @@
   "name": "typedesk",
   "version": "1.0.0",
   "private": true,
-  "description": "ProcureFlow — business management for a UAE translation & typing center",
+  "description": "TypeDesk — business management for a UAE translation & typing center",
   "scripts": {
     "dev": "next dev",
     "build": "prisma generate && next build",

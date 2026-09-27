@@ -1,0 +1,125 @@
+"use client";
+
+import { useCallback, useEffect, useState } from "react";
+import { Menu, PanelLeftClose, PanelLeftOpen } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Sheet, SheetContent, SheetDescription, SheetTitle } from "@/components/ui/sheet";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { cn } from "@/lib/utils";
+import { Brand } from "./brand";
+import { GlobalSearch } from "./global-search";
+import { SidebarNav } from "./sidebar-nav";
+import { ThemeToggle } from "./theme-toggle";
+import { UserMenu, type ShellUser } from "./user-menu";
+
+export const SIDEBAR_COOKIE = "sidebar_collapsed";
+
+export function AppShell({
+  user,
+  defaultCollapsed,
+  children,
+}: {
+  user: ShellUser;
+  defaultCollapsed: boolean;
+  children: React.ReactNode;
+}) {
+  const [collapsed, setCollapsed] = useState(defaultCollapsed);
+  const [mobileOpen, setMobileOpen] = useState(false);
+
+  const toggle = useCallback(() => {
+    setCollapsed((c) => {
+      const next = !c;
+      document.cookie = `${SIDEBAR_COOKIE}=${next ? "1" : "0"}; path=/; max-age=31536000; samesite=lax`;
+      return next;
+    });
+  }, []);
+
+  // Ctrl/⌘ + B toggles the sidebar
+  useEffect(() => {
+    function onKeyDown(e: KeyboardEvent) {
+      if (e.key === "b" && (e.metaKey || e.ctrlKey)) {
+        e.preventDefault();
+        toggle();
+      }
+    }
+    document.addEventListener("keydown", onKeyDown);
+    return () => document.removeEventListener("keydown", onKeyDown);
+  }, [toggle]);
+
+  return (
+    <div className="flex min-h-svh">
+      {/* Desktop sidebar */}
+      <aside
+        data-collapsed={collapsed}
+        className={cn(
+          "bg-sidebar text-sidebar-foreground border-sidebar-border sticky top-0 hidden h-svh shrink-0 flex-col border-r transition-[width] duration-200 ease-out lg:flex",
+          collapsed ? "w-[68px]" : "w-64",
+        )}
+      >
+        <div className={cn("flex h-14 items-center border-b border-sidebar-border", collapsed ? "justify-center px-2" : "px-4")}>
+          <Brand collapsed={collapsed} />
+        </div>
+        <div
+          className={cn(
+            "flex-1 overflow-x-hidden overflow-y-auto",
+            collapsed ? "[scrollbar-width:none]" : "[scrollbar-width:thin]",
+          )}
+        >
+          <SidebarNav role={user.role} collapsed={collapsed} />
+        </div>
+        <div className={cn("border-sidebar-border border-t p-3", collapsed && "flex justify-center")}>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="ghost"
+                size={collapsed ? "icon" : "default"}
+                onClick={toggle}
+                className="text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground w-full justify-start dark:hover:bg-sidebar-accent"
+                aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+              >
+                {collapsed ? <PanelLeftOpen /> : <PanelLeftClose />}
+                {!collapsed && <span>Collapse</span>}
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent side="right">
+              {collapsed ? "Expand" : "Collapse"} sidebar <kbd className="ml-1 font-mono">Ctrl B</kbd>
+            </TooltipContent>
+          </Tooltip>
+        </div>
+      </aside>
+
+      {/* Mobile sidebar */}
+      <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
+        <SheetContent
+          side="left"
+          className="bg-sidebar text-sidebar-foreground border-sidebar-border w-72 gap-0 p-0 sm:max-w-72 [&>[data-slot=sheet-close]]:text-sidebar-foreground"
+        >
+          <SheetTitle className="sr-only">Navigation</SheetTitle>
+          <SheetDescription className="sr-only">Main navigation</SheetDescription>
+          <div className="border-sidebar-border flex h-14 items-center border-b px-4">
+            <Brand />
+          </div>
+          <div className="flex-1 overflow-y-auto">
+            <SidebarNav role={user.role} onNavigate={() => setMobileOpen(false)} />
+          </div>
+        </SheetContent>
+      </Sheet>
+
+      <div className="flex min-w-0 flex-1 flex-col">
+        <header className="bg-background/85 supports-[backdrop-filter]:bg-background/70 sticky top-0 z-30 flex h-14 items-center gap-2 border-b px-3 backdrop-blur sm:gap-3 sm:px-6">
+          <Button variant="ghost" size="icon" className="lg:hidden" onClick={() => setMobileOpen(true)} aria-label="Open navigation">
+            <Menu />
+          </Button>
+          <div className="min-w-0 flex-1">
+            <GlobalSearch role={user.role} />
+          </div>
+          <div className="flex items-center gap-1">
+            <ThemeToggle />
+            <UserMenu user={user} />
+          </div>
+        </header>
+        <main className="flex-1 px-4 py-6 sm:px-6 lg:px-8">{children}</main>
+      </div>
+    </div>
+  );
+}

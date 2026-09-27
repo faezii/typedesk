@@ -1,4 +1,4 @@
-// ProcureFlow — Translation & Typing Center management (UAE)
+// TypeDesk — Translation & Typing Center management (UAE)
 // Currency: AED. Money = Decimal(12,2). VAT rate lives in Setting("vatRate").
 
 generator client {
