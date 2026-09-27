@@ -1,0 +1,565 @@
+// ProcureFlow — Translation & Typing Center management (UAE)
+// Currency: AED. Money = Decimal(12,2). VAT rate lives in Setting("vatRate").
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ─────────────────────────────── Enums ───────────────────────────────
+
+enum Role {
+  ADMIN
+  MANAGER
+  STAFF
+  FINANCE
+}
+
+enum Department {
+  MANAGEMENT
+  TYPING
+  TRANSLATION
+  FINANCE
+}
+
+enum CustomerType {
+  INDIVIDUAL
+  COMPANY
+}
+
+enum ServiceCategory {
+  LEGAL_TRANSLATION
+  GENERAL_TRANSLATION
+  TYPING
+  ATTESTATION
+  COURT_SUBMISSION
+  OTHER
+}
+
+enum ServiceUnit {
+  PAGE
+  WORD
+  DOCUMENT
+  HOUR
+}
+
+enum WorkOrderStatus {
+  RECEIVED
+  IN_PROGRESS
+  QUALITY_CHECK
+  READY
+  DELIVERED
+}
+
+enum Priority {
+  NORMAL
+  HIGH
+  URGENT
+}
+
+enum TaskStatus {
+  TODO
+  IN_PROGRESS
+  DONE
+}
+
+enum QaStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum SettlementStatus {
+  UNPAID
+  PAID
+}
+
+enum VendorType {
+  FREELANCER
+  AGENCY
+}
+
+enum DocumentCategory {
+  PASSPORT
+  EMIRATES_ID
+  TRADE_LICENSE
+  LEGAL_JUDGMENT
+  CATALOGUE
+  CERTIFICATE
+  OTHER
+}
+
+enum FollowUpType {
+  PASSPORT_EXPIRY
+  VISA_DEADLINE
+  TRADE_LICENSE_RENEWAL
+  PAYMENT_REMINDER
+  GENERAL
+}
+
+enum FollowUpStatus {
+  PENDING
+  DONE
+  SNOOZED
+}
+
+enum QuotationStatus {
+  DRAFT
+  SENT
+  ACCEPTED
+  REJECTED
+  CONVERTED
+}
+
+enum InvoiceStatus {
+  UNPAID
+  PARTIAL
+  PAID
+  CANCELLED
+}
+
+enum PaymentMethod {
+  CASH
+  CARD
+  BANK_TRANSFER
+  ONLINE
+}
+
+enum ExpenseCategory {
+  RENT
+  UTILITY
+  SUPPLIES
+  SOFTWARE
+  FREELANCER
+  SALARY
+  OTHER
+}
+
+// ─────────────────────────────── People ──────────────────────────────
+
+model User {
+  id           String     @id @default(cuid())
+  name         String
+  email        String     @unique
+  passwordHash String
+  role         Role       @default(STAFF)
+  department   Department
+  phone        String?
+  isActive     Boolean    @default(true)
+  lastLoginAt  DateTime?
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+
+  workOrders         WorkOrder[]         @relation("WorkOrderAssignee")
+  tasks              Task[]              @relation("TaskAssignee")
+  followUps          FollowUp[]          @relation("FollowUpAssignee")
+  documents          Document[]          @relation("DocumentUploader")
+  paymentsReceived   Payment[]           @relation("PaymentReceiver")
+  revisionsRequested WorkOrderRevision[] @relation("RevisionRequester")
+  revisionsResolved  WorkOrderRevision[] @relation("RevisionResolver")
+  activity           ActivityLog[]
+
+  @@index([role])
+  @@index([department])
+}
+
+model Customer {
+  id               String       @id @default(cuid())
+  name             String
+  email            String?
+  phone            String
+  companyName      String?
+  type             CustomerType @default(INDIVIDUAL)
+  emiratesId       String?
+  emiratesIdExpiry DateTime?
+  passportNo       String?
+  passportExpiry   DateTime?
+  nationality      String?
+  trn              String? // UAE Tax Registration Number (15 digits) for B2B invoices
+  notes            String?
+  deletedAt        DateTime?
+  createdAt        DateTime     @default(now())
+  updatedAt        DateTime     @updatedAt
+
+  workOrders WorkOrder[]
+  documents  Document[]
+  followUps  FollowUp[]
+  quotations Quotation[]
+  invoices   Invoice[]
+  payments   Payment[]
+
+  @@index([name])
+  @@index([phone])
+  @@index([emiratesId])
+  @@index([passportNo])
+  @@index([deletedAt])
+}
+
+model Vendor {
+  id        String     @id @default(cuid())
+  name      String
+  type      VendorType @default(FREELANCER)
+  phone     String?
+  email     String?
+  languages String[]
+  notes     String?
+  isActive  Boolean    @default(true)
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+
+  outsourcedWork OutsourcedWork[]
+  expenses       Expense[]
+
+  @@index([name])
+}
+
+// ─────────────────────────────── Catalogue ───────────────────────────
+
+model Service {
+  id           String          @id @default(cuid())
+  title        String
+  category     ServiceCategory
+  unit         ServiceUnit     @default(PAGE)
+  defaultPrice Decimal         @db.Decimal(12, 2)
+  description  String?
+  isActive     Boolean         @default(true)
+  createdAt    DateTime        @default(now())
+  updatedAt    DateTime        @updatedAt
+
+  workOrders     WorkOrder[]
+  quotationItems QuotationItem[]
+  invoiceItems   InvoiceItem[]
+
+  @@index([category])
+}
+
+// ─────────────────────────────── Operations ──────────────────────────
+
+model WorkOrder {
+  id              String          @id @default(cuid())
+  orderNo         String          @unique // WO-2026-0001
+  customerId      String
+  serviceId       String
+  status          WorkOrderStatus @default(RECEIVED)
+  hasOpenRevision Boolean         @default(false)
+  priority        Priority        @default(NORMAL)
+  quantity        Decimal         @default(1) @db.Decimal(10, 2)
+  unitPrice       Decimal         @db.Decimal(12, 2)
+  totalAmount     Decimal         @db.Decimal(12, 2) // quantity × unitPrice, excl. VAT
+  assignedToId    String?
+  deadline        DateTime?
+  deliveredAt     DateTime?
+  notes           String?
+  deletedAt       DateTime?
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+
+  customer     Customer            @relation(fields: [customerId], references: [id])
+  service      Service             @relation(fields: [serviceId], references: [id])
+  assignedTo   User?               @relation("WorkOrderAssignee", fields: [assignedToId], references: [id], onDelete: SetNull)
+  translation  TranslationDetail?
+  revisions    WorkOrderRevision[]
+  tasks        Task[]
+  outsourced   OutsourcedWork[]
+  documents    Document[]
+  invoiceItems InvoiceItem[]
+
+  @@index([status])
+  @@index([customerId])
+  @@index([assignedToId])
+  @@index([deadline])
+  @@index([createdAt])
+  @@index([deletedAt])
+}
+
+model WorkOrderRevision {
+  id            String    @id @default(cuid())
+  workOrderId   String
+  reason        String
+  requestedAt   DateTime  @default(now())
+  requestedById String?
+  resolvedAt    DateTime?
+  resolvedById  String?
+  resolution    String?
+
+  workOrder   WorkOrder @relation(fields: [workOrderId], references: [id], onDelete: Cascade)
+  requestedBy User?     @relation("RevisionRequester", fields: [requestedById], references: [id], onDelete: SetNull)
+  resolvedBy  User?     @relation("RevisionResolver", fields: [resolvedById], references: [id], onDelete: SetNull)
+
+  @@index([workOrderId])
+  @@index([resolvedAt])
+}
+
+model TranslationDetail {
+  id          String  @id @default(cuid())
+  workOrderId String  @unique
+  wordCount   Int     @default(0)
+  pageCount   Int     @default(0)
+  sourceLang  String
+  targetLang  String
+  isCertified Boolean @default(true) // MOJ-certified legal translation
+
+  workOrder WorkOrder @relation(fields: [workOrderId], references: [id], onDelete: Cascade)
+
+  @@index([sourceLang, targetLang])
+}
+
+model Task {
+  id           String     @id @default(cuid())
+  title        String
+  description  String?
+  status       TaskStatus @default(TODO)
+  priority     Priority   @default(NORMAL)
+  deadline     DateTime?
+  completedAt  DateTime?
+  assignedToId String?
+  workOrderId  String?
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+
+  assignedTo User?      @relation("TaskAssignee", fields: [assignedToId], references: [id], onDelete: SetNull)
+  workOrder  WorkOrder? @relation(fields: [workOrderId], references: [id], onDelete: SetNull)
+
+  @@index([status])
+  @@index([assignedToId])
+  @@index([deadline])
+}
+
+model OutsourcedWork {
+  id            String           @id @default(cuid())
+  workOrderId   String
+  vendorId      String
+  description   String
+  agreementCost Decimal          @db.Decimal(12, 2)
+  qaStatus      QaStatus         @default(PENDING)
+  paymentStatus SettlementStatus @default(UNPAID)
+  sentAt        DateTime         @default(now())
+  dueAt         DateTime?
+  receivedAt    DateTime?
+  createdAt     DateTime         @default(now())
+  updatedAt     DateTime         @updatedAt
+
+  workOrder WorkOrder @relation(fields: [workOrderId], references: [id], onDelete: Cascade)
+  vendor    Vendor    @relation(fields: [vendorId], references: [id])
+  expense   Expense? // created automatically when marked PAID
+
+  @@index([vendorId])
+  @@index([workOrderId])
+  @@index([qaStatus])
+  @@index([paymentStatus])
+}
+
+model Document {
+  id           String           @id @default(cuid())
+  name         String
+  fileUrl      String
+  mimeType     String
+  size         Int // bytes
+  category     DocumentCategory
+  customerId   String?
+  workOrderId  String?
+  expiryDate   DateTime?
+  uploadedById String
+  deletedAt    DateTime?
+  createdAt    DateTime         @default(now())
+
+  customer   Customer?  @relation(fields: [customerId], references: [id], onDelete: SetNull)
+  workOrder  WorkOrder? @relation(fields: [workOrderId], references: [id], onDelete: SetNull)
+  uploadedBy User       @relation("DocumentUploader", fields: [uploadedById], references: [id])
+
+  @@index([category])
+  @@index([customerId])
+  @@index([workOrderId])
+  @@index([expiryDate])
+  @@index([deletedAt])
+}
+
+model FollowUp {
+  id           String         @id @default(cuid())
+  title        String
+  type         FollowUpType   @default(GENERAL)
+  status       FollowUpStatus @default(PENDING)
+  deadline     DateTime
+  customerId   String?
+  invoiceId    String? // set for auto-created PAYMENT_REMINDER follow-ups
+  notes        String?
+  assignedToId String?
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+
+  customer   Customer? @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  invoice    Invoice?  @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+  assignedTo User?     @relation("FollowUpAssignee", fields: [assignedToId], references: [id], onDelete: SetNull)
+
+  @@index([deadline])
+  @@index([status])
+  @@index([type])
+  @@index([customerId])
+}
+
+// ─────────────────────────────── Finance ─────────────────────────────
+
+model Quotation {
+  id          String          @id @default(cuid())
+  quoteNo     String          @unique // QT-2026-0001
+  customerId  String
+  status      QuotationStatus @default(DRAFT)
+  subtotal    Decimal         @db.Decimal(12, 2)
+  vatRate     Decimal         @default(0.05) @db.Decimal(5, 4)
+  vatAmount   Decimal         @db.Decimal(12, 2)
+  totalAmount Decimal         @db.Decimal(12, 2)
+  issueDate   DateTime        @default(now())
+  validUntil  DateTime?
+  notes       String?
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+
+  customer Customer        @relation(fields: [customerId], references: [id])
+  items    QuotationItem[]
+  invoices Invoice[]
+
+  @@index([customerId])
+  @@index([status])
+}
+
+model QuotationItem {
+  id          String  @id @default(cuid())
+  quotationId String
+  serviceId   String?
+  description String
+  quantity    Decimal @db.Decimal(10, 2)
+  unitPrice   Decimal @db.Decimal(12, 2)
+  lineTotal   Decimal @db.Decimal(12, 2)
+  sortOrder   Int     @default(0)
+
+  quotation Quotation @relation(fields: [quotationId], references: [id], onDelete: Cascade)
+  service   Service?  @relation(fields: [serviceId], references: [id], onDelete: SetNull)
+
+  @@index([quotationId])
+}
+
+model Invoice {
+  id          String        @id @default(cuid())
+  invoiceNo   String        @unique // INV-2026-0001
+  customerId  String
+  quotationId String?
+  status      InvoiceStatus @default(UNPAID)
+  subtotal    Decimal       @db.Decimal(12, 2)
+  vatRate     Decimal       @default(0.05) @db.Decimal(5, 4)
+  vatAmount   Decimal       @db.Decimal(12, 2)
+  totalAmount Decimal       @db.Decimal(12, 2)
+  amountPaid  Decimal       @default(0) @db.Decimal(12, 2)
+  issueDate   DateTime      @default(now())
+  dueDate     DateTime?
+  notes       String?
+  deletedAt   DateTime?
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  customer  Customer      @relation(fields: [customerId], references: [id])
+  quotation Quotation?    @relation(fields: [quotationId], references: [id], onDelete: SetNull)
+  items     InvoiceItem[]
+  payments  Payment[]
+  followUps FollowUp[]
+
+  @@index([customerId])
+  @@index([status])
+  @@index([issueDate])
+  @@index([dueDate])
+  @@index([deletedAt])
+}
+
+model InvoiceItem {
+  id          String  @id @default(cuid())
+  invoiceId   String
+  description String
+  serviceId   String?
+  workOrderId String?
+  quantity    Decimal @db.Decimal(10, 2)
+  unitPrice   Decimal @db.Decimal(12, 2)
+  lineTotal   Decimal @db.Decimal(12, 2)
+  sortOrder   Int     @default(0)
+
+  invoice   Invoice    @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+  service   Service?   @relation(fields: [serviceId], references: [id], onDelete: SetNull)
+  workOrder WorkOrder? @relation(fields: [workOrderId], references: [id], onDelete: SetNull)
+
+  @@index([invoiceId])
+  @@index([workOrderId])
+}
+
+model Payment {
+  id           String        @id @default(cuid())
+  invoiceId    String
+  customerId   String
+  amount       Decimal       @db.Decimal(12, 2)
+  method       PaymentMethod
+  reference    String?
+  date         DateTime      @default(now())
+  receivedById String?
+  notes        String?
+  createdAt    DateTime      @default(now())
+
+  invoice    Invoice  @relation(fields: [invoiceId], references: [id])
+  customer   Customer @relation(fields: [customerId], references: [id])
+  receivedBy User?    @relation("PaymentReceiver", fields: [receivedById], references: [id], onDelete: SetNull)
+
+  @@index([invoiceId])
+  @@index([customerId])
+  @@index([date])
+  @@index([method])
+}
+
+model Expense {
+  id               String          @id @default(cuid())
+  category         ExpenseCategory
+  amount           Decimal         @db.Decimal(12, 2) // net, excl. VAT
+  vatAmount        Decimal         @default(0) @db.Decimal(12, 2) // recoverable input VAT
+  description      String
+  date             DateTime        @default(now())
+  receiptUrl       String?
+  vendorId         String?
+  outsourcedWorkId String?         @unique
+  createdAt        DateTime        @default(now())
+  updatedAt        DateTime        @updatedAt
+
+  vendor         Vendor?         @relation(fields: [vendorId], references: [id], onDelete: SetNull)
+  outsourcedWork OutsourcedWork? @relation(fields: [outsourcedWorkId], references: [id], onDelete: SetNull)
+
+  @@index([category])
+  @@index([date])
+}
+
+// ─────────────────────────────── System ──────────────────────────────
+
+model ActivityLog {
+  id         String   @id @default(cuid())
+  entityType String // "WorkOrder" | "Invoice" | "Task" | ...
+  entityId   String
+  action     String // "created" | "status_changed" | "revision_requested" | ...
+  message    String
+  userId     String?
+  createdAt  DateTime @default(now())
+
+  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([entityType, entityId, createdAt])
+  @@index([userId])
+}
+
+model Setting {
+  key       String   @id
+  value     String
+  updatedAt DateTime @updatedAt
+}
+
+// Atomic document-number sequences, one row per prefix per year.
+model Counter {
+  key   String @id // e.g. "INV-2026"
+  year  Int
+  value Int    @default(0)
+}
