@@ -14,7 +14,9 @@ import {
   type WorkOrderStatus,
 } from "@prisma/client";
 import bcrypt from "bcryptjs";
-import { addDays, addHours, differenceInCalendarDays, startOfDay, startOfMonth, subDays, subMonths } from "date-fns";
+import { addDays, addHours, differenceInCalendarDays, format, startOfDay, startOfMonth, subDays, subMonths } from "date-fns";
+import { mkdirSync, writeFileSync } from "node:fs";
+import path from "node:path";
 
 const prisma = new PrismaClient();
 
@@ -651,14 +653,16 @@ async function main() {
   for (const c of expiring.slice(0, 6)) {
     const isPassport = !!c.passportExpiry && Math.abs(differenceInCalendarDays(c.passportExpiry, TODAY)) <= 45;
     const expiry = isPassport ? c.passportExpiry! : c.emiratesIdExpiry!;
+    const label = isPassport ? "Passport" : "Emirates ID";
+    // Same shape as server/services/expiry-follow-ups.ts, so editing the customer updates this row.
     followUps.push({
-      title: `${isPassport ? "Passport" : "Emirates ID"} renewal — ${c.name}`,
-      type: isPassport ? "PASSPORT_EXPIRY" : "VISA_DEADLINE",
+      title: `${label} renewal — ${c.name}`,
+      type: isPassport ? "PASSPORT_EXPIRY" : "EMIRATES_ID_EXPIRY",
+      autoKey: `customer:${c.id}:${isPassport ? "passport" : "emiratesId"}`,
       status: "PENDING",
-      // remind 30 days ahead; if that is already past, act before the expiry date itself
-      deadline: subDays(expiry, 30) >= TODAY ? subDays(expiry, 30) : expiry >= TODAY ? addDays(TODAY, int(0, 5)) : subDays(TODAY, int(1, 6)),
+      deadline: subDays(expiry, 30),
       customerId: c.id,
-      notes: `Expires on ${expiry.toISOString().slice(0, 10)}`,
+      notes: `${label} expires on ${format(expiry, "d MMM yyyy")}`,
       assignedToId: typist.id,
     });
   }
@@ -705,6 +709,52 @@ async function main() {
   }
   await prisma.followUp.createMany({ data: followUps.slice(0, 25) });
 
+  // ───────────── Documents (sample PDFs on disk) ─────────────
+  console.log("Seeding documents…");
+  const seedDir = path.resolve(process.env.UPLOAD_DIR ?? "./uploads", "seed");
+  mkdirSync(seedDir, { recursive: true });
+  const documents: Prisma.DocumentCreateManyInput[] = [];
+  const addDoc = (d: Omit<Prisma.DocumentCreateManyInput, "fileUrl" | "mimeType" | "size" | "uploadedById">, lines: string[]) => {
+    const file = `doc-${String(documents.length + 1).padStart(3, "0")}.pdf`;
+    const bytes = samplePdf(lines);
+    writeFileSync(path.join(seedDir, file), bytes);
+    documents.push({ ...d, fileUrl: `/api/files/seed/${file}`, mimeType: "application/pdf", size: bytes.length, uploadedById: pick([typist, manager, translator]).id });
+  };
+  for (const c of customers.slice(0, 18)) {
+    const createdAt = addDays(c.createdAt, int(0, 3));
+    if (c.passportNo) {
+      addDoc({ name: `Passport - ${c.name}`, category: "PASSPORT", customerId: c.id, expiryDate: c.passportExpiry, createdAt }, [
+        "PASSPORT (SAMPLE SCAN)",
+        `Name: ${c.name}`,
+        `Passport no: ${c.passportNo}`,
+        `Nationality: ${c.nationality ?? "-"}`,
+        `Expiry: ${c.passportExpiry ? format(c.passportExpiry, "dd MMM yyyy") : "-"}`,
+      ]);
+    }
+    if (c.emiratesId) {
+      addDoc({ name: `Emirates ID - ${c.name}`, category: "EMIRATES_ID", customerId: c.id, expiryDate: c.emiratesIdExpiry, createdAt }, [
+        "EMIRATES ID (SAMPLE SCAN)",
+        `Name: ${c.name}`,
+        `ID number: ${c.emiratesId}`,
+        `Expiry: ${c.emiratesIdExpiry ? format(c.emiratesIdExpiry, "dd MMM yyyy") : "-"}`,
+      ]);
+    }
+    if (c.type === "COMPANY") {
+      addDoc(
+        { name: `Trade License - ${c.companyName}`, category: "TRADE_LICENSE", customerId: c.id, expiryDate: addDays(TODAY, int(-20, 300)), createdAt },
+        ["TRADE LICENSE (SAMPLE)", `Company: ${c.companyName}`, `License no: ${int(100000, 999999)}`, "Issued by: Dubai DET"],
+      );
+    }
+  }
+  for (const wo of workOrders.filter((w) => w.service.category === "LEGAL_TRANSLATION").slice(-8)) {
+    const docTitle = wo.notes!.split(" — ")[0]!;
+    addDoc(
+      { name: `${docTitle} (source)`, category: docTitle.includes("Judgment") || docTitle.includes("Decree") ? "LEGAL_JUDGMENT" : "CERTIFICATE", customerId: wo.customerId, workOrderId: wo.id, createdAt: wo.createdAt },
+      [docTitle.toUpperCase(), `Work order: ${wo.orderNo}`, "Source document received at counter", "Sample file for demonstration"],
+    );
+  }
+  await prisma.document.createMany({ data: documents });
+
   // ───────────── Activity log & counters ─────────────
   await prisma.activityLog.createMany({ data: activity });
   await prisma.counter.createMany({
@@ -730,6 +780,37 @@ async function main() {
   console.table(summary);
   console.log(`Logins: ${userSeeds.map((u) => `${u.email} (${u.role})`).join(", ")} — password: Password123!`);
   void admin;
+}
+
+/** Minimal one-page PDF with a few lines of Helvetica text (ASCII only). */
+function samplePdf(lines: string[]) {
+  const esc = (s: string) => s.replace(/[^\x20-\x7e]/g, "-").replace(/[\\()]/g, (m) => `\\${m}`);
+  const content = [
+    "BT",
+    "/F1 18 Tf",
+    "60 770 Td",
+    `(${esc(lines[0]!)}) Tj`,
+    "/F1 12 Tf",
+    ...lines.slice(1).flatMap((l) => ["0 -26 Td", `(${esc(l)}) Tj`]),
+    "ET",
+  ].join("\n");
+  const objects = [
+    "<< /Type /Catalog /Pages 2 0 R >>",
+    "<< /Type /Pages /Kids [3 0 R] /Count 1 >>",
+    "<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 4 0 R >> >> /Contents 5 0 R >>",
+    "<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>",
+    `<< /Length ${content.length} >>\nstream\n${content}\nendstream`,
+  ];
+  let pdf = "%PDF-1.4\n";
+  const offsets = objects.map((o, i) => {
+    const at = pdf.length;
+    pdf += `${i + 1} 0 obj\n${o}\nendobj\n`;
+    return at;
+  });
+  const xref = pdf.length;
+  pdf += `xref\n0 ${objects.length + 1}\n0000000000 65535 f \n${offsets.map((o) => `${String(o).padStart(10, "0")} 00000 n \n`).join("")}`;
+  pdf += `trailer\n<< /Size ${objects.length + 1} /Root 1 0 R >>\nstartxref\n${xref}\n%%EOF\n`;
+  return Buffer.from(pdf, "latin1");
 }
 
 main()

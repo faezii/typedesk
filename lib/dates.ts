@@ -1,4 +1,4 @@
-import { tz } from "@date-fns/tz";
+import { TZDate, tz } from "@date-fns/tz";
 import { addDays, endOfDay, format, startOfDay, startOfMonth, subMonths } from "date-fns";
 
 export const TIMEZONE = "Asia/Dubai";
@@ -14,6 +14,14 @@ export const monthsAgoDubai = (n: number, d = new Date()) => plain(startOfMonth(
 export const daysFromTodayDubai = (n: number, now = new Date()) => plain(endOfDay(addDays(now, n, { in: dubai }), { in: dubai }));
 
 export const formatDubai = (d: Date, pattern: string) => format(d, pattern, { in: dubai });
+
+/** "yyyy-mm-dd" (from <input type="date">) → midnight Dubai. */
+export function parseDateInput(value: string | null | undefined): Date | null {
+  const m = value ? /^(\d{4})-(\d{2})-(\d{2})$/.exec(value) : null;
+  return m ? plain(new TZDate(+m[1], +m[2] - 1, +m[3], TIMEZONE)) : null;
+}
+/** Date → "yyyy-mm-dd" in Dubai, for <input type="date"> defaults. */
+export const toDateInput = (d: Date | null | undefined) => (d ? formatDubai(d, "yyyy-MM-dd") : "");
 
 export function greetingFor(now = new Date()) {
   const hour = Number(formatDubai(now, "H"));

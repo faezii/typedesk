@@ -95,6 +95,7 @@ enum DocumentCategory {
 
 enum FollowUpType {
   PASSPORT_EXPIRY
+  EMIRATES_ID_EXPIRY
   VISA_DEADLINE
   TRADE_LICENSE_RENEWAL
   PAYMENT_REMINDER
@@ -386,6 +387,9 @@ model FollowUp {
   deadline     DateTime
   customerId   String?
   invoiceId    String? // set for auto-created PAYMENT_REMINDER follow-ups
+  /// Identifies system-generated follow-ups so they are updated, not duplicated
+  /// (e.g. "customer:<id>:passport", "customer:<id>:emiratesId").
+  autoKey      String?        @unique
   notes        String?
   assignedToId String?
   createdAt    DateTime       @default(now())
