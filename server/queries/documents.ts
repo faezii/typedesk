@@ -5,7 +5,7 @@ import { DOCUMENT_CATEGORY_LABEL } from "@/lib/labels";
 
 export const DOC_PAGE_SIZE = 25;
 
-export type DocumentListParams = { q?: string; category?: string; customerId?: string; page?: string };
+export type DocumentListParams = { q?: string; category?: string; customerId?: string; workOrderId?: string; page?: string };
 
 export async function listDocuments(params: DocumentListParams) {
   const page = Math.max(1, Number(params.page) || 1);
@@ -15,6 +15,7 @@ export async function listDocuments(params: DocumentListParams) {
     deletedAt: null,
     ...(category ? { category } : {}),
     ...(params.customerId ? { customerId: params.customerId } : {}),
+    ...(params.workOrderId ? { workOrderId: params.workOrderId } : {}),
     ...(q
       ? {
           OR: [

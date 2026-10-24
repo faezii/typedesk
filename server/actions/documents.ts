@@ -10,7 +10,6 @@ import { DOCUMENT_CATEGORY_LABEL, EXPIRING_CATEGORIES } from "@/lib/labels";
 import { prisma } from "@/lib/prisma";
 import { UploadError, saveUpload } from "@/lib/storage";
 import { customerWorkOrderOptions } from "@/server/queries/documents";
-import { searchCustomers } from "@/server/queries/customers";
 import { syncIdExpiryFollowUps } from "@/server/services/expiry-follow-ups";
 
 const uploadSchema = z.object({
@@ -116,12 +115,6 @@ export async function deleteDocument(id: string): Promise<ActionResult> {
 }
 
 /** Picker lookups for the upload dialog. */
-export async function findCustomers(q: string) {
-  const g = await guard("documents:view");
-  if (!g.user || q.trim().length < 2) return [];
-  return searchCustomers(q);
-}
-
 export async function findCustomerWorkOrders(customerId: string) {
   const g = await guard("documents:view");
   if (!g.user || !customerId) return [];

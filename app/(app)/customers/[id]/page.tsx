@@ -19,18 +19,11 @@ import {
   FOLLOW_UP_TYPE_LABEL,
   INVOICE_STATUS_LABEL,
   PAYMENT_METHOD_LABEL,
-  WORK_ORDER_STATUS_LABEL,
 } from "@/lib/labels";
 import { getCustomer } from "@/server/queries/customers";
-import type { FollowUpStatus, InvoiceStatus, WorkOrderStatus } from "@prisma/client";
+import { WorkOrderStatusBadge } from "@/components/shared/work-order-badges";
+import type { FollowUpStatus, InvoiceStatus } from "@prisma/client";
 
-const WO_TONE: Record<WorkOrderStatus, Tone> = {
-  RECEIVED: "gray",
-  IN_PROGRESS: "blue",
-  QUALITY_CHECK: "violet",
-  READY: "amber",
-  DELIVERED: "green",
-};
 const INVOICE_TONE: Record<InvoiceStatus, Tone> = { UNPAID: "red", PARTIAL: "amber", PAID: "green", CANCELLED: "gray" };
 const FOLLOW_UP_TONE: Record<FollowUpStatus, Tone> = { PENDING: "amber", DONE: "green", SNOOZED: "gray" };
 
@@ -348,15 +341,6 @@ function IdItem({ label, number, expiry }: { label: string; number: string | nul
         )}
       </dd>
     </div>
-  );
-}
-
-function WorkOrderStatusBadge({ status, revision }: { status: WorkOrderStatus; revision: boolean }) {
-  return (
-    <span className="inline-flex gap-1">
-      <ToneBadge tone={WO_TONE[status]}>{WORK_ORDER_STATUS_LABEL[status]}</ToneBadge>
-      {revision && <ToneBadge tone="red">Revision</ToneBadge>}
-    </span>
   );
 }
 

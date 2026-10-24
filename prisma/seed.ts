@@ -16,6 +16,7 @@ import {
 import bcrypt from "bcryptjs";
 import { addDays, addHours, differenceInCalendarDays, format, startOfDay, startOfMonth, subDays, subMonths } from "date-fns";
 import { mkdirSync, writeFileSync } from "node:fs";
+import { WORK_ORDER_STATUS_LABEL } from "../lib/labels";
 import path from "node:path";
 
 const prisma = new PrismaClient();
@@ -365,7 +366,7 @@ async function main() {
         entityType: "WorkOrder",
         entityId: wo.id,
         action: "status_changed",
-        message: `Status changed from ${flow[s - 1]} to ${flow[s]}`,
+        message: `Status changed from ${WORK_ORDER_STATUS_LABEL[flow[s - 1]!]} to ${WORK_ORDER_STATUS_LABEL[flow[s]!]}`,
         userId: assignee.id,
         createdAt: at,
       });

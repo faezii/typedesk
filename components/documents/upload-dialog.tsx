@@ -2,27 +2,33 @@
 
 import { useEffect, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { Check, ChevronsUpDown, FileUp, Loader2, X } from "lucide-react";
+import { FileUp, Loader2, X } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { DOCUMENT_CATEGORY_LABEL, EXPIRING_CATEGORIES } from "@/lib/labels";
 import { cn } from "@/lib/utils";
-import { findCustomerWorkOrders, findCustomers, uploadDocument } from "@/server/actions/documents";
+import { CustomerPicker, type CustomerOption } from "@/components/customers/customer-picker";
+import { findCustomerWorkOrders, uploadDocument } from "@/server/actions/documents";
 import type { DocumentCategory } from "@prisma/client";
 
 const MAX_BYTES = 10 * 1024 * 1024;
 const ACCEPT = ".pdf,.jpg,.jpeg,.png,.docx";
 const OK_EXT = /\.(pdf|jpe?g|png|docx)$/i;
 
-type CustomerOption = { id: string; name: string; subtitle?: string };
-
-export function UploadDialog({ defaultCustomer, children }: { defaultCustomer?: { id: string; name: string }; children: React.ReactNode }) {
+export function UploadDialog({
+  defaultCustomer,
+  defaultWorkOrderId,
+  children,
+}: {
+  defaultCustomer?: { id: string; name: string };
+  /** Preselect a work order (requires defaultCustomer). */
+  defaultWorkOrderId?: string;
+  children: React.ReactNode;
+}) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [pending, startTransition] = useTransition();
@@ -33,7 +39,7 @@ export function UploadDialog({ defaultCustomer, children }: { defaultCustomer?: 
   const [category, setCategory] = useState<DocumentCategory | "">("");
   const [customer, setCustomer] = useState<CustomerOption | null>(defaultCustomer ?? null);
   const [workOrders, setWorkOrders] = useState<{ id: string; label: string }[]>([]);
-  const [workOrderId, setWorkOrderId] = useState("none");
+  const [workOrderId, setWorkOrderId] = useState(defaultWorkOrderId ?? "none");
   const [expiryDate, setExpiryDate] = useState("");
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -54,7 +60,7 @@ export function UploadDialog({ defaultCustomer, children }: { defaultCustomer?: 
     setName("");
     setCategory("");
     setCustomer(defaultCustomer ?? null);
-    setWorkOrderId("none");
+    setWorkOrderId(defaultWorkOrderId ?? "none");
     setExpiryDate("");
   }
 
@@ -232,63 +238,5 @@ export function UploadDialog({ defaultCustomer, children }: { defaultCustomer?: 
         </form>
       </DialogContent>
     </Dialog>
-  );
-}
-
-function CustomerPicker({ value, onChange }: { value: CustomerOption | null; onChange: (c: CustomerOption | null) => void }) {
-  const [open, setOpen] = useState(false);
-  const [query, setQuery] = useState("");
-  const [results, setResults] = useState<CustomerOption[]>([]);
-
-  useEffect(() => {
-    if (query.trim().length < 2) return;
-    let cancelled = false;
-    const t = setTimeout(async () => {
-      const rows = await findCustomers(query);
-      if (!cancelled) setResults(rows.map((r) => ({ id: r.id, name: r.name, subtitle: [r.companyName, r.phone].filter(Boolean).join(" · ") })));
-    }, 200);
-    return () => {
-      cancelled = true;
-      clearTimeout(t);
-    };
-  }, [query]);
-
-  return (
-    <Popover open={open} onOpenChange={setOpen}>
-      <PopoverTrigger asChild>
-        <Button type="button" variant="outline" role="combobox" aria-expanded={open} className="w-full justify-between font-normal">
-          <span className={cn("truncate", !value && "text-muted-foreground")}>{value?.name ?? "Optional — search by name or phone"}</span>
-          <ChevronsUpDown className="opacity-50" />
-        </Button>
-      </PopoverTrigger>
-      <PopoverContent className="w-(--radix-popover-trigger-width) p-0" align="start">
-        <Command shouldFilter={false}>
-          <CommandInput value={query} onValueChange={setQuery} placeholder="Name, phone, Emirates ID…" />
-          <CommandList>
-            <CommandEmpty>{query.trim().length < 2 ? "Type at least 2 characters." : "No customers found."}</CommandEmpty>
-            {value && (
-              <CommandGroup>
-                <CommandItem value="__clear" onSelect={() => (onChange(null), setOpen(false))}>
-                  <X /> Clear selection
-                </CommandItem>
-              </CommandGroup>
-            )}
-            {query.trim().length >= 2 && results.length > 0 && (
-              <CommandGroup heading="Customers">
-                {results.map((c) => (
-                  <CommandItem key={c.id} value={c.id} onSelect={() => (onChange(c), setOpen(false))}>
-                    <Check className={cn(value?.id === c.id ? "opacity-100" : "opacity-0")} />
-                    <div className="min-w-0">
-                      <div className="truncate">{c.name}</div>
-                      {c.subtitle && <div className="text-muted-foreground truncate text-xs">{c.subtitle}</div>}
-                    </div>
-                  </CommandItem>
-                ))}
-              </CommandGroup>
-            )}
-          </CommandList>
-        </Command>
-      </PopoverContent>
-    </Popover>
   );
 }

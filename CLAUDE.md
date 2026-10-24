@@ -15,7 +15,9 @@ Business management app for a UAE translation & typing center. Built phase by ph
 - **VAT**: UAE 5%, read from `Setting` key `vatRate` (default `0.05`). Invoice = subtotal + VAT = total.
 - **Timezone**: all "today / this week / this month" logic uses `Asia/Dubai` — use the helpers in `lib/dates.ts` (`startOfTodayDubai`, `monthsAgoDubai`, `formatDubai`, …) and `lib/format.ts` (`formatAED`, `formatDate`); enum display labels live in `lib/labels.ts`.
 - **Charts**: series colors are `var(--chart-1..4)` (emerald, sky, amber, violet; validated for colour-blindness and contrast in both themes). Assign in that order, never by rank.
-- **Numbering**: `Counter` table, atomic upsert-increment → `WO-2026-0001`, `INV-2026-0001`, `QT-2026-0001`.
+- **Numbering**: `Counter` table, atomic upsert-increment → `WO-2026-0001`, `INV-2026-0001`, `QT-2026-0001`. Use `nextNumber(tx, prefix)` from `lib/numbering.ts` inside the creating transaction.
+- **Money math**: `lineTotal()` in `lib/money.ts` (exact `Prisma.Decimal`, half-up to fils) — server only. Client forms may show a display-only estimate. Shared money/quantity regex is `DECIMAL_RE` in `lib/validation/work-order.ts` (keep `@prisma/client` out of client bundles).
+- **Work orders**: stage changes go through `moveWorkOrder(id, from, to)` (optimistic-concurrency on `from`, writes ActivityLog). Orders with an open revision can't change stage. Deadlines render with `DeadlineText` (`components/shared/work-order-badges.tsx`).
 - **Phones**: `+971` format (e.g. `+971 50 123 4567`). **Emirates ID**: `784-XXXX-XXXXXXX-X`.
 - **Soft delete**: models with `deletedAt` are filtered with `deletedAt: null` in every query.
 - **Audit**: status changes and important mutations write an `ActivityLog` row.

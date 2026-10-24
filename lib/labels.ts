@@ -6,6 +6,8 @@ import type {
   InvoiceStatus,
   PaymentMethod,
   Priority,
+  ServiceCategory,
+  ServiceUnit,
   WorkOrderStatus,
 } from "@prisma/client";
 
@@ -55,6 +57,35 @@ export const DOCUMENT_CATEGORY_LABEL: Record<DocumentCategory, string> = {
   CERTIFICATE: "Certificate",
   OTHER: "Other",
 };
+
+export const SERVICE_CATEGORY_LABEL: Record<ServiceCategory, string> = {
+  LEGAL_TRANSLATION: "Legal translation",
+  GENERAL_TRANSLATION: "General translation",
+  TYPING: "Typing",
+  ATTESTATION: "Attestation",
+  COURT_SUBMISSION: "Court submission",
+  OTHER: "Other",
+};
+
+export const SERVICE_UNIT_LABEL: Record<ServiceUnit, string> = { PAGE: "page", WORD: "word", DOCUMENT: "document", HOUR: "hour" };
+
+export const LANGUAGES = [
+  "Arabic",
+  "English",
+  "French",
+  "Russian",
+  "Chinese",
+  "Hindi",
+  "Urdu",
+  "Persian",
+  "Spanish",
+  "German",
+  "Italian",
+  "Portuguese",
+  "Turkish",
+  "Tagalog",
+  "Bengali",
+] as const;
 
 /** Categories whose documents carry an expiry date. */
 export const EXPIRING_CATEGORIES: DocumentCategory[] = ["PASSPORT", "EMIRATES_ID", "TRADE_LICENSE"];

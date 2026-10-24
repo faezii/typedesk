@@ -2,11 +2,20 @@
 
 import { revalidatePath } from "next/cache";
 import type { ActionResult } from "@/lib/action-result";
-import { AuthorizationError, requirePermission } from "@/lib/auth/session";
+import { AuthorizationError, getCurrentUser, requirePermission } from "@/lib/auth/session";
 import { parseDateInput } from "@/lib/dates";
 import { prisma } from "@/lib/prisma";
 import { customerSchema, type CustomerFormValues } from "@/lib/validation/customer";
 import { syncIdExpiryFollowUps } from "@/server/services/expiry-follow-ups";
+import { searchCustomers } from "@/server/queries/customers";
+import { can } from "@/lib/auth/permissions";
+
+/** Lookup for customer pickers. */
+export async function findCustomers(q: string) {
+  const user = await getCurrentUser();
+  if (!user || !can(user.role, "customers:view") || q.trim().length < 2) return [];
+  return searchCustomers(q);
+}
 
 /** Create (id = null) or update a customer; keeps ID-expiry follow-ups in sync. */
 export async function saveCustomer(id: string | null, input: CustomerFormValues): Promise<ActionResult<{ id: string }>> {

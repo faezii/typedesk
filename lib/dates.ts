@@ -23,6 +23,13 @@ export function parseDateInput(value: string | null | undefined): Date | null {
 /** Date → "yyyy-mm-dd" in Dubai, for <input type="date"> defaults. */
 export const toDateInput = (d: Date | null | undefined) => (d ? formatDubai(d, "yyyy-MM-dd") : "");
 
+/** "yyyy-mm-ddThh:mm" (from <input type="datetime-local">) → that wall-clock time in Dubai. */
+export function parseDateTimeInput(value: string | null | undefined): Date | null {
+  const m = value ? /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})$/.exec(value) : null;
+  return m ? plain(new TZDate(+m[1], +m[2] - 1, +m[3], +m[4], +m[5], TIMEZONE)) : null;
+}
+export const toDateTimeInput = (d: Date | null | undefined) => (d ? formatDubai(d, "yyyy-MM-dd'T'HH:mm") : "");
+
 export function greetingFor(now = new Date()) {
   const hour = Number(formatDubai(now, "H"));
   if (hour < 12) return "Good morning";

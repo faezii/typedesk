@@ -50,6 +50,22 @@ export function SearchInput({ placeholder, param = "q" }: { placeholder: string;
   );
 }
 
+/** A yyyy-mm-dd URL param, e.g. the start or end of a date range. */
+export function DateParam({ param, label }: { param: string; label: string }) {
+  const { params, set } = useSetParam();
+  return (
+    <label className="text-muted-foreground flex items-center gap-2 text-sm">
+      <span className="shrink-0">{label}</span>
+      <Input
+        type="date"
+        className="h-9 w-full sm:w-38"
+        value={params.get(param) ?? ""}
+        onChange={(e) => set(param, e.target.value || null)}
+      />
+    </label>
+  );
+}
+
 export function FilterSelect({
   param,
   label,
