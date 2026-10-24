@@ -6,6 +6,8 @@ import type { Role } from "@prisma/client";
  */
 export const PERMISSIONS = {
   "dashboard:view": ["ADMIN", "MANAGER", "FINANCE", "STAFF"],
+  /** Centre-wide KPIs; STAFF see only work assigned to them. */
+  "dashboard:viewAll": ["ADMIN", "MANAGER", "FINANCE"],
 
   "workOrders:view": ["ADMIN", "MANAGER", "FINANCE", "STAFF"],
   "workOrders:edit": ["ADMIN", "MANAGER", "STAFF"],
