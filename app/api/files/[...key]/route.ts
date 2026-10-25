@@ -3,13 +3,18 @@ import { getCurrentUser } from "@/lib/auth/session";
 import { prisma } from "@/lib/prisma";
 import { fileUrlFor, mimeForKey, readKey } from "@/lib/storage";
 
-/** Serves uploaded files to signed-in users, only for documents that still exist. */
+/** Serves uploaded files to signed-in users: live documents (documents:view) and expense receipts (finance:view). */
 export async function GET(req: Request, { params }: { params: Promise<{ key: string[] }> }) {
   const user = await getCurrentUser();
-  if (!user || !can(user.role, "documents:view")) return new Response("Not found", { status: 404 });
+  if (!user) return new Response("Not found", { status: 404 });
 
   const key = (await params).key.join("/");
-  const doc = await prisma.document.findFirst({ where: { fileUrl: fileUrlFor(key), deletedAt: null }, select: { name: true } });
+  const fileUrl = fileUrlFor(key);
+  const doc =
+    (can(user.role, "documents:view") && (await prisma.document.findFirst({ where: { fileUrl, deletedAt: null }, select: { name: true } }))) ||
+    (can(user.role, "finance:view") &&
+      (await prisma.expense.findFirst({ where: { receiptUrl: fileUrl }, select: { description: true } }).then((e) => (e ? { name: `Receipt - ${e.description}` } : null)))) ||
+    null;
   const bytes = doc ? await readKey(key).catch(() => null) : null;
   if (!doc || !bytes) return new Response("Not found", { status: 404 });
 

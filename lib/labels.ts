@@ -1,6 +1,7 @@
 import type {
   CustomerType,
   DocumentCategory,
+  ExpenseCategory,
   FollowUpStatus,
   FollowUpType,
   InvoiceStatus,
@@ -44,6 +45,16 @@ export const INVOICE_STATUS_LABEL: Record<InvoiceStatus, string> = {
   PARTIAL: "Partial",
   PAID: "Paid",
   CANCELLED: "Cancelled",
+};
+
+export const EXPENSE_CATEGORY_LABEL: Record<ExpenseCategory, string> = {
+  RENT: "Rent",
+  UTILITY: "Utilities",
+  SUPPLIES: "Supplies",
+  SOFTWARE: "Software",
+  FREELANCER: "Freelancer payments",
+  SALARY: "Salaries",
+  OTHER: "Other",
 };
 
 export const CUSTOMER_TYPE_LABEL: Record<CustomerType, string> = { INDIVIDUAL: "Individual", COMPANY: "Company" };
