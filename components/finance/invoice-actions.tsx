@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { Ban, FileOutput, Loader2, Wallet } from "lucide-react";
+import { Ban, FileOutput, Loader2, Trash2, Wallet } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
@@ -10,7 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { PAYMENT_METHOD_LABEL } from "@/lib/labels";
-import { cancelInvoice, convertQuotation, recordPayment, setQuotationStatus } from "@/server/actions/invoices";
+import { cancelInvoice, convertQuotation, deletePayment, recordPayment, setQuotationStatus } from "@/server/actions/invoices";
 import type { PaymentMethod } from "@prisma/client";
 
 export function RecordPaymentDialog({ invoiceId, invoiceNo, balance, today }: { invoiceId: string; invoiceNo: string; balance: string; today: string }) {
@@ -129,6 +129,31 @@ export function CancelInvoiceButton({ id, invoiceNo }: { id: string; invoiceNo: 
       }
     >
       {pending ? <Loader2 className="animate-spin" /> : <Ban />} Cancel invoice
+    </Button>
+  );
+}
+
+export function RemovePaymentButton({ id, label }: { id: string; label: string }) {
+  const router = useRouter();
+  const [pending, startTransition] = useTransition();
+  return (
+    <Button
+      size="icon-sm"
+      variant="ghost"
+      disabled={pending}
+      aria-label={`Remove payment ${label}`}
+      className="text-muted-foreground hover:text-destructive"
+      onClick={() =>
+        confirm(`Remove the payment of ${label}? Use this only for a payment recorded by mistake. The balance goes back up and the details stay in the activity log.`) &&
+        startTransition(async () => {
+          const res = await deletePayment(id);
+          if (!res.ok) toast.error(res.error);
+          else toast.success("Payment removed");
+          router.refresh();
+        })
+      }
+    >
+      {pending ? <Loader2 className="animate-spin" /> : <Trash2 />}
     </Button>
   );
 }

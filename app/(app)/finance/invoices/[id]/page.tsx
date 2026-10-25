@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowLeft, Download, Pencil, Printer } from "lucide-react";
-import { CancelInvoiceButton, RecordPaymentDialog } from "@/components/finance/invoice-actions";
+import { CancelInvoiceButton, RecordPaymentDialog, RemovePaymentButton } from "@/components/finance/invoice-actions";
 import { InvoiceStatusBadge } from "@/components/finance/status-badges";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -143,7 +143,10 @@ export default async function InvoicePage({ params }: { params: Promise<{ id: st
                       {p.receivedBy && ` · ${p.receivedBy.name}`}
                     </div>
                   </div>
-                  <span className="tabular-nums">{formatAED(p.amount)}</span>
+                  <div className="flex items-center gap-1">
+                    <span className="tabular-nums">{formatAED(p.amount)}</span>
+                    {canEdit && <RemovePaymentButton id={p.id} label={`${formatAED(p.amount)} on ${formatDate(p.date)}`} />}
+                  </div>
                 </li>
               ))}
             </ul>

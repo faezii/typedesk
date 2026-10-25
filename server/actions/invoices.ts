@@ -165,7 +165,38 @@ export async function recordPayment(input: PaymentFormValues): Promise<ActionRes
   return result;
 }
 
-// ───────────── Quotations ─────────────
+/**
+ * Undo a payment recorded by mistake: the row is deleted, the invoice's paid amount and status are
+ * recomputed, and the activity log keeps the full details. Locks the invoice like recordPayment.
+ */
+export async function deletePayment(id: string): Promise<ActionResult> {
+  const { user, error } = await guardAction("finance:edit", id);
+  if (!user) return fail(error);
+
+  const result = await prisma.$transaction(async (tx) => {
+    const pay = await tx.payment.findUnique({ where: { id }, include: { receivedBy: { select: { name: true } } } });
+    if (!pay) return fail("This payment was already removed.");
+    await tx.$executeRaw`SELECT id FROM "Invoice" WHERE id = ${pay.invoiceId} FOR UPDATE`;
+    const { count } = await tx.payment.deleteMany({ where: { id } }); // 0 if a concurrent request removed it first
+    if (count === 0) return fail("This payment was already removed.");
+
+    const inv = await tx.invoice.findUniqueOrThrow({ where: { id: pay.invoiceId } });
+    const amountPaid = inv.amountPaid.minus(pay.amount);
+    const status = paymentStatus(inv.totalAmount, amountPaid, inv.status);
+    await tx.invoice.update({ where: { id: inv.id }, data: { amountPaid, status } });
+    // The reminder was closed automatically when the invoice was paid in full; it's open again.
+    if (inv.status === "PAID" && status !== "PAID") {
+      await tx.followUp.updateMany({ where: { invoiceId: inv.id, type: "PAYMENT_REMINDER", status: "DONE" }, data: { status: "PENDING" } });
+    }
+    const details = [pay.method.replace("_", " ").toLowerCase(), formatDubai(pay.date, "d MMM yyyy"), pay.reference, pay.receivedBy && `received by ${pay.receivedBy.name}`].filter(Boolean).join(", ");
+    await logInvoice(tx, inv.id, user.id, "payment_removed", `Removed payment AED ${pay.amount.toFixed(2)} (${details}) from ${inv.invoiceNo}; balance now AED ${inv.totalAmount.minus(amountPaid).toFixed(2)}`);
+    return { ok: true as const, data: undefined };
+  });
+  if (result.ok) refreshFinance();
+  return result;
+}
+
+//───────────── Quotations ─────────────
 
 export async function saveQuotation(id: string | null, input: DocumentFormValues): Promise<ActionResult<{ id: string }>> {
   const { user, error } = await guardAction("finance:edit", id);
