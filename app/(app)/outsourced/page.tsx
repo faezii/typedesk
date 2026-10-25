@@ -12,7 +12,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { can } from "@/lib/auth/permissions";
 import { requirePagePermission } from "@/lib/auth/session";
 import { toDateInput } from "@/lib/dates";
-import { formatAED, formatDate } from "@/lib/format";
+import { formatMoney, formatDate } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { JOB_PAGE_SIZE, listAssignments, listVendors, outsourcingSummary, vendorOptions, type AssignmentParams } from "@/server/queries/outsourcing";
 import type { QaStatus } from "@prisma/client";
@@ -55,8 +55,8 @@ export default async function OutsourcedPage({ searchParams }: { searchParams: P
       <div className="mb-4 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <StatCard label="Awaiting delivery" value={summary.awaitingDelivery} sub="Sent, nothing received yet" icon={Clock} />
         <StatCard label="Awaiting QA" value={summary.awaitingQa} sub="Delivered, not yet checked" icon={FileCheck2} />
-        <StatCard label="Owed to vendors" value={formatAED(summary.unpaidAmount)} sub={`${summary.unpaidCount} unpaid jobs`} icon={Wallet} />
-        <StatCard label="Paid this month" value={formatAED(summary.paidThisMonth)} sub="Booked as Freelancer expenses" icon={Handshake} />
+        <StatCard label="Owed to vendors" value={formatMoney(summary.unpaidAmount)} sub={`${summary.unpaidCount} unpaid jobs`} icon={Wallet} />
+        <StatCard label="Paid this month" value={formatMoney(summary.paidThisMonth)} sub="Booked as Freelancer expenses" icon={Handshake} />
       </div>
 
       <div className="bg-muted mb-4 inline-flex rounded-lg p-[3px]" role="tablist" aria-label="Section">
@@ -170,10 +170,10 @@ async function Assignments({
                       {j.receivedAt ? `Received ${formatDate(j.receivedAt)}` : "Not received"}
                     </div>
                   </TableCell>
-                  <TableCell className="text-right tabular-nums">{formatAED(j.agreementCost)}</TableCell>
+                  <TableCell className="text-right tabular-nums">{formatMoney(j.agreementCost)}</TableCell>
                   <TableCell className="text-right tabular-nums">
-                    <span className={j.margin.isNegative() ? "text-destructive font-medium" : ""}>{formatAED(j.margin)}</span>
-                    {j.pct !== null && <div className="text-muted-foreground text-xs">{j.pct}% of {formatAED(j.workOrder.totalAmount)}</div>}
+                    <span className={j.margin.isNegative() ? "text-destructive font-medium" : ""}>{formatMoney(j.margin)}</span>
+                    {j.pct !== null && <div className="text-muted-foreground text-xs">{j.pct}% of {formatMoney(j.workOrder.totalAmount)}</div>}
                   </TableCell>
                   <TableCell>{canEdit ? <QaSelect id={j.id} status={j.qaStatus} /> : <ToneBadge tone={QA_TONE[j.qaStatus]}>{j.qaStatus.toLowerCase()}</ToneBadge>}</TableCell>
                   <TableCell>
@@ -253,8 +253,8 @@ async function Vendors({ canEdit }: { canEdit: boolean }) {
                 </TableCell>
                 <TableCell className="text-muted-foreground max-w-56 text-sm whitespace-normal">{v.languages.join(", ") || "—"}</TableCell>
                 <TableCell className="text-right tabular-nums">{v.jobs}</TableCell>
-                <TableCell className="text-right tabular-nums">{formatAED(v.paid)}</TableCell>
-                <TableCell className={cn("text-right tabular-nums", v.unpaid.gt(0) && "font-medium")}>{formatAED(v.unpaid)}</TableCell>
+                <TableCell className="text-right tabular-nums">{formatMoney(v.paid)}</TableCell>
+                <TableCell className={cn("text-right tabular-nums", v.unpaid.gt(0) && "font-medium")}>{formatMoney(v.unpaid)}</TableCell>
                 <TableCell className="text-right tabular-nums">{v.approvalRate === null ? "—" : `${v.approvalRate}%`}</TableCell>
                 <TableCell className="text-right tabular-nums">{v.onTimeRate === null ? "—" : `${v.onTimeRate}%`}</TableCell>
                 <TableCell>{canEdit ? <VendorActiveToggle id={v.id} active={v.isActive} name={v.name} /> : v.isActive ? "Active" : "Inactive"}</TableCell>

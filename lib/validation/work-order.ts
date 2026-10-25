@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { parseDateTimeInput } from "../dates";
 
-/** Up to 9 digits with at most 2 decimals — used for both AED amounts and quantities. */
+/** Up to 9 digits with at most 2 decimals — used for both QAR amounts and quantities. */
 export const DECIMAL_RE = /^\d{1,9}(\.\d{1,2})?$/;
 
 const optionalText = (max: number) =>

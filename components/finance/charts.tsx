@@ -1,7 +1,7 @@
 "use client";
 
 import { Bar, BarChart, CartesianGrid, Line, LineChart, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
-import { formatAED, formatCompact } from "@/lib/format";
+import { formatMoney, formatCompact } from "@/lib/format";
 
 const axis = { tickLine: false, axisLine: false, tick: { fill: "var(--muted-foreground)", fontSize: 12 } } as const;
 
@@ -13,7 +13,7 @@ function TooltipBox({ title, rows }: { title?: string; rows: { label: string; va
         <div key={r.label} className="flex items-center gap-2">
           <span className="size-2 rounded-[2px]" style={{ background: r.color }} />
           <span className="text-muted-foreground">{r.label}</span>
-          <span className="ml-auto pl-4 font-medium tabular-nums">{formatAED(r.value)}</span>
+          <span className="ml-auto pl-4 font-medium tabular-nums">{formatMoney(r.value)}</span>
         </div>
       ))}
     </div>
@@ -41,12 +41,12 @@ export function MonthlyBars({ data, label }: { data: { label: string; value: num
         </ResponsiveContainer>
       </div>
       <table className="sr-only">
-        <caption>{label} by month, AED</caption>
+        <caption>{label} by month, QAR</caption>
         <tbody>
           {data.map((d) => (
             <tr key={d.label}>
               <th>{d.label}</th>
-              <td>{formatAED(d.value)}</td>
+              <td>{formatMoney(d.value)}</td>
             </tr>
           ))}
         </tbody>
@@ -61,7 +61,7 @@ const PNL_SERIES = [
   { key: "net", label: "Net", color: "var(--chart-3)" },
 ] as const;
 
-/** 12-month income / expenses / net lines (AED, net of VAT). */
+/** 12-month income / expenses / net lines (QAR, net of VAT). */
 export function PnlTrend({ data }: { data: { label: string; income: number; expenses: number; net: number }[] }) {
   return (
     <>
@@ -97,7 +97,7 @@ export function PnlTrend({ data }: { data: { label: string; income: number; expe
         </ResponsiveContainer>
       </div>
       <table className="sr-only">
-        <caption>Monthly income, expenses and net, AED</caption>
+        <caption>Monthly income, expenses and net, QAR</caption>
         <thead>
           <tr>
             <th>Month</th>
@@ -110,9 +110,9 @@ export function PnlTrend({ data }: { data: { label: string; income: number; expe
           {data.map((d) => (
             <tr key={d.label}>
               <td>{d.label}</td>
-              <td>{formatAED(d.income)}</td>
-              <td>{formatAED(d.expenses)}</td>
-              <td>{formatAED(d.net)}</td>
+              <td>{formatMoney(d.income)}</td>
+              <td>{formatMoney(d.expenses)}</td>
+              <td>{formatMoney(d.net)}</td>
             </tr>
           ))}
         </tbody>

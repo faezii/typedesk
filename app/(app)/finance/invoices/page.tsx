@@ -8,8 +8,8 @@ import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { can } from "@/lib/auth/permissions";
 import { requirePagePermission } from "@/lib/auth/session";
-import { startOfTodayDubai } from "@/lib/dates";
-import { formatAED, formatDate } from "@/lib/format";
+import { startOfTodayLocal } from "@/lib/dates";
+import { formatMoney, formatDate } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { INVOICE_PAGE_SIZE, listInvoices, listQuotations, type InvoiceListParams } from "@/server/queries/invoices";
 
@@ -25,7 +25,7 @@ export default async function InvoicesPage({ searchParams }: { searchParams: Pro
     <>
       <PageHeader
         title="Invoices & Quotes"
-        description="UAE tax invoices and quotations in AED, with 5% VAT."
+        description="Invoices and quotations in QAR."
         actions={
           canEdit && (
             <Button asChild>
@@ -89,16 +89,16 @@ export default async function InvoicesPage({ searchParams }: { searchParams: Pro
 
 async function Invoices({ params }: { params: InvoiceListParams }) {
   const { rows, total, page, sums } = await listInvoices(params);
-  const today = startOfTodayDubai();
+  const today = startOfTodayLocal();
   const invoiced = sums.totalAmount;
   const collected = sums.amountPaid;
   return (
     <>
       {invoiced && (
         <p className="text-muted-foreground mb-3 text-sm">
-          Matching invoices: <span className="text-foreground font-medium tabular-nums">{formatAED(invoiced)}</span> invoiced ·{" "}
-          <span className="text-foreground font-medium tabular-nums">{formatAED(collected)}</span> collected ·{" "}
-          <span className="text-foreground font-medium tabular-nums">{formatAED(invoiced.minus(collected ?? 0))}</span> outstanding
+          Matching invoices: <span className="text-foreground font-medium tabular-nums">{formatMoney(invoiced)}</span> invoiced ·{" "}
+          <span className="text-foreground font-medium tabular-nums">{formatMoney(collected)}</span> collected ·{" "}
+          <span className="text-foreground font-medium tabular-nums">{formatMoney(invoiced.minus(collected ?? 0))}</span> outstanding
         </p>
       )}
       <div className="bg-card rounded-xl border">
@@ -134,8 +134,8 @@ async function Invoices({ params }: { params: InvoiceListParams }) {
                     <TableCell>
                       <InvoiceStatusBadge status={i.status} />
                     </TableCell>
-                    <TableCell className="text-right tabular-nums">{formatAED(i.totalAmount)}</TableCell>
-                    <TableCell className="pr-4 text-right tabular-nums">{i.status === "CANCELLED" || balance.isZero() ? "—" : formatAED(balance)}</TableCell>
+                    <TableCell className="text-right tabular-nums">{formatMoney(i.totalAmount)}</TableCell>
+                    <TableCell className="pr-4 text-right tabular-nums">{i.status === "CANCELLED" || balance.isZero() ? "—" : formatMoney(balance)}</TableCell>
                   </TableRow>
                 );
               })}
@@ -183,7 +183,7 @@ async function Quotes({ params }: { params: InvoiceListParams }) {
                   <TableCell>
                     <QuoteStatusBadge status={q.status} />
                   </TableCell>
-                  <TableCell className="pr-4 text-right tabular-nums">{formatAED(q.totalAmount)}</TableCell>
+                  <TableCell className="pr-4 text-right tabular-nums">{formatMoney(q.totalAmount)}</TableCell>
                 </TableRow>
               ))}
             </TableBody>

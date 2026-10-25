@@ -1,10 +1,10 @@
 import "server-only";
 import { Prisma } from "@prisma/client";
 import { startOfYear } from "date-fns";
-import { TIMEZONE, dubai, endOfTodayDubai, formatDubai, monthsAgoDubai, parseDateInput, startOfMonthDubai } from "@/lib/dates";
+import { TIMEZONE, zone, endOfTodayLocal, formatLocal, monthsAgoLocal, parseDateInput, startOfMonthLocal } from "@/lib/dates";
 import { EXPENSE_CATEGORY_LABEL, PAYMENT_METHOD_LABEL, WORK_ORDER_STATUS_LABEL } from "@/lib/labels";
 import { prisma } from "@/lib/prisma";
-import { fils, pct, type ReportResult, type ReportRow } from "@/lib/reports";
+import { round2, pct, type ReportResult, type ReportRow } from "@/lib/reports";
 import { WORK_ORDER_FLOW } from "@/lib/work-orders";
 import { profitAndLoss } from "./finance";
 
@@ -24,19 +24,19 @@ export type ReportDef = {
 const n = (v: Prisma.Decimal | number | bigint | null | undefined) => (v === null || v === undefined ? 0 : Number(v));
 const LIVE_INVOICE = { deletedAt: null, status: { not: "CANCELLED" as const } };
 
-/** Date range from ?from=&to= (yyyy-mm-dd, Dubai days), falling back to the report's default period. */
+/** Date range from ?from=&to= (yyyy-mm-dd, Doha days), falling back to the report's default period. */
 export function reportRange(def: Pick<ReportDef, "defaultRange">, p: ReportParams): Range {
-  const end = parseDateInput(p.to) ? endOfTodayDubai(parseDateInput(p.to)!) : endOfTodayDubai();
+  const end = parseDateInput(p.to) ? endOfTodayLocal(parseDateInput(p.to)!) : endOfTodayLocal();
   const from = parseDateInput(p.from);
   if (from) return { start: from, end };
-  if (def.defaultRange === "ytd") return { start: new Date(startOfYear(new Date(), { in: dubai }).getTime()), end };
-  if (def.defaultRange === "12m") return { start: monthsAgoDubai(11), end };
-  return { start: startOfMonthDubai(), end };
+  if (def.defaultRange === "ytd") return { start: new Date(startOfYear(new Date(), { in: zone }).getTime()), end };
+  if (def.defaultRange === "12m") return { start: monthsAgoLocal(11), end };
+  return { start: startOfMonthLocal(), end };
 }
 
 // ───────────── Sales ─────────────
 
-/** Invoiced (by issue date) and collected (by payment date) grouped by Dubai day or month. */
+/** Invoiced (by issue date) and collected (by payment date) grouped by Doha day or month. */
 async function salesByPeriod({ start, end }: Range, fmt: "YYYY-MM-DD" | "YYYY-MM"): Promise<ReportResult> {
   const [invoiced, collected] = await Promise.all([
     prisma.$queryRaw<{ k: string; cnt: number; sub: Prisma.Decimal; vat: Prisma.Decimal; tot: Prisma.Decimal }[]>(Prisma.sql`
@@ -60,15 +60,15 @@ async function salesByPeriod({ start, end }: Range, fmt: "YYYY-MM-DD" | "YYYY-MM
     total: n(inv.get(k)?.tot),
     collected: col.get(k) ?? 0,
   }));
-  const sum = (key: string) => fils(rows.reduce((s, r) => s + Number(r[key] ?? 0), 0));
+  const sum = (key: string) => round2(rows.reduce((s, r) => s + Number(r[key] ?? 0), 0));
   return {
     columns: [
       { key: "period", label: fmt === "YYYY-MM" ? "Month" : "Date", type: "date" },
       { key: "invoices", label: "Invoices", type: "number" },
-      { key: "subtotal", label: "Sales excl. VAT (AED)", type: "money" },
-      { key: "vat", label: "VAT (AED)", type: "money" },
-      { key: "total", label: "Invoiced incl. VAT (AED)", type: "money" },
-      { key: "collected", label: "Collected (AED)", type: "money" },
+      { key: "subtotal", label: "Sales excl. VAT (QAR)", type: "money" },
+      { key: "vat", label: "VAT (QAR)", type: "money" },
+      { key: "total", label: "Invoiced incl. VAT (QAR)", type: "money" },
+      { key: "collected", label: "Collected (QAR)", type: "money" },
     ],
     rows,
     totals: { period: "Total", invoices: sum("invoices"), subtotal: sum("subtotal"), vat: sum("vat"), total: sum("total"), collected: sum("collected") },
@@ -95,11 +95,11 @@ async function serviceRevenue({ start, end }: Range): Promise<ReportResult> {
       { key: "service", label: "Service" },
       { key: "lines", label: "Invoice lines", type: "number" },
       { key: "quantity", label: "Quantity", type: "number" },
-      { key: "revenue", label: "Revenue excl. VAT (AED)", type: "money" },
+      { key: "revenue", label: "Revenue excl. VAT (QAR)", type: "money" },
       { key: "share", label: "Share", type: "percent" },
     ],
     rows,
-    totals: { service: "Total", lines: rows.reduce((s, r) => s + r.lines, 0), quantity: null, revenue: fils(total), share: rows.length ? 100 : 0 },
+    totals: { service: "Total", lines: rows.reduce((s, r) => s + r.lines, 0), quantity: null, revenue: round2(total), share: rows.length ? 100 : 0 },
   };
 }
 
@@ -116,18 +116,18 @@ async function customerRevenue({ start, end }: Range): Promise<ReportResult> {
     .map((g) => {
       const total = n(g._sum.totalAmount);
       const paid = n(g._sum.amountPaid);
-      return { customer: names.get(g.customerId) ?? "—", invoices: g._count, sales: n(g._sum.subtotal), total, paid, outstanding: fils(total - paid) };
+      return { customer: names.get(g.customerId) ?? "—", invoices: g._count, sales: n(g._sum.subtotal), total, paid, outstanding: round2(total - paid) };
     })
     .sort((a, b) => b.total - a.total);
-  const sum = (k: "invoices" | "sales" | "total" | "paid" | "outstanding") => fils(rows.reduce((s, r) => s + r[k], 0));
+  const sum = (k: "invoices" | "sales" | "total" | "paid" | "outstanding") => round2(rows.reduce((s, r) => s + r[k], 0));
   return {
     columns: [
       { key: "customer", label: "Customer" },
       { key: "invoices", label: "Invoices", type: "number" },
-      { key: "sales", label: "Sales excl. VAT (AED)", type: "money" },
-      { key: "total", label: "Invoiced incl. VAT (AED)", type: "money" },
-      { key: "paid", label: "Paid (AED)", type: "money" },
-      { key: "outstanding", label: "Outstanding (AED)", type: "money" },
+      { key: "sales", label: "Sales excl. VAT (QAR)", type: "money" },
+      { key: "total", label: "Invoiced incl. VAT (QAR)", type: "money" },
+      { key: "paid", label: "Paid (QAR)", type: "money" },
+      { key: "outstanding", label: "Outstanding (QAR)", type: "money" },
     ],
     rows,
     totals: { customer: `Total (${rows.length} customers)`, invoices: sum("invoices"), sales: sum("sales"), total: sum("total"), paid: sum("paid"), outstanding: sum("outstanding") },
@@ -144,11 +144,11 @@ async function paymentCollection({ start, end }: Range): Promise<ReportResult> {
     columns: [
       { key: "method", label: "Method" },
       { key: "payments", label: "Payments", type: "number" },
-      { key: "amount", label: "Collected (AED)", type: "money" },
+      { key: "amount", label: "Collected (QAR)", type: "money" },
       { key: "share", label: "Share", type: "percent" },
     ],
     rows,
-    totals: { method: "Total", payments: rows.reduce((s, r) => s + r.payments, 0), amount: fils(total), share: rows.length ? 100 : 0 },
+    totals: { method: "Total", payments: rows.reduce((s, r) => s + r.payments, 0), amount: round2(total), share: rows.length ? 100 : 0 },
   };
 }
 
@@ -192,7 +192,7 @@ async function employeeProductivity({ start, end }: Range): Promise<ReportResult
       { key: "words", label: "Words translated", type: "number" },
       { key: "onTime", label: "On time", type: "percent" },
       { key: "tasks", label: "Tasks done", type: "number" },
-      { key: "revenue", label: "Order value excl. VAT (AED)", type: "money" },
+      { key: "revenue", label: "Order value excl. VAT (QAR)", type: "money" },
     ],
     rows,
     totals: {
@@ -202,7 +202,7 @@ async function employeeProductivity({ start, end }: Range): Promise<ReportResult
       words: rows.reduce((s, r) => s + r.words, 0),
       onTime: timed ? pct(delivered.reduce((s, r) => s + r.on_time, 0), timed) : null,
       tasks: rows.reduce((s, r) => s + r.tasks, 0),
-      revenue: fils(rows.reduce((s, r) => s + r.revenue, 0)),
+      revenue: round2(rows.reduce((s, r) => s + r.revenue, 0)),
     },
     note: "Orders by delivery date and assignee; on time = delivered by the deadline (orders without a deadline are excluded).",
   };
@@ -227,8 +227,8 @@ async function freelancerPerformance(range: Range): Promise<ReportResult> {
       return {
         vendor,
         jobs: list.length,
-        cost: fils(list.reduce((s, j) => s + n(j.agreementCost), 0)),
-        paid: fils(list.filter((j) => j.paymentStatus === "PAID").reduce((s, j) => s + n(j.agreementCost), 0)),
+        cost: round2(list.reduce((s, j) => s + n(j.agreementCost), 0)),
+        paid: round2(list.filter((j) => j.paymentStatus === "PAID").reduce((s, j) => s + n(j.agreementCost), 0)),
         approval: reviewed.length ? pct(reviewed.filter((j) => j.qaStatus === "APPROVED").length, reviewed.length) : null,
         onTime: timed.length ? pct(timed.filter((j) => j.receivedAt! <= j.dueAt!).length, timed.length) : null,
       };
@@ -238,13 +238,13 @@ async function freelancerPerformance(range: Range): Promise<ReportResult> {
     columns: [
       { key: "vendor", label: "Vendor" },
       { key: "jobs", label: "Jobs", type: "number" },
-      { key: "cost", label: "Agreed cost (AED)", type: "money" },
-      { key: "paid", label: "Paid (AED)", type: "money" },
+      { key: "cost", label: "Agreed cost (QAR)", type: "money" },
+      { key: "paid", label: "Paid (QAR)", type: "money" },
       { key: "approval", label: "QA approved", type: "percent" },
       { key: "onTime", label: "On time", type: "percent" },
     ],
     rows,
-    totals: { vendor: "Total", jobs: jobs.length, cost: fils(rows.reduce((s, r) => s + r.cost, 0)), paid: fils(rows.reduce((s, r) => s + r.paid, 0)), approval: null, onTime: null },
+    totals: { vendor: "Total", jobs: jobs.length, cost: round2(rows.reduce((s, r) => s + r.cost, 0)), paid: round2(rows.reduce((s, r) => s + r.paid, 0)), approval: null, onTime: null },
     note: "Jobs by date sent. QA approval rate counts reviewed jobs only.",
   };
 }
@@ -252,16 +252,16 @@ async function freelancerPerformance(range: Range): Promise<ReportResult> {
 async function outsourcedSummary(range: Range): Promise<ReportResult> {
   const jobs = await outsourcedJobs(range);
   const rows = jobs.map((j) => ({
-    sent: formatDubai(j.sentAt, "yyyy-MM-dd"),
+    sent: formatLocal(j.sentAt, "yyyy-MM-dd"),
     order: j.workOrder.orderNo,
     vendor: j.vendor.name,
     description: j.description,
     orderValue: n(j.workOrder.totalAmount),
     cost: n(j.agreementCost),
-    margin: fils(n(j.workOrder.totalAmount) - n(j.agreementCost)),
+    margin: round2(n(j.workOrder.totalAmount) - n(j.agreementCost)),
     qa: j.qaStatus.charAt(0) + j.qaStatus.slice(1).toLowerCase(),
     payment: j.paymentStatus === "PAID" ? "Paid" : "Unpaid",
-    received: j.receivedAt ? formatDubai(j.receivedAt, "yyyy-MM-dd") : null,
+    received: j.receivedAt ? formatLocal(j.receivedAt, "yyyy-MM-dd") : null,
   }));
   return {
     columns: [
@@ -269,9 +269,9 @@ async function outsourcedSummary(range: Range): Promise<ReportResult> {
       { key: "order", label: "Work order" },
       { key: "vendor", label: "Vendor" },
       { key: "description", label: "Description" },
-      { key: "orderValue", label: "Order value (AED)", type: "money" },
-      { key: "cost", label: "Cost (AED)", type: "money" },
-      { key: "margin", label: "Margin (AED)", type: "money" },
+      { key: "orderValue", label: "Order value (QAR)", type: "money" },
+      { key: "cost", label: "Cost (QAR)", type: "money" },
+      { key: "margin", label: "Margin (QAR)", type: "money" },
       { key: "qa", label: "QA" },
       { key: "payment", label: "Payment" },
       { key: "received", label: "Received", type: "date" },
@@ -282,9 +282,9 @@ async function outsourcedSummary(range: Range): Promise<ReportResult> {
       order: `${rows.length} jobs`,
       vendor: null,
       description: null,
-      orderValue: fils(rows.reduce((s, r) => s + r.orderValue, 0)),
-      cost: fils(rows.reduce((s, r) => s + r.cost, 0)),
-      margin: fils(rows.reduce((s, r) => s + r.margin, 0)),
+      orderValue: round2(rows.reduce((s, r) => s + r.orderValue, 0)),
+      cost: round2(rows.reduce((s, r) => s + r.cost, 0)),
+      margin: round2(rows.reduce((s, r) => s + r.margin, 0)),
       qa: null,
       payment: null,
       received: null,
@@ -309,7 +309,7 @@ async function pendingVsCompleted({ start, end }: Range): Promise<ReportResult> 
   });
   const rows: ReportRow[] = [
     ...pending,
-    { line: "Pending — total (now)", jobs: pending.reduce((s, r) => s + r.jobs, 0), value: fils(pending.reduce((s, r) => s + r.value, 0)), overdue: pending.reduce((s, r) => s + r.overdue, 0) },
+    { line: "Pending — total (now)", jobs: pending.reduce((s, r) => s + r.jobs, 0), value: round2(pending.reduce((s, r) => s + r.value, 0)), overdue: pending.reduce((s, r) => s + r.overdue, 0) },
     { line: "Open revisions (now)", jobs: revisions._count, value: n(revisions._sum.totalAmount), overdue: null },
     { line: "Received in period", jobs: received._count, value: n(received._sum.totalAmount), overdue: null },
     { line: "Completed (delivered) in period", jobs: delivered._count, value: n(delivered._sum.totalAmount), overdue: null },
@@ -318,7 +318,7 @@ async function pendingVsCompleted({ start, end }: Range): Promise<ReportResult> 
     columns: [
       { key: "line", label: "Jobs" },
       { key: "jobs", label: "Count", type: "number" },
-      { key: "value", label: "Value excl. VAT (AED)", type: "money" },
+      { key: "value", label: "Value excl. VAT (QAR)", type: "money" },
       { key: "overdue", label: "Overdue", type: "number" },
     ],
     rows,
@@ -331,13 +331,13 @@ async function pendingVsCompleted({ start, end }: Range): Promise<ReportResult> 
 async function expensesReport({ start, end }: Range): Promise<ReportResult> {
   const list = await prisma.expense.findMany({ where: { date: { gte: start, lte: end } }, orderBy: { date: "asc" }, include: { vendor: { select: { name: true } } } });
   const rows = list.map((e) => ({
-    date: formatDubai(e.date, "yyyy-MM-dd"),
+    date: formatLocal(e.date, "yyyy-MM-dd"),
     category: EXPENSE_CATEGORY_LABEL[e.category],
     description: e.description,
     vendor: e.vendor?.name ?? null,
     amount: n(e.amount),
     vat: n(e.vatAmount),
-    total: fils(n(e.amount) + n(e.vatAmount)),
+    total: round2(n(e.amount) + n(e.vatAmount)),
   }));
   return {
     columns: [
@@ -345,9 +345,9 @@ async function expensesReport({ start, end }: Range): Promise<ReportResult> {
       { key: "category", label: "Category" },
       { key: "description", label: "Description" },
       { key: "vendor", label: "Vendor" },
-      { key: "amount", label: "Amount excl. VAT (AED)", type: "money" },
-      { key: "vat", label: "VAT (AED)", type: "money" },
-      { key: "total", label: "Total (AED)", type: "money" },
+      { key: "amount", label: "Amount excl. VAT (QAR)", type: "money" },
+      { key: "vat", label: "VAT (QAR)", type: "money" },
+      { key: "total", label: "Total (QAR)", type: "money" },
     ],
     rows,
     totals: {
@@ -355,19 +355,19 @@ async function expensesReport({ start, end }: Range): Promise<ReportResult> {
       category: `${rows.length} expenses`,
       description: null,
       vendor: null,
-      amount: fils(rows.reduce((s, r) => s + r.amount, 0)),
-      vat: fils(rows.reduce((s, r) => s + r.vat, 0)),
-      total: fils(rows.reduce((s, r) => s + r.total, 0)),
+      amount: round2(rows.reduce((s, r) => s + r.amount, 0)),
+      vat: round2(rows.reduce((s, r) => s + r.vat, 0)),
+      total: round2(rows.reduce((s, r) => s + r.total, 0)),
     },
   };
 }
 
 async function profitLossReport({ start, end }: Range): Promise<ReportResult> {
-  const p = await profitAndLoss({ range: "custom", from: formatDubai(start, "yyyy-MM-dd"), to: formatDubai(end, "yyyy-MM-dd"), basis: "cash" });
+  const p = await profitAndLoss({ range: "custom", from: formatLocal(start, "yyyy-MM-dd"), to: formatLocal(end, "yyyy-MM-dd"), basis: "cash" });
   return {
     columns: [
       { key: "line", label: "Line" },
-      { key: "amount", label: "AED (excl. VAT)", type: "money" },
+      { key: "amount", label: "QAR (excl. VAT)", type: "money" },
     ],
     rows: [
       { line: "Income (collected)", amount: n(p.income) },
@@ -379,7 +379,7 @@ async function profitLossReport({ start, end }: Range): Promise<ReportResult> {
   };
 }
 
-/** Output VAT on invoices issued, input VAT on expenses, net payable to the FTA. */
+/** Output VAT on invoices issued, input VAT on expenses, net payable to the tax authority. */
 async function vatReport({ start, end }: Range): Promise<ReportResult> {
   const [out, inp] = await Promise.all([
     prisma.invoice.aggregate({ where: { ...LIVE_INVOICE, issueDate: { gte: start, lte: end } }, _sum: { subtotal: true, vatAmount: true }, _count: true }),
@@ -391,15 +391,15 @@ async function vatReport({ start, end }: Range): Promise<ReportResult> {
     columns: [
       { key: "line", label: "Box" },
       { key: "count", label: "Documents", type: "number" },
-      { key: "amount", label: "Amount excl. VAT (AED)", type: "money" },
-      { key: "vat", label: "VAT (AED)", type: "money" },
+      { key: "amount", label: "Amount excl. VAT (QAR)", type: "money" },
+      { key: "vat", label: "VAT (QAR)", type: "money" },
     ],
     rows: [
       { line: "Standard-rated supplies (output VAT)", count: out._count, amount: n(out._sum.subtotal), vat: outputVat },
       { line: "Expenses with recoverable VAT (input VAT)", count: inp._count, amount: n(inp._sum.amount), vat: inputVat },
     ],
-    totals: { line: fils(outputVat - inputVat) >= 0 ? "Net VAT payable" : "Net VAT refundable", count: null, amount: null, vat: fils(outputVat - inputVat) },
-    note: "Invoices by issue date (accrual), cancelled excluded. Check against your FTA return before filing.",
+    totals: { line: round2(outputVat - inputVat) >= 0 ? "Net VAT payable" : "Net VAT refundable", count: null, amount: null, vat: round2(outputVat - inputVat) },
+    note: "Invoices by issue date (accrual), cancelled excluded. Check against your VAT return before filing.",
   };
 }
 
@@ -424,5 +424,5 @@ export const getReport = (slug: string) => REPORTS.find((r) => r.slug === slug) 
 
 export async function runReport(def: ReportDef, params: ReportParams) {
   const range = reportRange(def, params);
-  return { range, period: `${formatDubai(range.start, "d MMM yyyy")} – ${formatDubai(range.end, "d MMM yyyy")}`, result: await def.run(range) };
+  return { range, period: `${formatLocal(range.start, "d MMM yyyy")} – ${formatLocal(range.end, "d MMM yyyy")}`, result: await def.run(range) };
 }

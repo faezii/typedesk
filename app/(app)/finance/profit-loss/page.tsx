@@ -6,8 +6,8 @@ import { PageHeader } from "@/components/shared/page-header";
 import { DateParam } from "@/components/shared/url-filters";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { requirePagePermission } from "@/lib/auth/session";
-import { formatDubai } from "@/lib/dates";
-import { formatAED } from "@/lib/format";
+import { formatLocal } from "@/lib/dates";
+import { formatMoney } from "@/lib/format";
 import { EXPENSE_CATEGORY_LABEL } from "@/lib/labels";
 import { cn } from "@/lib/utils";
 import { pnlTrend, profitAndLoss, type PnlParams } from "@/server/queries/finance";
@@ -33,7 +33,7 @@ export default async function ProfitLossPage({ searchParams }: { searchParams: P
     <>
       <PageHeader
         title="Profit & Loss"
-        description={`${formatDubai(pnl.range.start, "d MMM yyyy")} – ${formatDubai(pnl.range.end, "d MMM yyyy")} · all figures net of VAT`}
+        description={`${formatLocal(pnl.range.start, "d MMM yyyy")} – ${formatLocal(pnl.range.end, "d MMM yyyy")} · all figures net of VAT`}
       />
 
       <div className="mb-4 flex flex-col gap-2 lg:flex-row lg:flex-wrap lg:items-center">
@@ -59,11 +59,11 @@ export default async function ProfitLossPage({ searchParams }: { searchParams: P
       </div>
 
       <div className="mb-4 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <StatCard label="Income" value={formatAED(pnl.income)} sub={pnl.basis === "cash" ? "Payments received, VAT removed" : "Invoices issued, before VAT"} icon={Wallet} />
-        <StatCard label="Expenses" value={formatAED(pnl.expenses)} sub="All categories, before VAT" icon={Receipt} />
+        <StatCard label="Income" value={formatMoney(pnl.income)} sub={pnl.basis === "cash" ? "Payments received, VAT removed" : "Invoices issued, before VAT"} icon={Wallet} />
+        <StatCard label="Expenses" value={formatMoney(pnl.expenses)} sub="All categories, before VAT" icon={Receipt} />
         <StatCard
           label={loss ? "Net loss" : "Net profit"}
-          value={<span className={loss ? "text-destructive" : undefined}>{formatAED(pnl.net)}</span>}
+          value={<span className={loss ? "text-destructive" : undefined}>{formatMoney(pnl.net)}</span>}
           sub="Income − expenses"
           icon={loss ? TrendingDown : TrendingUp}
         />
@@ -73,7 +73,7 @@ export default async function ProfitLossPage({ searchParams }: { searchParams: P
       <div className="mb-4 grid gap-4 xl:grid-cols-3">
         <section className="bg-card rounded-xl border p-5 xl:col-span-2">
           <h2 className="font-medium">12-month trend</h2>
-          <p className="text-muted-foreground mb-3 text-xs">{pnl.basis === "cash" ? "Collected" : "Invoiced"} income vs expenses, AED</p>
+          <p className="text-muted-foreground mb-3 text-xs">{pnl.basis === "cash" ? "Collected" : "Invoiced"} income vs expenses, QAR</p>
           <PnlTrend data={trend} />
         </section>
 
@@ -83,38 +83,38 @@ export default async function ProfitLossPage({ searchParams }: { searchParams: P
             <TableHeader>
               <TableRow>
                 <TableHead className="pl-5">Line</TableHead>
-                <TableHead className="pr-5 text-right">AED</TableHead>
+                <TableHead className="pr-5 text-right">QAR</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               <TableRow className="font-medium">
                 <TableCell className="pl-5">Income</TableCell>
-                <TableCell className="pr-5 text-right tabular-nums">{formatAED(pnl.income)}</TableCell>
+                <TableCell className="pr-5 text-right tabular-nums">{formatMoney(pnl.income)}</TableCell>
               </TableRow>
               {pnl.byCategory.map((c) => (
                 <TableRow key={c.category}>
                   <TableCell className="text-muted-foreground pl-8">{EXPENSE_CATEGORY_LABEL[c.category]}</TableCell>
-                  <TableCell className="pr-5 text-right tabular-nums">({formatAED(c.amount)})</TableCell>
+                  <TableCell className="pr-5 text-right tabular-nums">({formatMoney(c.amount)})</TableCell>
                 </TableRow>
               ))}
               <TableRow className="font-medium">
                 <TableCell className="pl-5">Total expenses</TableCell>
-                <TableCell className="pr-5 text-right tabular-nums">({formatAED(pnl.expenses)})</TableCell>
+                <TableCell className="pr-5 text-right tabular-nums">({formatMoney(pnl.expenses)})</TableCell>
               </TableRow>
               <TableRow className={cn("border-t-2 font-semibold", loss && "text-destructive")}>
                 <TableCell className="pl-5">{loss ? "Net loss" : "Net profit"}</TableCell>
-                <TableCell className="pr-5 text-right tabular-nums">{formatAED(pnl.net)}</TableCell>
+                <TableCell className="pr-5 text-right tabular-nums">{formatMoney(pnl.net)}</TableCell>
               </TableRow>
             </TableBody>
           </Table>
           <div className="text-muted-foreground space-y-1 border-t px-5 py-3 text-xs">
             <div className="flex justify-between">
               <span>Output VAT ({pnl.basis === "cash" ? "collected" : "invoiced"})</span>
-              <span className="tabular-nums">{formatAED(pnl.vatCollected)}</span>
+              <span className="tabular-nums">{formatMoney(pnl.vatCollected)}</span>
             </div>
             <div className="flex justify-between">
               <span>Input VAT on expenses</span>
-              <span className="tabular-nums">{formatAED(pnl.inputVat)}</span>
+              <span className="tabular-nums">{formatMoney(pnl.inputVat)}</span>
             </div>
             <p className="pt-1">
               VAT is excluded from profit. See{" "}

@@ -7,7 +7,7 @@ import { FilterSelect } from "@/components/shared/url-filters";
 import { Button } from "@/components/ui/button";
 import { can } from "@/lib/auth/permissions";
 import { requirePagePermission } from "@/lib/auth/session";
-import { formatDubai, toDateInput } from "@/lib/dates";
+import { formatLocal, toDateInput } from "@/lib/dates";
 import { FOLLOW_UP_TYPE_LABEL } from "@/lib/labels";
 import { cn } from "@/lib/utils";
 import { activeUserOptions } from "@/server/queries/employees";
@@ -19,7 +19,7 @@ export const metadata = { title: "Follow-ups" };
 
 const TYPE_TONE: Record<FollowUpType, Tone> = {
   PASSPORT_EXPIRY: "violet",
-  EMIRATES_ID_EXPIRY: "blue",
+  NATIONAL_ID_EXPIRY: "blue",
   VISA_DEADLINE: "blue",
   TRADE_LICENSE_RENEWAL: "amber",
   PAYMENT_REMINDER: "red",
@@ -44,7 +44,7 @@ export default async function FollowUpsPage({ searchParams }: { searchParams: Pr
     <>
       <PageHeader
         title="Follow-ups"
-        description="Passport, Emirates ID, visa and license deadlines, payment reminders and client call-backs."
+        description="Passport, QID, visa and license deadlines, payment reminders and client call-backs."
         actions={
           canEdit && (
             <FollowUpDialog users={users} defaultValues={{ title: "", type: "GENERAL", deadline: toDateInput(new Date()), customerId: "", assignedToId: user.id, notes: "" }}>
@@ -128,7 +128,7 @@ async function GroupedList({ params, canEdit, users }: { params: FollowUpParams;
 function Row({ f, canEdit, users, done = false }: { f: FollowUpItem; canEdit: boolean; users: { id: string; name: string }[]; done?: boolean }) {
   return (
     <li className="flex flex-col gap-2 py-3 sm:flex-row sm:items-center sm:gap-4">
-      <div className="text-muted-foreground w-20 shrink-0 text-xs tabular-nums">{formatDubai(f.deadline, "EEE d MMM")}</div>
+      <div className="text-muted-foreground w-20 shrink-0 text-xs tabular-nums">{formatLocal(f.deadline, "EEE d MMM")}</div>
       <div className="min-w-0 flex-1">
         <div className="flex flex-wrap items-center gap-2">
           <span className={cn("text-sm font-medium", done && "text-muted-foreground line-through")}>{f.title}</span>

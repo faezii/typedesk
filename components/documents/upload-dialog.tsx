@@ -220,7 +220,7 @@ export function UploadDialog({
               </div>
             )}
           </div>
-          {showExpiry && customer && (category === "PASSPORT" || category === "EMIRATES_ID") && expiryDate && (
+          {showExpiry && customer && (category === "PASSPORT" || category === "NATIONAL_ID") && expiryDate && (
             <p className="text-muted-foreground text-xs">
               This becomes {customer.name}&apos;s current {DOCUMENT_CATEGORY_LABEL[category]} expiry, and its renewal follow-up is updated.
             </p>

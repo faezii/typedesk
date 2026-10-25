@@ -22,7 +22,7 @@ export default async function DocumentsPage({ searchParams }: { searchParams: Pr
     <>
       <PageHeader
         title="Documents"
-        description="Passports, Emirates IDs, trade licenses and job files, linked to customers and work orders."
+        description="Passports, QIDs, trade licenses and job files, linked to customers and work orders."
         actions={
           canEdit && (
             <UploadDialog>

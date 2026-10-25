@@ -46,15 +46,15 @@ function weighted<T>(entries: [T, number][]): T {
 const round2 = (n: number) => Math.round((n + Number.EPSILON) * 100) / 100;
 const dec = (n: number) => new Prisma.Decimal(round2(n).toFixed(2));
 
-const VAT_RATE = 0.05;
+const VAT_RATE = 0; // Qatar has no VAT today
 const NOW = new Date();
 const TODAY = startOfDay(NOW);
 const SIX_MONTHS_AGO = startOfMonth(subMonths(NOW, 5));
 
 function randomDateBetween(from: Date, to: Date) {
   const d = new Date(from.getTime() + rand() * (to.getTime() - from.getTime()));
-  // business hours 8:30 – 20:00 Dubai (UTC+4) → 04:30 – 16:00 UTC
-  d.setUTCHours(int(4, 15), int(0, 59), 0, 0);
+  // business hours 8:30 – 20:00 Doha (UTC+3) → 05:30 – 17:00 UTC
+  d.setUTCHours(int(5, 16), int(0, 59), 0, 0);
   return d;
 }
 
@@ -65,29 +65,29 @@ const FIRST_NAMES = [
   "Youssef", "Noura", "Imran", "Sana", "Arjun", "Deepa", "Tariq", "Huda", "Samir", "Rania",
 ];
 const LAST_NAMES = [
-  "Al Mansoori", "Al Hashimi", "Al Suwaidi", "Khan", "Sharma", "Nair", "Menon", "Santos", "Reyes", "Ivanova",
+  "Al Kuwari", "Al Marri", "Al Sulaiti", "Khan", "Sharma", "Nair", "Menon", "Santos", "Reyes", "Ivanova",
   "Petrov", "Wei", "Haddad", "Farouk", "Qureshi", "Siddiqui", "Pillai", "Abdullah", "Mahmoud", "Nasser",
 ];
-const NATIONALITIES = ["Emirati", "Indian", "Pakistani", "Filipino", "Egyptian", "Jordanian", "Russian", "Chinese", "Lebanese", "British", "Syrian", "Bangladeshi"];
+const NATIONALITIES = ["Qatari", "Indian", "Pakistani", "Filipino", "Egyptian", "Jordanian", "Nepali", "Sri Lankan", "Lebanese", "British", "Syrian", "Bangladeshi"];
 const COMPANIES = [
-  "Gulf Horizon Trading LLC", "Al Noor General Contracting LLC", "Desert Pearl Real Estate", "Emirates Bright Logistics FZE",
-  "Blue Dhow Shipping LLC", "Al Barsha Medical Center", "Silver Palm Hospitality LLC", "Marina Tech Solutions FZ-LLC",
-  "Oasis Food Industries LLC", "Jumeirah Legal Consultants", "Falcon Auto Spare Parts Trading", "Creek Textiles Trading LLC",
+  "Gulf Horizon Trading WLL", "Al Noor General Contracting WLL", "مؤسسة اللؤلؤة للعقارات", "Lusail Bright Logistics WLL",
+  "Blue Dhow Shipping WLL", "Al Sadd Medical Center", "Silver Palm Hospitality WLL", "West Bay Tech Solutions WLL",
+  "Oasis Food Industries WLL", "Corniche Legal Consultants", "Falcon Auto Spare Parts Trading", "Souq Waqif Textiles Trading WLL",
 ];
 
 type ServiceSeed = { title: string; category: ServiceCategory; unit: ServiceUnit; price: number; description: string };
 const SERVICES: ServiceSeed[] = [
-  { title: "Legal Translation (Arabic ⇄ English)", category: "LEGAL_TRANSLATION", unit: "PAGE", price: 120, description: "MOJ-certified legal translation, stamped & signed" },
+  { title: "Legal Translation (Arabic / English)", category: "LEGAL_TRANSLATION", unit: "PAGE", price: 120, description: "MOJ-certified legal translation, stamped & signed" },
   { title: "Legal Translation (Other Languages)", category: "LEGAL_TRANSLATION", unit: "PAGE", price: 180, description: "Certified translation for French, Russian, Chinese, etc." },
   { title: "Court Judgment Translation", category: "LEGAL_TRANSLATION", unit: "PAGE", price: 150, description: "Judgments, verdicts and court memos" },
   { title: "General / Technical Translation", category: "GENERAL_TRANSLATION", unit: "WORD", price: 0.35, description: "Non-certified translation charged per word" },
   { title: "Catalogue & Website Translation", category: "GENERAL_TRANSLATION", unit: "WORD", price: 0.3, description: "Marketing and product content" },
-  { title: "Arabic Typing (Govt. Applications)", category: "TYPING", unit: "DOCUMENT", price: 35, description: "Typing for immigration, labour & DED applications" },
+  { title: "Arabic Typing (Govt. Applications)", category: "TYPING", unit: "DOCUMENT", price: 35, description: "Typing for MOI, labour & MoCI applications" },
   { title: "Tenancy / MOA Drafting & Typing", category: "TYPING", unit: "DOCUMENT", price: 150, description: "Tenancy contracts, MOA and agreements" },
   { title: "Legal Memo Typing", category: "TYPING", unit: "PAGE", price: 40, description: "Legal memoranda and letters" },
   { title: "MOFA Attestation", category: "ATTESTATION", unit: "DOCUMENT", price: 150, description: "Ministry of Foreign Affairs attestation handling (excl. govt. fees)" },
   { title: "Certificate Attestation (Embassy)", category: "ATTESTATION", unit: "DOCUMENT", price: 250, description: "Embassy & consulate attestation service" },
-  { title: "Court Submission Service", category: "COURT_SUBMISSION", unit: "DOCUMENT", price: 300, description: "Filing & submission at Dubai Courts" },
+  { title: "Court Submission Service", category: "COURT_SUBMISSION", unit: "DOCUMENT", price: 300, description: "Filing & submission at Qatar courts" },
   { title: "Notary Public Appointment Handling", category: "OTHER", unit: "HOUR", price: 200, description: "Accompany & process notarisation" },
 ];
 
@@ -106,10 +106,11 @@ const DOC_TITLES: Record<ServiceCategory, string[]> = {
 };
 
 function phone() {
-  return `+971 ${pick(["50", "52", "54", "55", "56", "58"])} ${int(100, 999)} ${int(1000, 9999)}`;
+  return `+974 ${pick(["33", "50", "55", "66", "70", "77"])}${int(10, 99)} ${int(1000, 9999)}`;
 }
-function emiratesId(birthYear: number) {
-  return `784-${birthYear}-${String(int(0, 9999999)).padStart(7, "0")}-${int(0, 9)}`;
+/** QID: century digit, birth year, nationality code, serial (11 digits). */
+function nationalId(birthYear: number) {
+  return `${birthYear < 2000 ? 2 : 3}${String(birthYear % 100).padStart(2, "0")}${pick(["634", "356", "586", "608", "818"])}${String(int(0, 99999)).padStart(5, "0")}`;
 }
 function passportNo() {
   return `${String.fromCharCode(65 + int(0, 25))}${String.fromCharCode(65 + int(0, 25))}${int(1000000, 9999999)}`;
@@ -165,13 +166,13 @@ async function main() {
   // ───────────── Settings ─────────────
   await prisma.setting.createMany({
     data: [
-      { key: "vatRate", value: "0.05" },
+      { key: "vatRate", value: "0" },
       { key: "companyName", value: "TypeDesk Legal Translation & Typing Center" },
-      { key: "companyTrn", value: "100385926400003" },
-      { key: "companyAddress", value: "Office 1204, Al Attar Business Tower, Sheikh Zayed Road, Dubai, UAE" },
-      { key: "companyPhone", value: "+971 4 332 1180" },
-      { key: "companyEmail", value: "info@typedesk.ae" },
-      { key: "invoiceTerms", value: "Payment due within 15 days. Government fees are non-refundable. Bank: Emirates NBD · IBAN AE07 0260 0010 1532 7818 901" },
+      { key: "companyTaxNo", value: "CR 145236" },
+      { key: "companyAddress", value: "Office 14, Building 52, C Ring Road, Doha, Qatar" },
+      { key: "companyPhone", value: "+974 4433 1180" },
+      { key: "companyEmail", value: "info@typedesk.qa" },
+      { key: "invoiceTerms", value: "Payment due within 15 days. Government fees are non-refundable. Bank: Doha Bank · IBAN QA58 DOHB 0000 1234 5678 90AB CDEF G" },
     ],
   });
 
@@ -179,11 +180,11 @@ async function main() {
   console.log("Seeding users…");
   const passwordHash = await bcrypt.hash("Password123!", 10);
   const userSeeds = [
-    { name: "Saeed Al Falasi", email: "admin@typedesk.ae", role: "ADMIN", department: "MANAGEMENT", phone: "+971 50 410 2201" },
-    { name: "Reem Haddad", email: "manager@typedesk.ae", role: "MANAGER", department: "MANAGEMENT", phone: "+971 55 318 7742" },
-    { name: "Vikram Iyer", email: "finance@typedesk.ae", role: "FINANCE", department: "FINANCE", phone: "+971 52 609 1134" },
-    { name: "Joanna Dela Cruz", email: "typist@typedesk.ae", role: "STAFF", department: "TYPING", phone: "+971 56 227 9083" },
-    { name: "Karim Mansour", email: "translator@typedesk.ae", role: "STAFF", department: "TRANSLATION", phone: "+971 54 771 3350" },
+    { name: "Saeed Al Marri", email: "admin@typedesk.qa", role: "ADMIN", department: "MANAGEMENT", phone: "+974 5541 2201" },
+    { name: "Reem Haddad", email: "manager@typedesk.qa", role: "MANAGER", department: "MANAGEMENT", phone: "+974 5531 7742" },
+    { name: "Vikram Iyer", email: "finance@typedesk.qa", role: "FINANCE", department: "FINANCE", phone: "+974 3360 1134" },
+    { name: "Joanna Dela Cruz", email: "typist@typedesk.qa", role: "STAFF", department: "TYPING", phone: "+974 6622 9083" },
+    { name: "Karim Mansour", email: "translator@typedesk.qa", role: "STAFF", department: "TRANSLATION", phone: "+974 7077 3350" },
   ] as const;
   const users = await Promise.all(
     userSeeds.map((u) => prisma.user.create({ data: { ...u, passwordHash, lastLoginAt: subDays(NOW, int(0, 3)) } })),
@@ -212,8 +213,8 @@ async function main() {
     const name = `${first} ${last}`;
     const nationality = pick(NATIONALITIES);
     const birthYear = int(1965, 2001);
-    const hasEid = chance(0.85);
-    const hasPassport = nationality !== "Emirati" || chance(0.5);
+    const hasQid = chance(0.85);
+    const hasPassport = nationality !== "Qatari" || chance(0.5);
     const createdAt = randomDateBetween(subMonths(SIX_MONTHS_AGO, 6), subDays(NOW, 10));
     customers.push(
       await prisma.customer.create({
@@ -221,14 +222,14 @@ async function main() {
           type,
           name: type === "COMPANY" ? `${name}` : name,
           companyName: type === "COMPANY" ? COMPANIES[i] : null,
-          email: type === "COMPANY" ? `${slug(first)}@${slug(COMPANIES[i]!).split(".")[0]}.ae` : chance(0.7) ? `${slug(name)}${int(1, 99)}@gmail.com` : null,
+          email: type === "COMPANY" ? `${slug(first)}@${slug(COMPANIES[i]!).split(".")[0] || "company"}.qa` : chance(0.7) ? `${slug(name)}${int(1, 99)}@gmail.com` : null,
           phone: phone(),
           nationality,
-          emiratesId: hasEid ? emiratesId(birthYear) : null,
-          emiratesIdExpiry: hasEid ? expiryDate() : null,
+          nationalId: hasQid ? nationalId(birthYear) : null,
+          nationalIdExpiry: hasQid ? expiryDate() : null,
           passportNo: hasPassport ? passportNo() : null,
           passportExpiry: hasPassport ? expiryDate() : null,
-          trn: type === "COMPANY" ? `100${int(100000000, 999999999)}003` : null,
+          taxNo: type === "COMPANY" ? `CR ${int(10000, 199999)}` : null,
           notes: chance(0.2) ? pick(["Prefers WhatsApp updates", "VIP — corporate account", "Collects documents in person", "Requires soft copy by email"]) : null,
           createdAt,
         },
@@ -256,7 +257,7 @@ async function main() {
           type: v.type,
           languages: [...v.languages],
           phone: phone(),
-          email: `${slug(v.name).split(".").slice(0, 2).join(".")}@${v.type === "AGENCY" ? "agency.ae" : "gmail.com"}`,
+          email: `${slug(v.name).split(".").slice(0, 2).join(".")}@${v.type === "AGENCY" ? "agency.qa" : "gmail.com"}`,
         },
       }),
     ),
@@ -378,7 +379,7 @@ async function main() {
       const reqAt = requestedAt > NOW ? NOW : requestedAt;
       const reason = pick([
         "Client reports spelling of name differs from passport",
-        "Date of birth format needs to match Emirates ID",
+        "Date of birth format needs to match the QID",
         "Missing translator stamp on page 3",
         "Client requested change of beneficiary name",
         "Court asked for updated case number on cover page",
@@ -499,7 +500,7 @@ async function main() {
         customerId: customer.id,
         status: weighted([["SENT", 30], ["ACCEPTED", 20], ["REJECTED", 15], ["DRAFT", 15], ["CONVERTED", 20]]),
         subtotal: dec(subtotal),
-        vatRate: new Prisma.Decimal("0.05"),
+        vatRate: new Prisma.Decimal(VAT_RATE),
         vatAmount: dec(vat),
         totalAmount: dec(subtotal + vat),
         issueDate,
@@ -590,7 +591,7 @@ async function main() {
         amount: dec(amount),
         method,
         reference:
-          method === "CARD" ? `POS-${int(100000, 999999)}` : method === "BANK_TRANSFER" ? `ENBD-FT${int(10000000, 99999999)}` : method === "ONLINE" ? `PAYBY-${int(1000000, 9999999)}` : null,
+          method === "CARD" ? `POS-${int(100000, 999999)}` : method === "BANK_TRANSFER" ? `QNB-FT${int(10000000, 99999999)}` : method === "ONLINE" ? `PAY-${int(1000000, 9999999)}` : null,
         date: d > NOW ? NOW : d,
         customer: { connect: { id: first.customerId } },
         receivedBy: { connect: { id: pick([finance, finance, manager, typist]).id } },
@@ -603,7 +604,7 @@ async function main() {
         customerId: first.customerId,
         status: outcome,
         subtotal: dec(subtotal),
-        vatRate: new Prisma.Decimal("0.05"),
+        vatRate: new Prisma.Decimal(VAT_RATE),
         vatAmount: dec(vat),
         totalAmount: dec(total),
         amountPaid: dec(paid),
@@ -631,15 +632,15 @@ async function main() {
       if (!date) return;
       expenses.push({ category, amount: dec(amount), vatAmount: dec(vatable ? amount * VAT_RATE : 0), description, date, vendorId: vendorId ?? null });
     };
-    push("RENT", 14500, "Office rent — Al Attar Business Tower (monthly instalment)", 1, false);
-    push("UTILITY", 850 + int(0, 450), "DEWA electricity & water", 8);
-    push("UTILITY", 699, "du Business internet & landlines", 10);
+    push("RENT", 14500, "Office rent — C Ring Road (monthly instalment)", 1, false);
+    push("UTILITY", 850 + int(0, 450), "Kahramaa electricity & water", 8);
+    push("UTILITY", 699, "Ooredoo Business internet & landlines", 10);
     push("SOFTWARE", 420, "Microsoft 365 Business (8 seats)", 3);
     push("SOFTWARE", 310, "SDL Trados / CAT tool subscription", 5);
     push("SALARY", 38500, "Staff salaries (WPS)", 28, false);
     push("SUPPLIES", 180 + int(0, 520), pick(["Printer toner & A4 paper", "Stamps, seals & envelopes", "Courier packaging"]), int(4, 25));
     if (chance(0.7)) push("SUPPLIES", 90 + int(0, 250), "Pantry & cleaning supplies", int(4, 25));
-    if (chance(0.6)) push("OTHER", 150 + int(0, 900), pick(["Aramex courier charges", "Parking & RTA fines", "Printer maintenance", "Marketing — Google Ads"]), int(4, 25));
+    if (chance(0.6)) push("OTHER", 150 + int(0, 900), pick(["Aramex courier charges", "Parking & traffic fines", "Printer maintenance", "Marketing — Google Ads"]), int(4, 25));
   }
   await prisma.expense.createMany({ data: expenses });
 
@@ -650,17 +651,17 @@ async function main() {
   const expiring = customers.filter(
     (c) =>
       (c.passportExpiry && Math.abs(differenceInCalendarDays(c.passportExpiry, TODAY)) <= 45) ||
-      (c.emiratesIdExpiry && Math.abs(differenceInCalendarDays(c.emiratesIdExpiry, TODAY)) <= 45),
+      (c.nationalIdExpiry && Math.abs(differenceInCalendarDays(c.nationalIdExpiry, TODAY)) <= 45),
   );
   for (const c of expiring.slice(0, 6)) {
     const isPassport = !!c.passportExpiry && Math.abs(differenceInCalendarDays(c.passportExpiry, TODAY)) <= 45;
-    const expiry = isPassport ? c.passportExpiry! : c.emiratesIdExpiry!;
-    const label = isPassport ? "Passport" : "Emirates ID";
+    const expiry = isPassport ? c.passportExpiry! : c.nationalIdExpiry!;
+    const label = isPassport ? "Passport" : "QID";
     // Same shape as server/services/expiry-follow-ups.ts, so editing the customer updates this row.
     followUps.push({
       title: `${label} renewal — ${c.name}`,
-      type: isPassport ? "PASSPORT_EXPIRY" : "EMIRATES_ID_EXPIRY",
-      autoKey: `customer:${c.id}:${isPassport ? "passport" : "emiratesId"}`,
+      type: isPassport ? "PASSPORT_EXPIRY" : "NATIONAL_ID_EXPIRY",
+      autoKey: `customer:${c.id}:${isPassport ? "passport" : "nationalId"}`,
       status: "PENDING",
       deadline: subDays(expiry, 30),
       customerId: c.id,
@@ -678,14 +679,14 @@ async function main() {
       deadline: addDays(inv.dueDate!, 7),
       customerId: inv.customerId,
       invoiceId: inv.id,
-      notes: `Outstanding AED ${(Number(inv.totalAmount) - Number(inv.amountPaid)).toFixed(2)}`,
+      notes: `Outstanding QAR ${(Number(inv.totalAmount) - Number(inv.amountPaid)).toFixed(2)}`,
       assignedToId: finance.id,
     });
   }
   const genericTitles: [FollowUpType, string][] = [
     ["TRADE_LICENSE_RENEWAL", "Trade license renewal — {company}"],
     ["TRADE_LICENSE_RENEWAL", "DED license amendment docs — {company}"],
-    ["VISA_DEADLINE", "Residence visa stamping deadline — {name}"],
+    ["VISA_DEADLINE", "Residence permit renewal deadline — {name}"],
     ["VISA_DEADLINE", "Family visa application follow-up — {name}"],
     ["GENERAL", "Collect original certificates — {name}"],
     ["GENERAL", "Confirm court hearing date — {name}"],
@@ -736,18 +737,18 @@ async function main() {
         `Expiry: ${c.passportExpiry ? format(c.passportExpiry, "dd MMM yyyy") : "-"}`,
       ]);
     }
-    if (c.emiratesId) {
-      addDoc({ name: `Emirates ID - ${c.name}`, category: "EMIRATES_ID", customerId: c.id, expiryDate: c.emiratesIdExpiry, createdAt }, [
-        "EMIRATES ID (SAMPLE SCAN)",
+    if (c.nationalId) {
+      addDoc({ name: `QID - ${c.name}`, category: "NATIONAL_ID", customerId: c.id, expiryDate: c.nationalIdExpiry, createdAt }, [
+        "QATAR ID (SAMPLE SCAN)",
         `Name: ${c.name}`,
-        `ID number: ${c.emiratesId}`,
-        `Expiry: ${c.emiratesIdExpiry ? format(c.emiratesIdExpiry, "dd MMM yyyy") : "-"}`,
+        `ID number: ${c.nationalId}`,
+        `Expiry: ${c.nationalIdExpiry ? format(c.nationalIdExpiry, "dd MMM yyyy") : "-"}`,
       ]);
     }
     if (c.type === "COMPANY") {
       addDoc(
         { name: `Trade License - ${c.companyName}`, category: "TRADE_LICENSE", customerId: c.id, expiryDate: addDays(TODAY, int(-20, 300)), createdAt },
-        ["TRADE LICENSE (SAMPLE)", `Company: ${c.companyName}`, `License no: ${int(100000, 999999)}`, "Issued by: Dubai DET"],
+        ["TRADE LICENSE (SAMPLE)", `Company: ${c.companyName}`, `License no: ${int(100000, 999999)}`, "Issued by: Ministry of Commerce and Industry"],
       );
     }
   }

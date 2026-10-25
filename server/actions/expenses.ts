@@ -54,7 +54,7 @@ export async function saveExpense(id: string | null, formData: FormData): Promis
   };
   const expense = id ? await prisma.expense.update({ where: { id }, data }) : await prisma.expense.create({ data });
   await prisma.activityLog.create({
-    data: { entityType: "Expense", entityId: expense.id, action: id ? "updated" : "created", message: `${id ? "Updated" : "Recorded"} ${d.category.toLowerCase()} expense AED ${expense.amount.toFixed(2)} — ${d.description}`, userId: user.id },
+    data: { entityType: "Expense", entityId: expense.id, action: id ? "updated" : "created", message: `${id ? "Updated" : "Recorded"} ${d.category.toLowerCase()} expense QAR ${expense.amount.toFixed(2)} — ${d.description}`, userId: user.id },
   });
   refresh();
   return { ok: true, data: { id: expense.id } };
@@ -70,7 +70,7 @@ export async function deleteExpense(id: string): Promise<ActionResult> {
     prisma.expense.delete({ where: { id } }),
     // Keep a full copy in the audit log, since the row itself is removed.
     prisma.activityLog.create({
-      data: { entityType: "Expense", entityId: id, action: "deleted", message: `Deleted ${e.category.toLowerCase()} expense AED ${e.amount.toFixed(2)} (VAT ${e.vatAmount.toFixed(2)}) dated ${e.date.toISOString().slice(0, 10)} — ${e.description}`, userId: user.id },
+      data: { entityType: "Expense", entityId: id, action: "deleted", message: `Deleted ${e.category.toLowerCase()} expense QAR ${e.amount.toFixed(2)} (VAT ${e.vatAmount.toFixed(2)}) dated ${e.date.toISOString().slice(0, 10)} — ${e.description}`, userId: user.id },
     }),
   ]);
   refresh();

@@ -15,7 +15,7 @@ describe("computeTotals", () => {
     expect(t.lines.map((l) => l.lineTotal.toFixed(2))).toEqual(["720.00", "70.00"]);
     expect([t.subtotal, t.vatAmount, t.totalAmount].map((d) => d.toFixed(2))).toEqual(["790.00", "39.50", "829.50"]);
   });
-  it("per-word pricing rounds each line to fils, VAT half-up", () => {
+  it("per-word pricing rounds each line to 2 decimals, VAT half-up", () => {
     const t = computeTotals([{ quantity: "2481", unitPrice: "0.35" }], "0.05");
     expect(t.subtotal.toFixed(2)).toBe("868.35");
     expect(t.vatAmount.toFixed(2)).toBe("43.42"); // 43.4175 → 43.42
@@ -34,12 +34,12 @@ describe("computeTotals", () => {
 });
 
 describe("settingsSchema VAT rate", () => {
-  const base = { companyName: "TypeDesk", companyTrn: "", companyPhone: "", companyEmail: "", companyAddress: "", invoiceTerms: "" };
+  const base = { companyName: "TypeDesk", companyTaxNo: "", companyPhone: "", companyEmail: "", companyAddress: "", invoiceTerms: "" };
   it.each(["5", "0", "7.5", "12.25"])("accepts %s%%", (v) => expect(settingsSchema.safeParse({ ...base, vatPercent: v }).success).toBe(true));
   it.each(["", "100", "-5", "5%", "abc", "5.555", "0.05.1"])("rejects %j", (v) => expect(settingsSchema.safeParse({ ...base, vatPercent: v }).success).toBe(false));
-  it("normalises TRN and phone", () => {
-    const r = settingsSchema.parse({ ...base, vatPercent: "5", companyTrn: "100-3859-2640-0003", companyPhone: "043321180", companyEmail: "Info@TypeDesk.ae" });
-    expect([r.companyTrn, r.companyPhone, r.companyEmail]).toEqual(["100385926400003", "+971 4 332 1180", "info@typedesk.ae"]);
+  it("normalises tax no., phone and email", () => {
+    const r = settingsSchema.parse({ ...base, vatPercent: "5", companyTaxNo: " cr  145236", companyPhone: "44331180", companyEmail: "Info@TypeDesk.qa" });
+    expect([r.companyTaxNo, r.companyPhone, r.companyEmail]).toEqual(["CR 145236", "+974 4433 1180", "info@typedesk.qa"]);
   });
 });
 
@@ -59,12 +59,12 @@ describe("paymentStatus", () => {
 
 describe("amountInWords", () => {
   it.each([
-    ["829.50", "UAE Dirhams Eight Hundred and Twenty-Nine and Fils Fifty Only"],
-    ["1250", "UAE Dirhams One Thousand Two Hundred and Fifty Only"],
-    ["15000.05", "UAE Dirhams Fifteen Thousand and Fils Five Only"],
-    ["1000000", "UAE Dirhams One Million Only"],
-    ["0.99", "UAE Dirhams Zero and Fils Ninety-Nine Only"],
-    ["2014.10", "UAE Dirhams Two Thousand Fourteen and Fils Ten Only"],
+    ["829.50", "Qatari Riyals Eight Hundred and Twenty-Nine and Dirhams Fifty Only"],
+    ["1250", "Qatari Riyals One Thousand Two Hundred and Fifty Only"],
+    ["15000.05", "Qatari Riyals Fifteen Thousand and Dirhams Five Only"],
+    ["1000000", "Qatari Riyals One Million Only"],
+    ["0.99", "Qatari Riyals Zero and Dirhams Ninety-Nine Only"],
+    ["2014.10", "Qatari Riyals Two Thousand Fourteen and Dirhams Ten Only"],
   ])("%s", (n, words) => expect(amountInWords(n)).toBe(words));
 });
 

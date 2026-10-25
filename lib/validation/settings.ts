@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { normalizeTrn, normalizeUaePhone } from "./uae";
+import { normalizeTaxNo, normalizePhone } from "./country";
 
 /** "" stays "" (not set); anything else must normalise. */
 const optional = (normalize: (v: string) => string | null, message: string) =>
@@ -16,8 +16,8 @@ const optional = (normalize: (v: string) => string | null, message: string) =>
 /** Company details, VAT rate and invoice terms — shared by the Settings form and its server action. */
 export const settingsSchema = z.object({
   companyName: z.string().trim().min(2, "Enter the company name").max(160),
-  companyTrn: optional(normalizeTrn, "TRN must be 15 digits"),
-  companyPhone: optional(normalizeUaePhone, "Use a UAE number, e.g. +971 4 123 4567"),
+  companyTaxNo: optional(normalizeTaxNo, "Use 3–20 letters, digits, spaces, / or -"),
+  companyPhone: optional(normalizePhone, "Use a Qatar number, e.g. +974 4412 3456"),
   companyEmail: z
     .string()
     .trim()

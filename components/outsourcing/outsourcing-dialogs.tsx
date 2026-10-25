@@ -195,7 +195,7 @@ export function AssignmentDialog({
       <DialogContent className="sm:max-w-lg">
         <DialogHeader>
           <DialogTitle>{jobId ? "Edit outsourced job" : "Outsource work"}</DialogTitle>
-          <DialogDescription>Record what was sent to a freelancer or agency and the agreed cost (AED).</DialogDescription>
+          <DialogDescription>Record what was sent to a freelancer or agency and the agreed cost (QAR).</DialogDescription>
         </DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4" noValidate>
@@ -262,7 +262,7 @@ export function AssignmentDialog({
                 name="agreementCost"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Agreed cost (AED)</FormLabel>
+                    <FormLabel>Agreed cost (QAR)</FormLabel>
                     <FormControl>
                       <Input inputMode="decimal" {...field} />
                     </FormControl>

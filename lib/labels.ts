@@ -24,7 +24,7 @@ export const PRIORITY_LABEL: Record<Priority, string> = { NORMAL: "Normal", HIGH
 
 export const FOLLOW_UP_TYPE_LABEL: Record<FollowUpType, string> = {
   PASSPORT_EXPIRY: "Passport expiry",
-  EMIRATES_ID_EXPIRY: "Emirates ID expiry",
+  NATIONAL_ID_EXPIRY: "QID expiry",
   VISA_DEADLINE: "Visa deadline",
   TRADE_LICENSE_RENEWAL: "Trade license renewal",
   PAYMENT_REMINDER: "Payment reminder",
@@ -61,7 +61,7 @@ export const CUSTOMER_TYPE_LABEL: Record<CustomerType, string> = { INDIVIDUAL: "
 
 export const DOCUMENT_CATEGORY_LABEL: Record<DocumentCategory, string> = {
   PASSPORT: "Passport",
-  EMIRATES_ID: "Emirates ID",
+  NATIONAL_ID: "Qatar ID (QID)",
   TRADE_LICENSE: "Trade License",
   LEGAL_JUDGMENT: "Legal Judgment",
   CATALOGUE: "Catalogue",
@@ -99,4 +99,4 @@ export const LANGUAGES = [
 ] as const;
 
 /** Categories whose documents carry an expiry date. */
-export const EXPIRING_CATEGORIES: DocumentCategory[] = ["PASSPORT", "EMIRATES_ID", "TRADE_LICENSE"];
+export const EXPIRING_CATEGORIES: DocumentCategory[] = ["PASSPORT", "NATIONAL_ID", "TRADE_LICENSE"];

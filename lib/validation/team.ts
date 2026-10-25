@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { parseDateInput, parseDateTimeInput } from "../dates";
-import { normalizeUaePhone } from "./uae";
+import { normalizePhone } from "./country";
 
 const optionalText = (max: number) =>
   z
@@ -26,7 +26,7 @@ export type TaskFormValues = z.input<typeof taskSchema>;
 
 export const followUpSchema = z.object({
   title: z.string().trim().min(3, "Enter a title").max(200),
-  type: z.enum(["PASSPORT_EXPIRY", "EMIRATES_ID_EXPIRY", "VISA_DEADLINE", "TRADE_LICENSE_RENEWAL", "PAYMENT_REMINDER", "GENERAL"]),
+  type: z.enum(["PASSPORT_EXPIRY", "NATIONAL_ID_EXPIRY", "VISA_DEADLINE", "TRADE_LICENSE_RENEWAL", "PAYMENT_REMINDER", "GENERAL"]),
   deadline: z
     .string()
     .trim()
@@ -49,8 +49,8 @@ export const employeeSchema = z.object({
     .trim()
     .transform((v, ctx) => {
       if (!v) return null;
-      const n = normalizeUaePhone(v);
-      if (!n) ctx.addIssue({ code: "custom", message: "Use a UAE number, e.g. +971 50 123 4567" });
+      const n = normalizePhone(v);
+      if (!n) ctx.addIssue({ code: "custom", message: "Use a Qatar number, e.g. +974 5512 3456" });
       return n ?? v;
     }),
   role: z.enum(["ADMIN", "MANAGER", "FINANCE", "STAFF"]),

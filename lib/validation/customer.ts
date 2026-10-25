@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { parseDateInput } from "../dates";
-import { normalizeEmiratesId, normalizeTrn, normalizeUaePhone } from "./uae";
+import { normalizeNationalId, normalizeTaxNo, normalizePhone } from "./country";
 
 const optionalText = (max: number) =>
   z
@@ -9,7 +9,7 @@ const optionalText = (max: number) =>
     .max(max)
     .transform((v) => v || null);
 
-/** "" → null; "yyyy-mm-dd" kept as-is (converted to a Dubai-midnight Date on the server). */
+/** "" → null; "yyyy-mm-dd" kept as-is (converted to a Doha-midnight Date on the server). */
 const optionalDate = z
   .string()
   .trim()
@@ -27,8 +27,8 @@ export const customerSchema = z
       .trim()
       .min(1, "Enter a phone number")
       .transform((v, ctx) => {
-        const n = normalizeUaePhone(v);
-        if (!n) ctx.addIssue({ code: "custom", message: "Use a UAE number, e.g. +971 50 123 4567" });
+        const n = normalizePhone(v);
+        if (!n) ctx.addIssue({ code: "custom", message: "Use a Qatar number, e.g. +974 5512 3456" });
         return n ?? v;
       }),
     email: z
@@ -37,25 +37,25 @@ export const customerSchema = z
       .refine((v) => v === "" || z.email().safeParse(v).success, "Enter a valid email")
       .transform((v) => v.toLowerCase() || null),
     nationality: optionalText(60),
-    trn: z
+    taxNo: z
       .string()
       .trim()
       .transform((v, ctx) => {
         if (!v) return null;
-        const n = normalizeTrn(v);
-        if (!n) ctx.addIssue({ code: "custom", message: "TRN must be 15 digits" });
+        const n = normalizeTaxNo(v);
+        if (!n) ctx.addIssue({ code: "custom", message: "Use 3–20 letters, digits, spaces, / or -" });
         return n ?? v;
       }),
-    emiratesId: z
+    nationalId: z
       .string()
       .trim()
       .transform((v, ctx) => {
         if (!v) return null;
-        const n = normalizeEmiratesId(v);
-        if (!n) ctx.addIssue({ code: "custom", message: "Format: 784-XXXX-XXXXXXX-X" });
+        const n = normalizeNationalId(v);
+        if (!n) ctx.addIssue({ code: "custom", message: "QID must be 11 digits" });
         return n ?? v;
       }),
-    emiratesIdExpiry: optionalDate,
+    nationalIdExpiry: optionalDate,
     passportNo: z
       .string()
       .trim()

@@ -102,7 +102,7 @@ export function EmployeeDialog({
                           <FormControl>
                             <Input
                               type={name === "email" ? "email" : "text"}
-                              placeholder={name === "phone" ? "+971 50 123 4567" : undefined}
+                              placeholder={name === "phone" ? "+974 5512 3456" : undefined}
                               autoComplete="off"
                               {...field}
                               value={field.value ?? ""}

@@ -1,10 +1,10 @@
 import "server-only";
 import { cache } from "react";
 import { Prisma, type CustomerType } from "@prisma/client";
-import { daysFromTodayDubai, startOfTodayDubai } from "@/lib/dates";
+import { daysFromTodayLocal, startOfTodayLocal } from "@/lib/dates";
 import { EXPIRY_WARNING_DAYS } from "@/lib/expiry";
 import { prisma } from "@/lib/prisma";
-import { normalizeUaePhone } from "@/lib/validation/uae";
+import { normalizePhone } from "@/lib/validation/country";
 import { listDocuments } from "./documents";
 
 export const PAGE_SIZE = 25;
@@ -18,14 +18,14 @@ export function customerSearchWhere(q: string | undefined): Prisma.CustomerWhere
   const term = q?.trim();
   if (!term) return {};
   const contains = { contains: term, mode: "insensitive" as const };
-  const phone = normalizeUaePhone(term);
+  const phone = normalizePhone(term);
   return {
     OR: [
       { name: contains },
       { companyName: contains },
       { email: contains },
       { phone: contains },
-      { emiratesId: contains },
+      { nationalId: contains },
       { passportNo: contains },
       ...(phone ? [{ phone: { contains: phone } }] : []),
     ],
@@ -33,11 +33,11 @@ export function customerSearchWhere(q: string | undefined): Prisma.CustomerWhere
 }
 
 function expiryWhere(expiry: string | undefined): Prisma.CustomerWhereInput {
-  const today = startOfTodayDubai();
-  if (expiry === "expired") return { OR: [{ passportExpiry: { lt: today } }, { emiratesIdExpiry: { lt: today } }] };
+  const today = startOfTodayLocal();
+  if (expiry === "expired") return { OR: [{ passportExpiry: { lt: today } }, { nationalIdExpiry: { lt: today } }] };
   if (expiry === "expiring") {
-    const window = { gte: today, lte: daysFromTodayDubai(EXPIRY_WARNING_DAYS) };
-    return { OR: [{ passportExpiry: window }, { emiratesIdExpiry: window }] };
+    const window = { gte: today, lte: daysFromTodayLocal(EXPIRY_WARNING_DAYS) };
+    return { OR: [{ passportExpiry: window }, { nationalIdExpiry: window }] };
   }
   return {};
 }
@@ -63,8 +63,8 @@ export async function listCustomers(params: CustomerListParams) {
         companyName: true,
         phone: true,
         email: true,
-        emiratesId: true,
-        emiratesIdExpiry: true,
+        nationalId: true,
+        nationalIdExpiry: true,
         passportNo: true,
         passportExpiry: true,
       },

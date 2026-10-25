@@ -12,7 +12,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { can } from "@/lib/auth/permissions";
 import { requirePagePermission } from "@/lib/auth/session";
 import { toDateInput } from "@/lib/dates";
-import { formatAED, formatDate } from "@/lib/format";
+import { formatMoney, formatDate } from "@/lib/format";
 import {
   CUSTOMER_TYPE_LABEL,
   FOLLOW_UP_STATUS_LABEL,
@@ -68,7 +68,7 @@ export default async function CustomerPage({ params }: { params: Promise<{ id: s
                   </a>
                 )}
                 {c.nationality && <span>{c.nationality}</span>}
-                {c.trn && <span>TRN {c.trn}</span>}
+                {c.taxNo && <span>CR / tax no. {c.taxNo}</span>}
               </div>
             </div>
           </div>
@@ -82,9 +82,9 @@ export default async function CustomerPage({ params }: { params: Promise<{ id: s
                 phone: c.phone,
                 email: c.email ?? "",
                 nationality: c.nationality ?? "",
-                trn: c.trn ?? "",
-                emiratesId: c.emiratesId ?? "",
-                emiratesIdExpiry: toDateInput(c.emiratesIdExpiry),
+                taxNo: c.taxNo ?? "",
+                nationalId: c.nationalId ?? "",
+                nationalIdExpiry: toDateInput(c.nationalIdExpiry),
                 passportNo: c.passportNo ?? "",
                 passportExpiry: toDateInput(c.passportExpiry),
                 notes: c.notes ?? "",
@@ -98,18 +98,18 @@ export default async function CustomerPage({ params }: { params: Promise<{ id: s
         </div>
 
         <dl className="mt-5 grid gap-3 border-t pt-4 text-sm sm:grid-cols-2 lg:grid-cols-4">
-          <IdItem label="Emirates ID" number={c.emiratesId} expiry={c.emiratesIdExpiry} />
+          <IdItem label="QID" number={c.nationalId} expiry={c.nationalIdExpiry} />
           <IdItem label="Passport" number={c.passportNo} expiry={c.passportExpiry} />
           {finance && (
             <>
               <div>
                 <dt className="text-muted-foreground text-xs">Total billed</dt>
-                <dd className="mt-1 font-medium tabular-nums">{formatAED(totals.billed)}</dd>
+                <dd className="mt-1 font-medium tabular-nums">{formatMoney(totals.billed)}</dd>
               </div>
               <div>
                 <dt className="text-muted-foreground text-xs">Outstanding balance</dt>
                 <dd className={`mt-1 font-medium tabular-nums ${totals.outstanding.gt(0) ? "text-destructive" : ""}`}>
-                  {formatAED(totals.outstanding)}
+                  {formatMoney(totals.outstanding)}
                 </dd>
               </div>
             </>
@@ -184,7 +184,7 @@ export default async function CustomerPage({ params }: { params: Promise<{ id: s
                         <WorkOrderStatusBadge status={w.status} revision={w.hasOpenRevision} />
                       </TableCell>
                       <TableCell className="text-sm">{formatDate(w.deadline)}</TableCell>
-                      <TableCell className="text-right tabular-nums">{formatAED(w.totalAmount)}</TableCell>
+                      <TableCell className="text-right tabular-nums">{formatMoney(w.totalAmount)}</TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
@@ -223,9 +223,9 @@ export default async function CustomerPage({ params }: { params: Promise<{ id: s
                         <TableCell>
                           <ToneBadge tone={INVOICE_TONE[i.status]}>{INVOICE_STATUS_LABEL[i.status]}</ToneBadge>
                         </TableCell>
-                        <TableCell className="text-right tabular-nums">{formatAED(i.totalAmount)}</TableCell>
+                        <TableCell className="text-right tabular-nums">{formatMoney(i.totalAmount)}</TableCell>
                         <TableCell className="text-right tabular-nums">
-                          {i.status === "CANCELLED" ? "—" : formatAED(i.totalAmount.minus(i.amountPaid))}
+                          {i.status === "CANCELLED" ? "—" : formatMoney(i.totalAmount.minus(i.amountPaid))}
                         </TableCell>
                       </TableRow>
                     ))}
@@ -268,9 +268,9 @@ export default async function CustomerPage({ params }: { params: Promise<{ id: s
                             </>
                           )}
                         </TableCell>
-                        <TableCell className="text-right tabular-nums">{e.debit ? formatAED(e.debit) : ""}</TableCell>
-                        <TableCell className="text-right tabular-nums">{e.credit ? formatAED(e.credit) : ""}</TableCell>
-                        <TableCell className="text-right font-medium tabular-nums">{formatAED(e.balance)}</TableCell>
+                        <TableCell className="text-right tabular-nums">{e.debit ? formatMoney(e.debit) : ""}</TableCell>
+                        <TableCell className="text-right tabular-nums">{e.credit ? formatMoney(e.credit) : ""}</TableCell>
+                        <TableCell className="text-right font-medium tabular-nums">{formatMoney(e.balance)}</TableCell>
                       </TableRow>
                     ))}
                   </TableBody>

@@ -1,7 +1,7 @@
 import { AlertTriangle, Clock, RotateCcw } from "lucide-react";
 import type { Priority, WorkOrderStatus } from "@prisma/client";
 import { PRIORITY_LABEL, WORK_ORDER_STATUS_LABEL } from "@/lib/labels";
-import { formatDubai } from "@/lib/dates";
+import { formatLocal } from "@/lib/dates";
 import { cn } from "@/lib/utils";
 import { deadlineInfo } from "@/lib/work-orders";
 import { ToneBadge, type Tone } from "./tone-badge";
@@ -41,7 +41,7 @@ export function PriorityBadge({ priority }: { priority: Priority }) {
 export function DeadlineText({ deadline, done = false, now, className }: { deadline: Date | null; done?: boolean; now?: Date; className?: string }) {
   if (!deadline) return <span className={cn("text-muted-foreground text-xs", className)}>No deadline</span>;
   // Once delivered, "overdue" no longer means anything — just show when it was due.
-  if (done) return <span className={cn("text-muted-foreground text-xs whitespace-nowrap", className)}>Due {formatDubai(deadline, "d MMM")}</span>;
+  if (done) return <span className={cn("text-muted-foreground text-xs whitespace-nowrap", className)}>Due {formatLocal(deadline, "d MMM")}</span>;
   const { label, tone } = deadlineInfo(deadline, now);
   return (
     <span

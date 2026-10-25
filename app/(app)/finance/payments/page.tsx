@@ -6,7 +6,7 @@ import { Pagination } from "@/components/shared/pagination";
 import { DateParam, FilterSelect, SearchInput } from "@/components/shared/url-filters";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { requirePagePermission } from "@/lib/auth/session";
-import { formatAED, formatDate } from "@/lib/format";
+import { formatMoney, formatDate } from "@/lib/format";
 import { PAYMENT_METHOD_LABEL } from "@/lib/labels";
 import { PAYMENT_PAGE_SIZE, dailyCollection, listPayments, type PaymentParams } from "@/server/queries/finance";
 import type { PaymentMethod } from "@prisma/client";
@@ -35,7 +35,7 @@ export default async function PaymentsPage({ searchParams }: { searchParams: Pro
           <div>
             <h2 className="font-medium">Daily collection</h2>
             <p className="text-muted-foreground text-sm">
-              {daily.label} · {daily.count} payment{daily.count === 1 ? "" : "s"} · <span className="text-foreground font-semibold tabular-nums">{formatAED(daily.total)}</span>
+              {daily.label} · {daily.count} payment{daily.count === 1 ? "" : "s"} · <span className="text-foreground font-semibold tabular-nums">{formatMoney(daily.total)}</span>
             </p>
           </div>
           <DateParam param="day" label="Day" />
@@ -47,7 +47,7 @@ export default async function PaymentsPage({ searchParams }: { searchParams: Pro
                 <dt className="text-muted-foreground flex items-center gap-1.5 text-xs">
                   <Icon className="size-3.5" /> {PAYMENT_METHOD_LABEL[method]}
                 </dt>
-                <dd className="mt-1 font-semibold tabular-nums">{formatAED(daily.byMethod[method]?.amount ?? 0)}</dd>
+                <dd className="mt-1 font-semibold tabular-nums">{formatMoney(daily.byMethod[method]?.amount ?? 0)}</dd>
               </div>
             ))}
           </dl>
@@ -72,10 +72,10 @@ export default async function PaymentsPage({ searchParams }: { searchParams: Pro
                     <TableCell className="font-medium">{s.name}</TableCell>
                     {METHODS.map(({ method }) => (
                       <TableCell key={method} className="text-right tabular-nums">
-                        {s.methods[method] ? formatAED(s.methods[method]!) : "—"}
+                        {s.methods[method] ? formatMoney(s.methods[method]!) : "—"}
                       </TableCell>
                     ))}
-                    <TableCell className="text-right font-medium tabular-nums">{formatAED(s.total)}</TableCell>
+                    <TableCell className="text-right font-medium tabular-nums">{formatMoney(s.total)}</TableCell>
                   </TableRow>
                 ))}
               </TableBody>
@@ -96,7 +96,7 @@ export default async function PaymentsPage({ searchParams }: { searchParams: Pro
           <StatCard
             key={method}
             label={PAYMENT_METHOD_LABEL[method]}
-            value={formatAED(byMethod[method]?.amount ?? 0)}
+            value={formatMoney(byMethod[method]?.amount ?? 0)}
             sub={`${byMethod[method]?.count ?? 0} payments${filtered ? " (filtered)" : ", all time"}`}
             icon={Icon}
           />
@@ -136,7 +136,7 @@ export default async function PaymentsPage({ searchParams }: { searchParams: Pro
                   <TableCell className="text-sm">{PAYMENT_METHOD_LABEL[p.method]}</TableCell>
                   <TableCell className="text-muted-foreground font-mono text-xs">{p.reference ?? "—"}</TableCell>
                   <TableCell className="text-sm">{p.receivedBy?.name ?? "—"}</TableCell>
-                  <TableCell className="pr-4 text-right font-medium tabular-nums">{formatAED(p.amount)}</TableCell>
+                  <TableCell className="pr-4 text-right font-medium tabular-nums">{formatMoney(p.amount)}</TableCell>
                 </TableRow>
               ))}
             </TableBody>

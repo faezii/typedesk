@@ -1,6 +1,6 @@
 /**
  * First admin for a fresh (unseeded) database:
- *   npm run create-admin -- owner@centre.ae "Full Name"
+ *   npm run create-admin -- owner@centre.qa "Full Name"
  * Prints a one-time password; TypeDesk asks for a new one at first sign-in.
  * Running it again for the same email resets that admin's password and reactivates them.
  */

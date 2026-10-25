@@ -2,6 +2,7 @@ import Link from "next/link";
 import { ArrowRight, BarChart3, Briefcase, Landmark } from "lucide-react";
 import { PageHeader } from "@/components/shared/page-header";
 import { requirePagePermission } from "@/lib/auth/session";
+import { getSettings } from "@/lib/settings";
 import { REPORTS, type ReportDef } from "@/server/queries/reports";
 
 export const metadata = { title: "Reports" };
@@ -14,6 +15,8 @@ const GROUPS: { name: ReportDef["group"]; Icon: typeof BarChart3 }[] = [
 
 export default async function ReportsPage() {
   await requirePagePermission("reports:view");
+  // The VAT report only makes sense once a VAT rate is set (Qatar has none today).
+  const reports = (await getSettings()).vatRate.isZero() ? REPORTS.filter((r) => r.slug !== "vat") : REPORTS;
   return (
     <>
       <PageHeader title="Reports" description="Pick a report, choose the period and export it as CSV, Excel or PDF." />
@@ -24,7 +27,7 @@ export default async function ReportsPage() {
               <Icon className="size-3.5" /> {name}
             </h2>
             <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
-              {REPORTS.filter((r) => r.group === name).map((r) => (
+              {reports.filter((r) => r.group === name).map((r) => (
                 <Link
                   key={r.slug}
                   href={`/reports/${r.slug}`}

@@ -22,9 +22,9 @@ const EMPTY: CustomerFormValues = {
   phone: "",
   email: "",
   nationality: "",
-  trn: "",
-  emiratesId: "",
-  emiratesIdExpiry: "",
+  taxNo: "",
+  nationalId: "",
+  nationalIdExpiry: "",
   passportNo: "",
   passportExpiry: "",
   notes: "",
@@ -83,7 +83,7 @@ export function CustomerFormSheet({
       <SheetContent className="w-full gap-0 sm:max-w-lg">
         <SheetHeader className="border-b">
           <SheetTitle>{customerId ? "Edit customer" : "New customer"}</SheetTitle>
-          <SheetDescription>Phone numbers and Emirates IDs are formatted automatically.</SheetDescription>
+          <SheetDescription>Phone numbers and QIDs are checked and formatted automatically.</SheetDescription>
         </SheetHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="flex min-h-0 flex-1 flex-col" noValidate>
@@ -111,17 +111,17 @@ export function CustomerFormSheet({
                 />
                 <TextField form={form} name="name" label={isCompany ? "Contact name" : "Full name"} autoComplete="off" />
                 {isCompany && <TextField form={form} name="companyName" label="Company name" className="sm:col-span-2" />}
-                <TextField form={form} name="phone" label="Phone" placeholder="+971 50 123 4567" inputMode="tel" />
+                <TextField form={form} name="phone" label="Phone" placeholder="+974 5512 3456" inputMode="tel" />
                 <TextField form={form} name="email" label="Email" type="email" placeholder="Optional" />
                 <TextField form={form} name="nationality" label="Nationality" placeholder="Optional" />
-                {isCompany && <TextField form={form} name="trn" label="TRN" placeholder="15 digits" inputMode="numeric" />}
+                {isCompany && <TextField form={form} name="taxNo" label="CR / tax no." placeholder="e.g. CR 123456" />}
               </div>
 
               <fieldset className="space-y-4">
                 <legend className="text-muted-foreground mb-3 text-xs font-medium tracking-wider uppercase">Identity documents</legend>
                 <div className="grid gap-4 sm:grid-cols-2">
-                  <TextField form={form} name="emiratesId" label="Emirates ID" placeholder="784-XXXX-XXXXXXX-X" inputMode="numeric" />
-                  <TextField form={form} name="emiratesIdExpiry" label="Emirates ID expiry" type="date" />
+                  <TextField form={form} name="nationalId" label="QID" placeholder="11 digits" inputMode="numeric" />
+                  <TextField form={form} name="nationalIdExpiry" label="QID expiry" type="date" />
                   <TextField form={form} name="passportNo" label="Passport no." placeholder="Optional" />
                   <TextField form={form} name="passportExpiry" label="Passport expiry" type="date" />
                 </div>

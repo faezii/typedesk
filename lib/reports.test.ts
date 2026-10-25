@@ -7,7 +7,7 @@ const report: ReportResult = {
   columns: [
     { key: "customer", label: "Customer" },
     { key: "invoices", label: "Invoices", type: "number" },
-    { key: "total", label: "Invoiced (AED)", type: "money" },
+    { key: "total", label: "Invoiced (QAR)", type: "money" },
     { key: "share", label: "Share", type: "percent" },
   ],
   rows: [
@@ -30,7 +30,7 @@ describe("toCsv", () => {
 });
 
 describe("toXlsx", () => {
-  it("writes typed numbers with an AED format and a totals row", () => {
+  it("writes typed numbers with an QAR format and a totals row", () => {
     const wb = XLSX.read(toXlsx(report, "Customer revenue", "1 Oct 2026 – 25 Oct 2026"), { cellNF: true });
     const ws = wb.Sheets[wb.SheetNames[0]!]!;
     const rows = XLSX.utils.sheet_to_json<unknown[]>(ws, { header: 1 });

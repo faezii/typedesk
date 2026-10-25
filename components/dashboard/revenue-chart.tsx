@@ -1,7 +1,7 @@
 "use client";
 
 import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
-import { formatAED, formatCompact } from "@/lib/format";
+import { formatMoney, formatCompact } from "@/lib/format";
 import type { RevenuePoint } from "@/server/queries/dashboard";
 
 const SERIES = [
@@ -44,7 +44,7 @@ export function RevenueChart({ data }: { data: RevenuePoint[] }) {
                         <div key={s.key} className="flex items-center gap-2">
                           <span className="size-2 rounded-[2px]" style={{ background: s.color }} />
                           <span className="text-muted-foreground">{s.label}</span>
-                          <span className="ml-auto pl-4 font-medium tabular-nums">{formatAED(Number(v ?? 0))}</span>
+                          <span className="ml-auto pl-4 font-medium tabular-nums">{formatMoney(Number(v ?? 0))}</span>
                         </div>
                       );
                     })}
@@ -60,7 +60,7 @@ export function RevenueChart({ data }: { data: RevenuePoint[] }) {
       </div>
       {/* Table view for screen readers */}
       <table className="sr-only">
-        <caption>Invoiced and collected revenue by month, AED</caption>
+        <caption>Invoiced and collected revenue by month, QAR</caption>
         <thead>
           <tr>
             <th>Month</th>
@@ -72,8 +72,8 @@ export function RevenueChart({ data }: { data: RevenuePoint[] }) {
           {data.map((d) => (
             <tr key={d.month}>
               <td>{d.label}</td>
-              <td>{formatAED(d.invoiced)}</td>
-              <td>{formatAED(d.collected)}</td>
+              <td>{formatMoney(d.invoiced)}</td>
+              <td>{formatMoney(d.collected)}</td>
             </tr>
           ))}
         </tbody>

@@ -5,7 +5,7 @@ import { z } from "zod";
 import type { QaStatus } from "@prisma/client";
 import type { ActionResult } from "@/lib/action-result";
 import { guardAction } from "@/lib/auth/session";
-import { formatDubai, parseDateInput } from "@/lib/dates";
+import { formatLocal, parseDateInput } from "@/lib/dates";
 import { LANGUAGES } from "@/lib/labels";
 import { prisma } from "@/lib/prisma";
 import { UploadError, saveUpload } from "@/lib/storage";
@@ -82,7 +82,7 @@ export async function saveAssignment(id: string | null, input: AssignmentFormVal
     dueAt: parseDateInput(d.dueAt),
   };
   const job = id ? await prisma.outsourcedWork.update({ where: { id }, data }) : await prisma.outsourcedWork.create({ data });
-  await woLog(wo.id, user.id, id ? "outsourcing_updated" : "outsourced", `${id ? "Outsourcing updated" : "Outsourced"} to ${vendor.name} — AED ${job.agreementCost.toFixed(2)}`);
+  await woLog(wo.id, user.id, id ? "outsourcing_updated" : "outsourced", `${id ? "Outsourcing updated" : "Outsourced"} to ${vendor.name} — QAR ${job.agreementCost.toFixed(2)}`);
   refresh(wo.id);
   return { ok: true, data: { id: job.id } };
 }
@@ -140,7 +140,7 @@ export async function setPaymentStatus(id: string, paid: boolean): Promise<Actio
         entityType: "WorkOrder",
         entityId: job.workOrderId,
         action: paid ? "vendor_paid" : "vendor_unpaid",
-        message: paid ? `Paid ${job.vendor.name} AED ${job.agreementCost.toFixed(2)} (expense booked)` : `Payment to ${job.vendor.name} reversed (expense removed)`,
+        message: paid ? `Paid ${job.vendor.name} QAR ${job.agreementCost.toFixed(2)} (expense booked)` : `Payment to ${job.vendor.name} reversed (expense removed)`,
         userId: user.id,
       },
     });
@@ -170,7 +170,7 @@ export async function uploadDelivery(id: string, formData: FormData): Promise<Ac
     if (e instanceof UploadError) return { ok: false, error: e.message };
     throw e;
   }
-  const name = `${job.vendor.name} delivery — ${job.workOrder.orderNo} (${formatDubai(new Date(), "d MMM")})`.slice(0, 160);
+  const name = `${job.vendor.name} delivery — ${job.workOrder.orderNo} (${formatLocal(new Date(), "d MMM")})`.slice(0, 160);
   await prisma.$transaction([
     prisma.document.create({
       data: { name, category: "OTHER", ...stored, customerId: job.workOrder.customerId, workOrderId: job.workOrder.id, outsourcedWorkId: id, uploadedById: user.id },

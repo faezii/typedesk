@@ -5,12 +5,12 @@ import { can } from "@/lib/auth/permissions";
 import type { CurrentUser } from "@/lib/auth/session";
 import {
   TIMEZONE,
-  daysFromTodayDubai,
-  endOfTodayDubai,
-  formatDubai,
-  monthsAgoDubai,
-  startOfMonthDubai,
-  startOfTodayDubai,
+  daysFromTodayLocal,
+  endOfTodayLocal,
+  formatLocal,
+  monthsAgoLocal,
+  startOfMonthLocal,
+  startOfTodayLocal,
 } from "@/lib/dates";
 
 type Viewer = Pick<CurrentUser, "id" | "role">;
@@ -28,14 +28,14 @@ const NOT_INVOICED: Prisma.WorkOrderWhereInput = {
 
 export async function getKpis(user: Viewer) {
   const scope = { deletedAt: null, ...ownWork(user) };
-  const startToday = startOfTodayDubai();
-  const endToday = endOfTodayDubai();
+  const startToday = startOfTodayLocal();
+  const endToday = endOfTodayLocal();
   const finance = can(user.role, "finance:view");
 
   // Month-to-date vs the same span of last month, so the comparison is fair on day 5 as on day 25.
   const now = new Date();
-  const monthStart = startOfMonthDubai();
-  const lastMonthStart = monthsAgoDubai(1);
+  const monthStart = startOfMonthLocal();
+  const lastMonthStart = monthsAgoLocal(1);
   const lastMonthSameDay = new Date(lastMonthStart.getTime() + (now.getTime() - monthStart.getTime()));
 
   const [customers, active, dueToday, overdue, pending, revenueNow, revenuePrev] = await Promise.all([
@@ -75,10 +75,10 @@ async function sumPayments(from: Date, to: Date) {
 
 export type RevenuePoint = { month: string; label: string; invoiced: number; collected: number };
 
-/** Last 6 months (incl. current), grouped by Dubai calendar month. Numbers are for charting only. */
+/** Last 6 months (incl. current), grouped by Doha calendar month. Numbers are for charting only. */
 export async function getRevenueSeries(): Promise<RevenuePoint[]> {
-  const from = monthsAgoDubai(5);
-  // Timestamps are stored as UTC without zone; convert before truncating to the Dubai month.
+  const from = monthsAgoLocal(5);
+  // Timestamps are stored as UTC without zone; convert before truncating to the Doha month.
   const [collected, invoiced] = await Promise.all([
     prisma.$queryRaw<{ m: string; total: number }[]>(Prisma.sql`
       SELECT to_char(date_trunc('month', (p."date" AT TIME ZONE 'UTC') AT TIME ZONE ${TIMEZONE}), 'YYYY-MM') AS m,
@@ -98,9 +98,9 @@ export async function getRevenueSeries(): Promise<RevenuePoint[]> {
   const inv = byMonth(invoiced);
 
   return Array.from({ length: 6 }, (_, i) => {
-    const d = monthsAgoDubai(5 - i);
-    const month = formatDubai(d, "yyyy-MM");
-    return { month, label: formatDubai(d, "MMM"), invoiced: inv.get(month) ?? 0, collected: c.get(month) ?? 0 };
+    const d = monthsAgoLocal(5 - i);
+    const month = formatLocal(d, "yyyy-MM");
+    return { month, label: formatLocal(d, "MMM"), invoiced: inv.get(month) ?? 0, collected: c.get(month) ?? 0 };
   });
 }
 
@@ -109,7 +109,7 @@ export type StatusSlice = { key: "inProgress" | "ready" | "delivered" | "revisio
 /** Current pipeline plus the last 30 days of deliveries (all-time deliveries would drown everything else). */
 export async function getStatusBreakdown(user: Viewer): Promise<StatusSlice[]> {
   const scope = { deletedAt: null, ...ownWork(user) };
-  const since = new Date(startOfTodayDubai().getTime() - 30 * 86_400_000);
+  const since = new Date(startOfTodayLocal().getTime() - 30 * 86_400_000);
   const [inProgress, ready, delivered, revisions] = await Promise.all([
     prisma.workOrder.count({ where: { ...scope, status: { in: IN_PROGRESS_STATUSES } } }),
     prisma.workOrder.count({ where: { ...scope, status: "READY" } }),
@@ -125,7 +125,7 @@ export async function getStatusBreakdown(user: Viewer): Promise<StatusSlice[]> {
 }
 
 export async function getDueWorkOrders(user: Viewer) {
-  const where: Prisma.WorkOrderWhereInput = { deletedAt: null, ...ownWork(user), ...OPEN, deadline: { lte: endOfTodayDubai() } };
+  const where: Prisma.WorkOrderWhereInput = { deletedAt: null, ...ownWork(user), ...OPEN, deadline: { lte: endOfTodayLocal() } };
   const [items, total] = await Promise.all([
     prisma.workOrder.findMany({
       where,
@@ -144,7 +144,7 @@ export async function getDueWorkOrders(user: Viewer) {
     }),
     prisma.workOrder.count({ where }),
   ]);
-  return { items, total, startToday: startOfTodayDubai() };
+  return { items, total, startToday: startOfTodayLocal() };
 }
 
 /** Pending follow-ups due today through the next 7 days, plus how many are already overdue. */
@@ -153,10 +153,10 @@ export async function getUpcomingFollowUps(user: Viewer) {
     status: "PENDING",
     ...(can(user.role, "dashboard:viewAll") ? {} : { assignedToId: user.id }),
   };
-  const startToday = startOfTodayDubai();
+  const startToday = startOfTodayLocal();
   const [items, overdue] = await Promise.all([
     prisma.followUp.findMany({
-      where: { ...base, deadline: { gte: startToday, lte: daysFromTodayDubai(7) } },
+      where: { ...base, deadline: { gte: startToday, lte: daysFromTodayLocal(7) } },
       orderBy: { deadline: "asc" },
       take: 6,
       select: { id: true, title: true, type: true, deadline: true, customer: { select: { name: true } } },

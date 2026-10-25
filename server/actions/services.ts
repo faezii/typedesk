@@ -18,7 +18,7 @@ export async function saveService(id: string | null, input: ServiceFormValues): 
 
   const service = id ? await prisma.service.update({ where: { id }, data }) : await prisma.service.create({ data });
   await prisma.activityLog.create({
-    data: { entityType: "Service", entityId: service.id, action: id ? "updated" : "created", message: `${id ? "Updated" : "Created"} service ${service.title} (AED ${service.defaultPrice.toFixed(2)})`, userId: g.user.id },
+    data: { entityType: "Service", entityId: service.id, action: id ? "updated" : "created", message: `${id ? "Updated" : "Created"} service ${service.title} (QAR ${service.defaultPrice.toFixed(2)})`, userId: g.user.id },
   });
   revalidatePath("/services");
   return { ok: true, data: { id: service.id } };

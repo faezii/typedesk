@@ -10,7 +10,7 @@ import { KanbanBoard } from "@/components/work-orders/kanban-board";
 import { WorkOrderSheet } from "@/components/work-orders/work-order-sheet";
 import { can } from "@/lib/auth/permissions";
 import { requirePagePermission } from "@/lib/auth/session";
-import { formatAED, formatDate } from "@/lib/format";
+import { formatMoney, formatDate } from "@/lib/format";
 import { WORK_ORDER_STATUS_LABEL } from "@/lib/labels";
 import { cn } from "@/lib/utils";
 import { WORK_ORDER_FLOW } from "@/lib/work-orders";
@@ -157,7 +157,7 @@ async function WorkOrderTable({ params, now }: { params: WorkOrderListParams; no
                     <DeadlineText deadline={w.deadline} done={w.status === "DELIVERED"} now={now} />
                   </TableCell>
                   <TableCell className="text-sm">{w.assignedTo?.name ?? <span className="text-muted-foreground">Unassigned</span>}</TableCell>
-                  <TableCell className="pr-4 text-right tabular-nums">{formatAED(w.totalAmount)}</TableCell>
+                  <TableCell className="pr-4 text-right tabular-nums">{formatMoney(w.totalAmount)}</TableCell>
                 </TableRow>
               ))}
             </TableBody>

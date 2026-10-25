@@ -1,16 +1,16 @@
 import type { ServiceCategory, ServiceUnit, WorkOrderStatus } from "@prisma/client";
-import { formatDubai, startOfTodayDubai } from "./dates";
+import { formatLocal, startOfTodayLocal } from "./dates";
 
 export type DeadlineTone = "overdue" | "today" | "soon" | "later";
 
-/** Human deadline label in Dubai calendar days, e.g. "Overdue 3d", "Today 5:00 PM", "Tomorrow", "In 4 days". */
+/** Human deadline label in Doha calendar days, e.g. "Overdue 3d", "Today 5:00 PM", "Tomorrow", "In 4 days". */
 export function deadlineInfo(deadline: Date, now = new Date()): { label: string; tone: DeadlineTone } {
-  const days = Math.round((startOfTodayDubai(deadline).getTime() - startOfTodayDubai(now).getTime()) / 86_400_000);
-  if (deadline < now) return { label: days < 0 ? `Overdue ${-days}d` : `Overdue · ${formatDubai(deadline, "h:mm a")}`, tone: "overdue" };
-  if (days === 0) return { label: `Today ${formatDubai(deadline, "h:mm a")}`, tone: "today" };
+  const days = Math.round((startOfTodayLocal(deadline).getTime() - startOfTodayLocal(now).getTime()) / 86_400_000);
+  if (deadline < now) return { label: days < 0 ? `Overdue ${-days}d` : `Overdue · ${formatLocal(deadline, "h:mm a")}`, tone: "overdue" };
+  if (days === 0) return { label: `Today ${formatLocal(deadline, "h:mm a")}`, tone: "today" };
   if (days === 1) return { label: "Tomorrow", tone: "soon" };
   if (days <= 7) return { label: `In ${days} days`, tone: "soon" };
-  return { label: formatDubai(deadline, "d MMM"), tone: "later" };
+  return { label: formatLocal(deadline, "d MMM"), tone: "later" };
 }
 
 export const WORK_ORDER_FLOW: WorkOrderStatus[] = ["RECEIVED", "IN_PROGRESS", "QUALITY_CHECK", "READY", "DELIVERED"];

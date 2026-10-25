@@ -3,19 +3,19 @@ import { followUpGroup, snoozedDeadline } from "./follow-ups";
 import { generateTempPassword } from "./passwords";
 import { employeeSchema, passwordChangeSchema } from "./validation/team";
 
-const now = new Date("2026-10-25T06:00:00Z"); // Sun 25 Oct, 10:00 Dubai
+const now = new Date("2026-10-25T06:00:00Z"); // Sun 25 Oct, 09:00 Doha
 
-describe("followUpGroup (Dubai days)", () => {
-  it("yesterday â†’ overdue", () => expect(followUpGroup(new Date("2026-10-24T08:00:00Z"), now)).toBe("overdue"));
+describe("followUpGroup (Doha days)", () => {
+  it("yesterday → overdue", () => expect(followUpGroup(new Date("2026-10-24T08:00:00Z"), now)).toBe("overdue"));
   it("earlier today is still today, not overdue", () => expect(followUpGroup(new Date("2026-10-25T02:00:00Z"), now)).toBe("today"));
-  it("late tonight Dubai â†’ today", () => expect(followUpGroup(new Date("2026-10-25T19:30:00Z"), now)).toBe("today"));
-  it("in 7 days â†’ this week", () => expect(followUpGroup(new Date("2026-11-01T08:00:00Z"), now)).toBe("week"));
-  it("in 8 days â†’ later", () => expect(followUpGroup(new Date("2026-11-02T08:00:00Z"), now)).toBe("later"));
+  it("late tonight Doha → today", () => expect(followUpGroup(new Date("2026-10-25T19:30:00Z"), now)).toBe("today"));
+  it("in 7 days → this week", () => expect(followUpGroup(new Date("2026-11-01T08:00:00Z"), now)).toBe("week"));
+  it("in 8 days → later", () => expect(followUpGroup(new Date("2026-11-02T08:00:00Z"), now)).toBe("later"));
 });
 
 describe("snoozedDeadline", () => {
   it("overdue items move to 7 days from today", () =>
-    expect(snoozedDeadline(new Date("2026-10-01T08:00:00Z"), now).toISOString()).toBe("2026-10-31T20:00:00.000Z"));
+    expect(snoozedDeadline(new Date("2026-10-01T08:00:00Z"), now).toISOString()).toBe("2026-10-31T21:00:00.000Z"));
   it("future items move 7 days past their deadline", () =>
     expect(snoozedDeadline(new Date("2026-11-10T08:00:00Z"), now).toISOString()).toBe("2026-11-17T08:00:00.000Z"));
 });
@@ -34,12 +34,12 @@ describe("generateTempPassword", () => {
 
 describe("employeeSchema", () => {
   it("lowercases email and normalises phone", () =>
-    expect(employeeSchema.parse({ name: "Sara Ali", email: " Sara@TypeDesk.AE ", phone: "0501234567", role: "STAFF", department: "TYPING" })).toMatchObject({
-      email: "sara@typedesk.ae",
-      phone: "+971 50 123 4567",
+    expect(employeeSchema.parse({ name: "Sara Ali", email: " Sara@TypeDesk.QA ", phone: "55123456", role: "STAFF", department: "TYPING" })).toMatchObject({
+      email: "sara@typedesk.qa",
+      phone: "+974 5512 3456",
     }));
   it("allows an empty phone", () =>
-    expect(employeeSchema.parse({ name: "Sara Ali", email: "s@t.ae", phone: "", role: "STAFF", department: "TYPING" }).phone).toBeNull());
+    expect(employeeSchema.parse({ name: "Sara Ali", email: "s@t.qa", phone: "", role: "STAFF", department: "TYPING" }).phone).toBeNull());
 });
 
 describe("passwordChangeSchema", () => {

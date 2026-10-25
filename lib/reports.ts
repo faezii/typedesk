@@ -4,7 +4,7 @@ export type ReportColumn = { key: string; label: string; type?: ColumnType };
 export type ReportRow = Record<string, string | number | null>;
 export type ReportResult = { columns: ReportColumn[]; rows: ReportRow[]; totals?: ReportRow; note?: string };
 
-const nf = (max: number, min = 0) => new Intl.NumberFormat("en-AE", { minimumFractionDigits: min, maximumFractionDigits: max });
+const nf = (max: number, min = 0) => new Intl.NumberFormat("en-QA", { minimumFractionDigits: min, maximumFractionDigits: max });
 const money = nf(2, 2);
 const num = nf(2);
 
@@ -39,5 +39,5 @@ export function toCsv(report: ReportResult): string {
 /** Share of a total as a percentage with one decimal (0 when the total is 0). */
 export const pct = (part: number, whole: number) => (whole ? Math.round((part / whole) * 1000) / 10 : 0);
 
-/** Round a float (summed from Decimals) back to fils for totals rows. */
-export const fils = (n: number) => Math.round((n + Number.EPSILON) * 100) / 100;
+/** Round a float (summed from Decimals) back to 2 decimals for totals rows. */
+export const round2 = (n: number) => Math.round((n + Number.EPSILON) * 100) / 100;

@@ -1,7 +1,7 @@
 import "server-only";
 import { cache } from "react";
 import type { InvoiceStatus, Prisma, QuotationStatus } from "@prisma/client";
-import { endOfTodayDubai, parseDateInput } from "@/lib/dates";
+import { endOfTodayLocal, parseDateInput } from "@/lib/dates";
 import { prisma } from "@/lib/prisma";
 
 export const INVOICE_PAGE_SIZE = 25;
@@ -11,7 +11,7 @@ export type InvoiceListParams = { tab?: string; q?: string; status?: string; fro
 function dateRange(p: InvoiceListParams) {
   const from = parseDateInput(p.from);
   const to = parseDateInput(p.to);
-  return from || to ? { issueDate: { ...(from ? { gte: from } : {}), ...(to ? { lte: endOfTodayDubai(to) } : {}) } } : {};
+  return from || to ? { issueDate: { ...(from ? { gte: from } : {}), ...(to ? { lte: endOfTodayLocal(to) } : {}) } } : {};
 }
 
 const customerMatch = (q: string) => [
@@ -64,7 +64,7 @@ export async function listQuotations(p: InvoiceListParams) {
   return { rows, total, page };
 }
 
-const customerSelect = { id: true, name: true, companyName: true, phone: true, email: true, trn: true } satisfies Prisma.CustomerSelect;
+const customerSelect = { id: true, name: true, companyName: true, phone: true, email: true, taxNo: true } satisfies Prisma.CustomerSelect;
 
 export const getInvoice = cache(async (id: string) =>
   prisma.invoice.findFirst({

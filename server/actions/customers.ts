@@ -27,21 +27,21 @@ export async function saveCustomer(id: string | null, input: CustomerFormValues)
     const fieldErrors = Object.fromEntries(parsed.error.issues.map((i) => [String(i.path[0]), i.message]));
     return { ok: false, error: "Please fix the highlighted fields.", fieldErrors };
   }
-  const { emiratesIdExpiry, passportExpiry, companyName, type, ...rest } = parsed.data;
+  const { nationalIdExpiry, passportExpiry, companyName, type, ...rest } = parsed.data;
   const data = {
     ...rest,
     type,
     companyName: type === "COMPANY" ? companyName : null,
-    emiratesIdExpiry: parseDateInput(emiratesIdExpiry),
+    nationalIdExpiry: parseDateInput(nationalIdExpiry),
     passportExpiry: parseDateInput(passportExpiry),
   };
 
-  if (data.emiratesId) {
+  if (data.nationalId) {
     const dupe = await prisma.customer.findFirst({
-      where: { emiratesId: data.emiratesId, deletedAt: null, ...(id ? { id: { not: id } } : {}) },
+      where: { nationalId: data.nationalId, deletedAt: null, ...(id ? { id: { not: id } } : {}) },
       select: { name: true },
     });
-    if (dupe) return { ok: false, error: "Duplicate Emirates ID.", fieldErrors: { emiratesId: `Already registered to ${dupe.name}` } };
+    if (dupe) return { ok: false, error: "Duplicate QID.", fieldErrors: { nationalId: `Already registered to ${dupe.name}` } };
   }
 
   const saved = await prisma.$transaction(async (tx) => {

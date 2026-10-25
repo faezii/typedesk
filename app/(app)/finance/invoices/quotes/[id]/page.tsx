@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { can } from "@/lib/auth/permissions";
 import { requirePagePermission } from "@/lib/auth/session";
-import { formatAED, formatDate } from "@/lib/format";
+import { formatMoney, formatDate } from "@/lib/format";
 import { getQuotation } from "@/server/queries/invoices";
 
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }) {
@@ -93,8 +93,8 @@ export default async function QuotationPage({ params }: { params: Promise<{ id: 
               <TableRow key={it.id}>
                 <TableCell className="pl-5 whitespace-normal">{it.description}</TableCell>
                 <TableCell className="text-right tabular-nums">{it.quantity.toString()}</TableCell>
-                <TableCell className="text-right tabular-nums">{formatAED(it.unitPrice)}</TableCell>
-                <TableCell className="pr-5 text-right tabular-nums">{formatAED(it.lineTotal)}</TableCell>
+                <TableCell className="text-right tabular-nums">{formatMoney(it.unitPrice)}</TableCell>
+                <TableCell className="pr-5 text-right tabular-nums">{formatMoney(it.lineTotal)}</TableCell>
               </TableRow>
             ))}
           </TableBody>
@@ -102,15 +102,17 @@ export default async function QuotationPage({ params }: { params: Promise<{ id: 
         <dl className="ml-auto w-full max-w-xs space-y-1.5 border-t px-5 py-4 text-sm">
           <div className="flex justify-between">
             <dt className="text-muted-foreground">Subtotal</dt>
-            <dd className="tabular-nums">{formatAED(q.subtotal)}</dd>
+            <dd className="tabular-nums">{formatMoney(q.subtotal)}</dd>
           </div>
-          <div className="flex justify-between">
-            <dt className="text-muted-foreground">VAT {q.vatRate.times(100).toDecimalPlaces(2).toString()}%</dt>
-            <dd className="tabular-nums">{formatAED(q.vatAmount)}</dd>
-          </div>
+          {!q.vatRate.isZero() && (
+            <div className="flex justify-between">
+              <dt className="text-muted-foreground">VAT {q.vatRate.times(100).toDecimalPlaces(2).toString()}%</dt>
+              <dd className="tabular-nums">{formatMoney(q.vatAmount)}</dd>
+            </div>
+          )}
           <div className="flex justify-between border-t pt-1.5 text-base font-semibold">
             <dt>Total</dt>
-            <dd className="tabular-nums">{formatAED(q.totalAmount)}</dd>
+            <dd className="tabular-nums">{formatMoney(q.totalAmount)}</dd>
           </div>
         </dl>
         {q.notes && <p className="border-t px-5 py-3 text-sm whitespace-pre-wrap">{q.notes}</p>}

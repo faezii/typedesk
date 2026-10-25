@@ -1,6 +1,6 @@
 # TypeDesk
 
-Business management for a UAE translation & typing center: customers and their ID documents, work orders (Kanban + table), the translation pipeline, tasks and follow-ups, outsourced work, invoices and quotations with 5% VAT, payments, expenses, profit & loss, and exportable reports. Money is in AED, all dates run on Asia/Dubai time.
+Business management for a translation & typing center in Qatar: customers and their ID documents, work orders (Kanban + table), the translation pipeline, tasks and follow-ups, outsourced work, invoices and quotations (VAT-ready, 0% while Qatar has none), payments, expenses, profit & loss, and exportable reports. Money is in QAR, all dates run on Asia/Qatar (Doha) time.
 
 **Stack:** Next.js 16 (App Router) · React 19 · TypeScript · Tailwind CSS 4 + shadcn/ui · PostgreSQL + Prisma 6 · Auth.js v5 · Zod · Vitest.
 Coding conventions and the role/permission table live in [CLAUDE.md](CLAUDE.md).
@@ -24,10 +24,10 @@ Every seeded user has the password `Password123!`.
 
 | Email | Role |
 | --- | --- |
-| admin@typedesk.ae | Admin: everything, including Settings |
-| manager@typedesk.ae | Manager: everything except Settings |
-| finance@typedesk.ae | Finance: invoices, payments, expenses, reports; operations read-only |
-| typist@typedesk.ae, translator@typedesk.ae | Staff: work orders, tasks, follow-ups, customers, documents |
+| admin@typedesk.qa | Admin: everything, including Settings |
+| manager@typedesk.qa | Manager: everything except Settings |
+| finance@typedesk.qa | Finance: invoices, payments, expenses, reports; operations read-only |
+| typist@typedesk.qa, translator@typedesk.qa | Staff: work orders, tasks, follow-ups, customers, documents |
 
 ## Environment variables
 
@@ -41,7 +41,7 @@ Every seeded user has the password `Password123!`.
 | `S3_REGION` | with bucket | `auto` for R2, the bucket's region for AWS (e.g. `me-central-1`) |
 | `S3_ACCESS_KEY_ID`, `S3_SECRET_ACCESS_KEY` | with bucket | A key limited to read/write on that bucket |
 
-Company name, TRN, address, phone, email, logo, VAT rate and invoice terms are not env vars: an admin edits them under **Settings**.
+Company name, CR / tax number, address, phone, email, logo, VAT rate and invoice terms are not env vars: an admin edits them under **Settings**.
 
 ## Scripts
 
@@ -80,7 +80,7 @@ Vercel functions have no persistent disk, so uploads must go to a bucket.
 
 4. **Vercel.** Import the Git repository (framework preset: Next.js; the default build command runs `prisma generate && next build`). Under *Settings → Environment Variables* add `DATABASE_URL` (pooled), `AUTH_SECRET`, `S3_BUCKET`, `S3_ENDPOINT`, `S3_REGION=auto`, `S3_ACCESS_KEY_ID`, `S3_SECRET_ACCESS_KEY`. Deploy.
 
-5. **First sign-in.** Sign in with the admin and one-time password, choose a new password, then fill in **Settings** (company details, TRN, logo, VAT rate, invoice terms), add your **Services** and price list, and create **Employees** (each gets a one-time password).
+5. **First sign-in.** Sign in with the admin and one-time password, choose a new password, then fill in **Settings** (company details, CR / tax number, logo, VAT rate — leave at 0 — and invoice terms), add your **Services** and price list, and create **Employees** (each gets a one-time password).
 
 **Later releases** that add a migration: run step 2's `prisma migrate deploy` (direct connection) before the new version goes live.
 
@@ -88,4 +88,4 @@ Vercel functions have no persistent disk, so uploads must go to a bucket.
 
 ## Tests
 
-`npm test` covers money and VAT maths, invoice status, document numbering, permissions and navigation, validation (UAE phone, Emirates ID, TRN, dates), report exports and S3 request signing.
+`npm test` covers money and VAT maths, invoice status, document numbering, permissions and navigation, validation (Qatar phone, QID, tax number, dates), report exports and S3 request signing.

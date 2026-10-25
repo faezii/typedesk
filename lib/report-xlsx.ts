@@ -1,7 +1,7 @@
 import * as XLSX from "xlsx";
 import type { ReportResult } from "./reports";
 
-/** One-sheet workbook: title + period rows, a header, data rows and totals, with AED number formats. */
+/** One-sheet workbook: title + period rows, a header, data rows and totals, with QAR number formats. */
 export function toXlsx(report: ReportResult, title: string, period: string): Buffer {
   const header = report.columns.map((c) => c.label);
   const body = [...report.rows, ...(report.totals ? [report.totals] : [])].map((row) => report.columns.map((c) => row[c.key] ?? null));

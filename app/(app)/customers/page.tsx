@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { can } from "@/lib/auth/permissions";
 import { requirePagePermission } from "@/lib/auth/session";
-import { formatAED } from "@/lib/format";
+import { formatMoney } from "@/lib/format";
 import { PAGE_SIZE, listCustomers, type CustomerListParams } from "@/server/queries/customers";
 
 export const metadata = { title: "Customers" };
@@ -70,7 +70,7 @@ export default async function CustomersPage({ searchParams }: { searchParams: Pr
               <TableRow>
                 <TableHead className="pl-4">Customer</TableHead>
                 <TableHead>Phone</TableHead>
-                <TableHead>Emirates ID</TableHead>
+                <TableHead>QID</TableHead>
                 <TableHead>Passport</TableHead>
                 <TableHead className="text-right">Outstanding</TableHead>
                 <TableHead className="w-8" />
@@ -95,10 +95,10 @@ export default async function CustomersPage({ searchParams }: { searchParams: Pr
                   </TableCell>
                   <TableCell className="text-sm whitespace-nowrap tabular-nums">{c.phone}</TableCell>
                   <TableCell>
-                    {c.emiratesId ? (
+                    {c.nationalId ? (
                       <div className="space-y-1">
-                        <div className="font-mono text-xs">{c.emiratesId}</div>
-                        <ExpiryBadge date={c.emiratesIdExpiry} />
+                        <div className="font-mono text-xs">{c.nationalId}</div>
+                        <ExpiryBadge date={c.nationalIdExpiry} />
                       </div>
                     ) : (
                       <span className="text-muted-foreground text-xs">—</span>
@@ -118,7 +118,7 @@ export default async function CustomersPage({ searchParams }: { searchParams: Pr
                     {c.outstanding.isZero() ? (
                       <span className="text-muted-foreground">—</span>
                     ) : (
-                      <span className="font-medium">{formatAED(c.outstanding)}</span>
+                      <span className="font-medium">{formatMoney(c.outstanding)}</span>
                     )}
                   </TableCell>
                   <TableCell>

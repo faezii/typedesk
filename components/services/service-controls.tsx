@@ -120,7 +120,7 @@ export function ServiceDialog({ serviceId, defaultValues, children }: { serviceI
                 name="defaultPrice"
                 render={({ field }) => (
                   <FormItem className="sm:col-span-2">
-                    <FormLabel>Default rate (AED, excl. VAT)</FormLabel>
+                    <FormLabel>Default rate (QAR, excl. VAT)</FormLabel>
                     <FormControl>
                       <Input inputMode="decimal" {...field} />
                     </FormControl>

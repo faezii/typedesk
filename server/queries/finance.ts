@@ -1,7 +1,7 @@
 import "server-only";
 import { Prisma, type ExpenseCategory, type PaymentMethod } from "@prisma/client";
 import { addMonths, startOfQuarter, startOfYear } from "date-fns";
-import { TIMEZONE, dubai, endOfTodayDubai, formatDubai, monthsAgoDubai, parseDateInput, startOfMonthDubai, startOfTodayDubai } from "@/lib/dates";
+import { TIMEZONE, zone, endOfTodayLocal, formatLocal, monthsAgoLocal, parseDateInput, startOfMonthLocal, startOfTodayLocal } from "@/lib/dates";
 import { prisma } from "@/lib/prisma";
 
 const zero = new Prisma.Decimal(0);
@@ -15,7 +15,7 @@ export type PaymentParams = { method?: string; from?: string; to?: string; q?: s
 function rangeWhere(from?: string, to?: string) {
   const f = parseDateInput(from);
   const t = parseDateInput(to);
-  return f || t ? { ...(f ? { gte: f } : {}), ...(t ? { lte: endOfTodayDubai(t) } : {}) } : undefined;
+  return f || t ? { ...(f ? { gte: f } : {}), ...(t ? { lte: endOfTodayLocal(t) } : {}) } : undefined;
 }
 
 export async function listPayments(p: PaymentParams) {
@@ -49,10 +49,10 @@ export async function listPayments(p: PaymentParams) {
   return { rows, total, page, byMethod: Object.fromEntries(byMethod.map((m) => [m.method, { amount: m._sum.amount ?? zero, count: m._count }])) as Partial<Record<PaymentMethod, { amount: Prisma.Decimal; count: number }>> };
 }
 
-/** One day's collections (Dubai day) broken down by method and by staff member. */
+/** One day's collections (Doha day) broken down by method and by staff member. */
 export async function dailyCollection(day?: string) {
-  const start = parseDateInput(day) ?? startOfTodayDubai();
-  const where: Prisma.PaymentWhereInput = { invoice: { deletedAt: null }, date: { gte: start, lte: endOfTodayDubai(start) } };
+  const start = parseDateInput(day) ?? startOfTodayLocal();
+  const where: Prisma.PaymentWhereInput = { invoice: { deletedAt: null }, date: { gte: start, lte: endOfTodayLocal(start) } };
   const [byMethod, byStaff, total] = await Promise.all([
     prisma.payment.groupBy({ by: ["method"], where, _sum: { amount: true }, _count: true }),
     prisma.payment.groupBy({ by: ["receivedById", "method"], where, _sum: { amount: true } }),
@@ -69,8 +69,8 @@ export async function dailyCollection(day?: string) {
     staff.set(key, row);
   }
   return {
-    day: formatDubai(start, "yyyy-MM-dd"),
-    label: formatDubai(start, "EEEE d MMMM yyyy"),
+    day: formatLocal(start, "yyyy-MM-dd"),
+    label: formatLocal(start, "EEEE d MMMM yyyy"),
     total: total._sum.amount ?? zero,
     count: total._count,
     byMethod: Object.fromEntries(byMethod.map((m) => [m.method, { amount: m._sum.amount ?? zero, count: m._count }])) as Partial<Record<PaymentMethod, { amount: Prisma.Decimal; count: number }>>,
@@ -112,16 +112,16 @@ export async function listExpenses(p: ExpenseParams) {
   };
 }
 
-/** Last 6 Dubai months of expense totals (net of VAT) — chart data. */
+/** Last 6 Doha months of expense totals (net of VAT) — chart data. */
 export async function expenseTrend() {
-  const from = monthsAgoDubai(5);
+  const from = monthsAgoLocal(5);
   const rows = await prisma.$queryRaw<{ m: string; total: number }[]>(Prisma.sql`
     SELECT to_char(date_trunc('month', ("date" AT TIME ZONE 'UTC') AT TIME ZONE ${TIMEZONE}), 'YYYY-MM') AS m, SUM(amount)::float8 AS total
     FROM "Expense" WHERE "date" >= ${from} GROUP BY 1`);
   const byMonth = new Map(rows.map((r) => [r.m, r.total]));
   return Array.from({ length: 6 }, (_, i) => {
-    const d = monthsAgoDubai(5 - i);
-    return { month: formatDubai(d, "yyyy-MM"), label: formatDubai(d, "MMM"), value: byMonth.get(formatDubai(d, "yyyy-MM")) ?? 0 };
+    const d = monthsAgoLocal(5 - i);
+    return { month: formatLocal(d, "yyyy-MM"), label: formatLocal(d, "MMM"), value: byMonth.get(formatLocal(d, "yyyy-MM")) ?? 0 };
   });
 }
 
@@ -132,23 +132,23 @@ export type Basis = "cash" | "accrual";
 
 export function resolveRange(p: PnlParams) {
   const now = new Date();
-  const end = endOfTodayDubai();
+  const end = endOfTodayLocal();
   switch (p.range) {
     case "last-month": {
-      const start = monthsAgoDubai(1);
-      return { key: "last-month", start, end: plain(new Date(startOfMonthDubai().getTime() - 1)) };
+      const start = monthsAgoLocal(1);
+      return { key: "last-month", start, end: plain(new Date(startOfMonthLocal().getTime() - 1)) };
     }
     case "quarter":
-      return { key: "quarter", start: plain(startOfQuarter(now, { in: dubai })), end };
+      return { key: "quarter", start: plain(startOfQuarter(now, { in: zone })), end };
     case "ytd":
-      return { key: "ytd", start: plain(startOfYear(now, { in: dubai })), end };
+      return { key: "ytd", start: plain(startOfYear(now, { in: zone })), end };
     case "custom": {
-      const start = parseDateInput(p.from) ?? startOfMonthDubai();
+      const start = parseDateInput(p.from) ?? startOfMonthLocal();
       const to = parseDateInput(p.to);
-      return { key: "custom", start, end: to ? endOfTodayDubai(to) : end };
+      return { key: "custom", start, end: to ? endOfTodayLocal(to) : end };
     }
     default:
-      return { key: "month", start: startOfMonthDubai(), end };
+      return { key: "month", start: startOfMonthLocal(), end };
   }
 }
 
@@ -194,15 +194,15 @@ export async function profitAndLoss(p: PnlParams) {
   };
 }
 
-/** 12 Dubai months of income / expenses / net (numbers for charting only). */
+/** 12 Doha months of income / expenses / net (numbers for charting only). */
 export async function pnlTrend(basis: Basis) {
-  const months = Array.from({ length: 12 }, (_, i) => monthsAgoDubai(11 - i));
+  const months = Array.from({ length: 12 }, (_, i) => monthsAgoLocal(11 - i));
   return Promise.all(
     months.map(async (start) => {
-      const end = plain(new Date(addMonths(start, 1, { in: dubai }).getTime() - 1));
+      const end = plain(new Date(addMonths(start, 1, { in: zone }).getTime() - 1));
       const [{ income }, exp] = await Promise.all([incomeBetween(start, end, basis), prisma.expense.aggregate({ where: { date: { gte: start, lte: end } }, _sum: { amount: true } })]);
       const expenses = exp._sum.amount ?? zero;
-      return { label: formatDubai(start, "MMM yy"), income: income.toNumber(), expenses: expenses.toNumber(), net: income.minus(expenses).toNumber() };
+      return { label: formatLocal(start, "MMM yy"), income: income.toNumber(), expenses: expenses.toNumber(), net: income.minus(expenses).toNumber() };
     }),
   );
 }

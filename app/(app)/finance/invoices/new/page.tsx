@@ -2,7 +2,7 @@ import { addDays } from "date-fns";
 import { DocumentBuilder } from "@/components/finance/document-builder";
 import { PageHeader } from "@/components/shared/page-header";
 import { requirePagePermission } from "@/lib/auth/session";
-import { dubai, toDateInput } from "@/lib/dates";
+import { zone, toDateInput } from "@/lib/dates";
 import { prisma } from "@/lib/prisma";
 import { DEFAULT_PAYMENT_DAYS, getSettings } from "@/lib/settings";
 import { serviceOptions, uninvoicedWorkOrders } from "@/server/queries/invoices";
@@ -23,11 +23,11 @@ export default async function NewDocumentPage({ searchParams }: { searchParams: 
   const woLine = wo && workOrderId ? (await uninvoicedWorkOrders(wo.customerId)).find((w) => w.id === workOrderId) : null;
 
   const today = new Date();
-  const due = addDays(today, kind === "invoice" ? DEFAULT_PAYMENT_DAYS : 30, { in: dubai });
+  const due = addDays(today, kind === "invoice" ? DEFAULT_PAYMENT_DAYS : 30, { in: zone });
 
   return (
     <>
-      <PageHeader title={kind === "invoice" ? "New tax invoice" : "New quotation"} description="Totals, VAT and the document number are assigned when you save." />
+      <PageHeader title={kind === "invoice" ? "New invoice" : "New quotation"} description="Totals, VAT and the document number are assigned when you save." />
       <DocumentBuilder
         kind={kind}
         services={services}

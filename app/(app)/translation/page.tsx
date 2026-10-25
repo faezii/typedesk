@@ -23,9 +23,9 @@ export default async function TranslationPage() {
       <PageHeader title="Translation" description="Translation orders in progress — pages, words, language pairs and deadlines." />
 
       <div className="mb-4 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <StatCard label="Total translations" value={counters.total.toLocaleString("en-AE")} sub="All translation orders" icon={Languages} />
-        <StatCard label="Active pages" value={counters.activePages.toLocaleString("en-AE")} sub={`Across ${counters.activeOrders} open orders`} icon={FileText} />
-        <StatCard label="Words this month" value={counters.wordsThisMonth.toLocaleString("en-AE")} sub="Orders received this month" icon={Type} />
+        <StatCard label="Total translations" value={counters.total.toLocaleString("en-QA")} sub="All translation orders" icon={Languages} />
+        <StatCard label="Active pages" value={counters.activePages.toLocaleString("en-QA")} sub={`Across ${counters.activeOrders} open orders`} icon={FileText} />
+        <StatCard label="Words this month" value={counters.wordsThisMonth.toLocaleString("en-QA")} sub="Orders received this month" icon={Type} />
         <StatCard label="Due this week" value={counters.dueThisWeek} sub="Not delivered, due within 7 days (incl. overdue)" icon={CalendarClock} />
       </div>
 
@@ -57,7 +57,7 @@ export default async function TranslationPage() {
                   <div className="flex justify-between gap-2">
                     <span>{p.pair}</span>
                     <span className="text-muted-foreground tabular-nums">
-                      {p.orders} · {p.pages.toLocaleString("en-AE")} pp
+                      {p.orders} · {p.pages.toLocaleString("en-QA")} pp
                     </span>
                   </div>
                   <div className="bg-muted mt-1 h-1.5 rounded-full" aria-hidden>
@@ -105,7 +105,7 @@ export default async function TranslationPage() {
                     {w.translation!.isCertified && <BadgeCheck className="text-primary ml-1 inline size-3.5" aria-label="Certified" />}
                   </TableCell>
                   <TableCell className="text-right tabular-nums">{w.translation!.pageCount}</TableCell>
-                  <TableCell className="text-right tabular-nums">{w.translation!.wordCount.toLocaleString("en-AE")}</TableCell>
+                  <TableCell className="text-right tabular-nums">{w.translation!.wordCount.toLocaleString("en-QA")}</TableCell>
                   <TableCell>
                     <div className="flex flex-wrap gap-1">
                       <WorkOrderStatusBadge status={w.status} revision={w.hasOpenRevision} />

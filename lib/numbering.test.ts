@@ -25,10 +25,10 @@ describe("nextNumber", () => {
     expect(await nextNumber(tx, "WO", now)).toBe("WO-2026-0001");
   });
 
-  it("starts a new sequence on 1 January in Dubai, not UTC", async () => {
+  it("starts a new sequence on 1 January in Doha, not UTC", async () => {
     const { tx, rows } = fakeTx();
-    await nextNumber(tx, "QT", new Date("2026-12-31T19:59:00Z")); // 23:59 Dubai
-    expect(await nextNumber(tx, "QT", new Date("2026-12-31T20:01:00Z"))).toBe("QT-2027-0001"); // 00:01 Dubai
+    await nextNumber(tx, "QT", new Date("2026-12-31T20:59:00Z")); // 23:59 Doha
+    expect(await nextNumber(tx, "QT", new Date("2026-12-31T21:01:00Z"))).toBe("QT-2027-0001"); // 00:01 Doha
     expect([...rows.keys()]).toEqual(["QT-2026", "QT-2027"]);
   });
 

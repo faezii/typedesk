@@ -61,11 +61,11 @@ export async function uploadDocument(formData: FormData): Promise<ActionResult<{
     const created = await tx.document.create({
       data: { name, category, ...stored, customerId, workOrderId, expiryDate: expiry, uploadedById: user.id },
     });
-    // A newly uploaded passport / Emirates ID becomes the customer's current ID expiry.
-    if (customerId && expiry && (category === "PASSPORT" || category === "EMIRATES_ID")) {
+    // A newly uploaded passport / QID becomes the customer's current ID expiry.
+    if (customerId && expiry && (category === "PASSPORT" || category === "NATIONAL_ID")) {
       const customer = await tx.customer.update({
         where: { id: customerId },
-        data: category === "PASSPORT" ? { passportExpiry: expiry } : { emiratesIdExpiry: expiry },
+        data: category === "PASSPORT" ? { passportExpiry: expiry } : { nationalIdExpiry: expiry },
       });
       await syncIdExpiryFollowUps(tx, customer, user.id);
     }

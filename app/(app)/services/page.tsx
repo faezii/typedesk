@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { can } from "@/lib/auth/permissions";
 import { requirePagePermission } from "@/lib/auth/session";
-import { formatAED } from "@/lib/format";
+import { formatMoney } from "@/lib/format";
 import { SERVICE_CATEGORY_LABEL, SERVICE_UNIT_LABEL } from "@/lib/labels";
 import { cn } from "@/lib/utils";
 import { listServices } from "@/server/queries/services";
@@ -32,7 +32,7 @@ export default async function ServicesPage() {
     <>
       <PageHeader
         title="Services"
-        description="Service catalogue and default AED rates (excl. VAT). Inactive services can't be picked for new work orders."
+        description="Service catalogue and default QAR rates (excl. VAT). Inactive services can't be picked for new work orders."
         actions={
           canEdit && (
             <ServiceDialog>
@@ -73,7 +73,7 @@ export default async function ServicesPage() {
                   <ToneBadge tone={CATEGORY_TONE[s.category]}>{SERVICE_CATEGORY_LABEL[s.category]}</ToneBadge>
                 </TableCell>
                 <TableCell className="text-right whitespace-nowrap tabular-nums">
-                  {formatAED(s.defaultPrice)}
+                  {formatMoney(s.defaultPrice)}
                   <span className="text-muted-foreground text-xs"> / {SERVICE_UNIT_LABEL[s.unit]}</span>
                 </TableCell>
                 <TableCell className="text-right tabular-nums">{s.orders}</TableCell>

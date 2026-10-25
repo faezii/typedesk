@@ -7,7 +7,7 @@ export function jobMargin(orderAmount: Prisma.Decimal.Value, cost: Prisma.Decima
   return { margin, pct: amount.isZero() ? null : margin.div(amount).times(100).toDecimalPlaces(1).toNumber() };
 }
 
-/** quantity × unit price, rounded half-up to fils. Server-side only (exact decimal math). */
+/** quantity × unit price, rounded half-up to 2 decimals. Server-side only (exact decimal math). */
 export function lineTotal(quantity: Prisma.Decimal.Value, unitPrice: Prisma.Decimal.Value) {
   return new Prisma.Decimal(quantity).times(unitPrice).toDecimalPlaces(2, Prisma.Decimal.ROUND_HALF_UP);
 }

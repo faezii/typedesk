@@ -5,7 +5,7 @@ import { DueWorkOrders, FollowUps, Kpis, RecentPayments, Revenue, Status } from 
 import { StatCardSkeleton } from "@/components/dashboard/stat-card";
 import { can } from "@/lib/auth/permissions";
 import { requirePagePermission } from "@/lib/auth/session";
-import { formatDubai, greetingFor } from "@/lib/dates";
+import { formatLocal, greetingFor } from "@/lib/dates";
 
 export const metadata = { title: "Dashboard" };
 
@@ -43,7 +43,7 @@ export default async function DashboardPage() {
         <h1 className="text-2xl font-semibold tracking-tight">
           {greetingFor(now)}, {user.name.split(" ")[0]}
         </h1>
-        <p className="text-muted-foreground mt-1 text-sm">{formatDubai(now, "EEEE, d MMMM yyyy")} · Dubai</p>
+        <p className="text-muted-foreground mt-1 text-sm">{formatLocal(now, "EEEE, d MMMM yyyy")} · Doha</p>
       </section>
 
       <div className={finance ? "grid gap-4 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-5" : "grid gap-4 sm:grid-cols-3"}>
@@ -57,7 +57,7 @@ export default async function DashboardPage() {
           <div className="grid gap-4 xl:grid-cols-3">
             <Panel
               title="Revenue"
-              description="Invoiced vs collected, last 6 months (AED, incl. VAT)"
+              description="Invoiced vs collected, last 6 months (QAR, incl. VAT)"
               href="/finance/payments"
               className="xl:col-span-2"
             >

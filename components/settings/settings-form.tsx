@@ -17,9 +17,9 @@ import { saveLogo, saveSettings } from "@/server/actions/settings";
 
 const TEXT_FIELDS = [
   { name: "companyName", label: "Company name", span: true },
-  { name: "companyTrn", label: "TRN", placeholder: "15 digits", inputMode: "numeric" },
-  { name: "companyPhone", label: "Phone", placeholder: "+971 4 123 4567", inputMode: "tel" },
-  { name: "companyEmail", label: "Email", placeholder: "info@example.ae", inputMode: "email", span: true },
+  { name: "companyTaxNo", label: "CR / tax no.", placeholder: "e.g. CR 123456" },
+  { name: "companyPhone", label: "Phone", placeholder: "+974 4412 3456", inputMode: "tel" },
+  { name: "companyEmail", label: "Email", placeholder: "info@example.qa", inputMode: "email", span: true },
 ] as const;
 
 export function SettingsForm({ defaultValues }: { defaultValues: SettingsFormValues }) {
@@ -35,7 +35,7 @@ export function SettingsForm({ defaultValues }: { defaultValues: SettingsFormVal
         return void toast.error(res.error);
       }
       toast.success("Settings saved");
-      form.reset(data); // show the normalised TRN / phone
+      form.reset(data); // show the normalised tax no. / phone
       router.refresh();
     });
   }
@@ -91,7 +91,7 @@ export function SettingsForm({ defaultValues }: { defaultValues: SettingsFormVal
                   <FormControl>
                     <Input inputMode="decimal" {...field} />
                   </FormControl>
-                  <FormDescription>UAE standard rate is 5%. Applies to new invoices and quotes only.</FormDescription>
+                  <FormDescription>Qatar has no VAT today, so leave this at 0. If VAT is introduced, set the rate here; it applies to new invoices and quotes only.</FormDescription>
                   <FormMessage />
                 </FormItem>
               )}

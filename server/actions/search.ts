@@ -4,6 +4,7 @@ import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { can } from "@/lib/auth/permissions";
 import { getCurrentUser } from "@/lib/auth/session";
+import { normalizePhone } from "@/lib/validation/country";
 
 export type SearchResults = {
   customers: { id: string; name: string; subtitle: string }[];
@@ -14,13 +15,8 @@ export type SearchResults = {
 const EMPTY: SearchResults = { customers: [], workOrders: [], invoices: [] };
 const querySchema = z.string().trim().min(2).max(80);
 
-/** Phones are stored as "+971 50 123 4567"; map digit input like "0501234567" or "971501234567" onto that. */
-function formatUaeMobile(q: string) {
-  if (!/^[\d\s+()-]+$/.test(q)) return null;
-  const digits = q.replace(/\D/g, "").replace(/^(00971|971|0)/, "");
-  if (digits.length !== 9) return null;
-  return `${digits.slice(0, 2)} ${digits.slice(2, 5)} ${digits.slice(5)}`;
-}
+/** Phones are stored as "+974 5512 3456"; map digit input like "55123456" or "+97455123456" onto that. */
+const phoneQuery = (q: string) => (/^[\d\s+()-]+$/.test(q) ? normalizePhone(q) : null);
 
 export async function globalSearch(rawQuery: string): Promise<SearchResults> {
   const user = await getCurrentUser();
@@ -29,7 +25,7 @@ export async function globalSearch(rawQuery: string): Promise<SearchResults> {
   if (!parsed.success) return EMPTY;
   const q = parsed.data;
   const contains = { contains: q, mode: "insensitive" as const };
-  const phone = formatUaeMobile(q);
+  const phone = phoneQuery(q);
 
   const [customers, workOrders, invoices] = await Promise.all([
     can(user.role, "customers:view")
@@ -41,7 +37,7 @@ export async function globalSearch(rawQuery: string): Promise<SearchResults> {
               { companyName: contains },
               { email: contains },
               { phone: contains },
-              { emiratesId: contains },
+              { nationalId: contains },
               { passportNo: contains },
               ...(phone ? [{ phone: { contains: phone } }] : []),
             ],
@@ -88,7 +84,7 @@ export async function globalSearch(rawQuery: string): Promise<SearchResults> {
       invoiceNo: i.invoiceNo,
       status: i.status,
       subtitle: i.customer.name,
-      total: `AED ${Number(i.totalAmount).toLocaleString("en-AE", { minimumFractionDigits: 2 })}`,
+      total: `QAR ${Number(i.totalAmount).toLocaleString("en-QA", { minimumFractionDigits: 2 })}`,
     })),
   };
 }

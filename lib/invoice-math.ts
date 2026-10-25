@@ -2,16 +2,16 @@ import { Prisma, type InvoiceStatus } from "@prisma/client";
 
 type D = Prisma.Decimal.Value;
 const dec = (v: D) => new Prisma.Decimal(v);
-const fils = (v: Prisma.Decimal) => v.toDecimalPlaces(2, Prisma.Decimal.ROUND_HALF_UP);
+const round2 = (v: Prisma.Decimal) => v.toDecimalPlaces(2, Prisma.Decimal.ROUND_HALF_UP);
 
 /**
- * Invoice / quotation totals. Each line is rounded to fils, VAT is charged on the subtotal
- * (UAE FTA allows invoice-level VAT) and rounded half-up. Server-side only.
+ * Invoice / quotation totals. Each line is rounded to 2 decimals, VAT is charged on the subtotal
+ * (one VAT amount per invoice) and rounded half-up. Server-side only.
  */
 export function computeTotals<L extends { quantity: D; unitPrice: D }>(lines: L[], vatRate: D) {
-  const priced = lines.map((l) => ({ ...l, lineTotal: fils(dec(l.quantity).times(l.unitPrice)) }));
+  const priced = lines.map((l) => ({ ...l, lineTotal: round2(dec(l.quantity).times(l.unitPrice)) }));
   const subtotal = priced.reduce((s, l) => s.plus(l.lineTotal), dec(0));
-  const vatAmount = fils(subtotal.times(vatRate));
+  const vatAmount = round2(subtotal.times(vatRate));
   return { lines: priced, subtotal, vatAmount, totalAmount: subtotal.plus(vatAmount) };
 }
 
@@ -44,10 +44,10 @@ function integerWords(n: number): string {
   return parts.join(" ");
 }
 
-/** 1250.25 → "UAE Dirhams One Thousand Two Hundred and Fifty and Fils Twenty-Five Only" */
+/** 1250.25 → "Qatari Riyals One Thousand Two Hundred and Fifty and Dirhams Twenty-Five Only" */
 export function amountInWords(amount: D): string {
-  const v = fils(dec(amount));
-  const dirhams = v.floor().toNumber();
+  const v = round2(dec(amount));
+  const riyals = v.floor().toNumber();
   const f = v.minus(v.floor()).times(100).round().toNumber();
-  return `UAE Dirhams ${integerWords(dirhams)}${f ? ` and Fils ${integerWords(f)}` : ""} Only`;
+  return `Qatari Riyals ${integerWords(riyals)}${f ? ` and Dirhams ${integerWords(f)}` : ""} Only`;
 }

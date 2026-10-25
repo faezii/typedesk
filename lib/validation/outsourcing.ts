@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { parseDateInput } from "../dates";
-import { normalizeUaePhone } from "./uae";
+import { normalizePhone } from "./country";
 import { DECIMAL_RE } from "./work-order";
 
 const optionalText = (max: number) =>
@@ -21,8 +21,8 @@ export const vendorSchema = z.object({
     .transform((v, ctx) => {
       if (!v) return null;
       // Freelancers are often abroad, so accept international numbers as typed.
-      const uae = normalizeUaePhone(v);
-      if (uae) return uae;
+      const local = normalizePhone(v);
+      if (local) return local;
       if (!/^\+?[\d\s()-]{7,20}$/.test(v)) ctx.addIssue({ code: "custom", message: "Enter a valid phone number" });
       return v;
     }),

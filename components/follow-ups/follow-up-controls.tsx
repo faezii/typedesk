@@ -68,7 +68,7 @@ export function FollowUpDialog({
       <DialogContent className="sm:max-w-lg">
         <DialogHeader>
           <DialogTitle>{followUpId ? "Edit follow-up" : "New follow-up"}</DialogTitle>
-          <DialogDescription>Passport and Emirates ID renewals and overdue-invoice reminders are scheduled automatically.</DialogDescription>
+          <DialogDescription>Passport and QID renewals and overdue-invoice reminders are scheduled automatically.</DialogDescription>
         </DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4" noValidate>

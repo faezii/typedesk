@@ -2,7 +2,7 @@ import "server-only";
 import type { FollowUpType, Prisma } from "@prisma/client";
 import { addDays, addMonths, endOfMonth, endOfWeek, startOfMonth, startOfWeek } from "date-fns";
 import { TZDate } from "@date-fns/tz";
-import { TIMEZONE, dubai, formatDubai } from "@/lib/dates";
+import { TIMEZONE, zone, formatLocal } from "@/lib/dates";
 import { FOLLOW_UP_GROUPS, followUpGroup, type FollowUpGroup } from "@/lib/follow-ups";
 import { FOLLOW_UP_TYPE_LABEL } from "@/lib/labels";
 import { prisma } from "@/lib/prisma";
@@ -48,13 +48,13 @@ export async function listFollowUps(p: FollowUpParams) {
   return { groups: FOLLOW_UP_GROUPS.map((g) => ({ ...g, items: buckets.get(g.key)! })), done: [] };
 }
 
-/** Month grid (Monday-first, Dubai days) with every follow-up placed on its day. */
+/** Month grid (Monday-first, Doha days) with every follow-up placed on its day. */
 export async function followUpCalendar(p: FollowUpParams) {
   const m = /^(\d{4})-(\d{2})$/.exec(p.month ?? "");
   const anchor = m ? new TZDate(+m[1], +m[2] - 1, 1, TIMEZONE) : new TZDate(Date.now(), TIMEZONE);
-  const monthStart = startOfMonth(anchor, { in: dubai });
-  const gridStart = startOfWeek(monthStart, { weekStartsOn: 1, in: dubai });
-  const gridEnd = endOfWeek(endOfMonth(monthStart, { in: dubai }), { weekStartsOn: 1, in: dubai });
+  const monthStart = startOfMonth(anchor, { in: zone });
+  const gridStart = startOfWeek(monthStart, { weekStartsOn: 1, in: zone });
+  const gridEnd = endOfWeek(endOfMonth(monthStart, { in: zone }), { weekStartsOn: 1, in: zone });
 
   const items = await prisma.followUp.findMany({
     where: { ...baseWhere(p), deadline: { gte: new Date(gridStart.getTime()), lte: new Date(gridEnd.getTime()) } },
@@ -63,20 +63,20 @@ export async function followUpCalendar(p: FollowUpParams) {
   });
   const byDay = new Map<string, FollowUpItem[]>();
   for (const f of items) {
-    const key = formatDubai(f.deadline, "yyyy-MM-dd");
+    const key = formatLocal(f.deadline, "yyyy-MM-dd");
     byDay.set(key, [...(byDay.get(key) ?? []), f]);
   }
 
   const days = [];
-  for (let d = gridStart; d <= gridEnd; d = addDays(d, 1, { in: dubai })) {
-    const key = formatDubai(d, "yyyy-MM-dd");
-    days.push({ key, day: Number(formatDubai(d, "d")), inMonth: formatDubai(d, "MM") === formatDubai(monthStart, "MM"), items: byDay.get(key) ?? [] });
+  for (let d = gridStart; d <= gridEnd; d = addDays(d, 1, { in: zone })) {
+    const key = formatLocal(d, "yyyy-MM-dd");
+    days.push({ key, day: Number(formatLocal(d, "d")), inMonth: formatLocal(d, "MM") === formatLocal(monthStart, "MM"), items: byDay.get(key) ?? [] });
   }
   return {
     days,
-    label: formatDubai(monthStart, "MMMM yyyy"),
-    prev: formatDubai(addMonths(monthStart, -1, { in: dubai }), "yyyy-MM"),
-    next: formatDubai(addMonths(monthStart, 1, { in: dubai }), "yyyy-MM"),
-    today: formatDubai(new Date(), "yyyy-MM-dd"),
+    label: formatLocal(monthStart, "MMMM yyyy"),
+    prev: formatLocal(addMonths(monthStart, -1, { in: zone }), "yyyy-MM"),
+    next: formatLocal(addMonths(monthStart, 1, { in: zone }), "yyyy-MM"),
+    today: formatLocal(new Date(), "yyyy-MM-dd"),
   };
 }

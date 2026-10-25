@@ -1,6 +1,6 @@
 import "server-only";
 import { Prisma, type QaStatus, type SettlementStatus } from "@prisma/client";
-import { startOfMonthDubai } from "@/lib/dates";
+import { startOfMonthLocal } from "@/lib/dates";
 import { jobMargin } from "@/lib/money";
 import { prisma } from "@/lib/prisma";
 
@@ -49,7 +49,7 @@ export async function outsourcingSummary() {
     prisma.outsourcedWork.count({ where: { receivedAt: null, workOrder: { deletedAt: null } } }),
     prisma.outsourcedWork.count({ where: { receivedAt: { not: null }, qaStatus: "PENDING", workOrder: { deletedAt: null } } }),
     prisma.outsourcedWork.aggregate({ where: { paymentStatus: "UNPAID", workOrder: { deletedAt: null } }, _sum: { agreementCost: true }, _count: true }),
-    prisma.expense.aggregate({ where: { outsourcedWorkId: { not: null }, date: { gte: startOfMonthDubai() } }, _sum: { amount: true } }),
+    prisma.expense.aggregate({ where: { outsourcedWorkId: { not: null }, date: { gte: startOfMonthLocal() } }, _sum: { amount: true } }),
   ]);
   return {
     awaitingDelivery,

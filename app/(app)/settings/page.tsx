@@ -16,7 +16,7 @@ export default async function SettingsPage() {
         <SettingsForm
           defaultValues={{
             companyName: s.companyName,
-            companyTrn: s.companyTrn,
+            companyTaxNo: s.companyTaxNo,
             companyPhone: s.companyPhone,
             companyEmail: s.companyEmail,
             companyAddress: s.companyAddress,

@@ -15,7 +15,7 @@ import { WorkOrderSheet } from "@/components/work-orders/work-order-sheet";
 import { can } from "@/lib/auth/permissions";
 import { requirePagePermission } from "@/lib/auth/session";
 import { toDateTimeInput } from "@/lib/dates";
-import { formatAED, formatDate, formatDateTime } from "@/lib/format";
+import { formatMoney, formatDate, formatDateTime } from "@/lib/format";
 import { INVOICE_STATUS_LABEL, SERVICE_UNIT_LABEL } from "@/lib/labels";
 import { getWorkOrder, workOrderFormOptions } from "@/server/queries/work-orders";
 import type { InvoiceStatus } from "@prisma/client";
@@ -111,10 +111,10 @@ export default async function WorkOrderPage({ params }: { params: Promise<{ id: 
 
         <dl className="mt-5 grid gap-4 border-t pt-4 text-sm sm:grid-cols-2 lg:grid-cols-4">
           <Item label="Amount (excl. VAT)">
-            <span className="font-medium tabular-nums">{formatAED(wo.totalAmount)}</span>
+            <span className="font-medium tabular-nums">{formatMoney(wo.totalAmount)}</span>
             <div className="text-muted-foreground text-xs">
               {wo.quantity.toString()} {SERVICE_UNIT_LABEL[wo.service.unit]}
-              {wo.quantity.eq(1) ? "" : "s"} × {formatAED(wo.unitPrice)}
+              {wo.quantity.eq(1) ? "" : "s"} × {formatMoney(wo.unitPrice)}
             </div>
           </Item>
           <Item label="Deadline">
@@ -129,7 +129,7 @@ export default async function WorkOrderPage({ params }: { params: Promise<{ id: 
                 {wo.translation.sourceLang} → {wo.translation.targetLang}
               </Item>
               <Item label="Size">
-                {wo.translation.pageCount} pages · {wo.translation.wordCount.toLocaleString("en-AE")} words
+                {wo.translation.pageCount} pages · {wo.translation.wordCount.toLocaleString("en-QA")} words
               </Item>
               <Item label="Certification">{wo.translation.isCertified ? "Certified (MOJ)" : "Not certified"}</Item>
             </>
@@ -246,7 +246,7 @@ export default async function WorkOrderPage({ params }: { params: Promise<{ id: 
                       <div className="text-muted-foreground truncate text-xs">{o.description}</div>
                     </div>
                     <ToneBadge tone={o.qaStatus === "APPROVED" ? "green" : o.qaStatus === "REJECTED" ? "red" : "amber"}>QA {o.qaStatus.toLowerCase()}</ToneBadge>
-                    {finance && <span className="w-24 text-right tabular-nums">{formatAED(o.agreementCost)}</span>}
+                    {finance && <span className="w-24 text-right tabular-nums">{formatMoney(o.agreementCost)}</span>}
                   </li>
                 ))}
               </ul>
@@ -270,7 +270,7 @@ export default async function WorkOrderPage({ params }: { params: Promise<{ id: 
                         <div className="text-muted-foreground text-xs">{formatDate(i.issueDate)}</div>
                       </div>
                       <ToneBadge tone={INVOICE_TONE[i.status]}>{INVOICE_STATUS_LABEL[i.status]}</ToneBadge>
-                      <span className="tabular-nums">{formatAED(i.totalAmount)}</span>
+                      <span className="tabular-nums">{formatMoney(i.totalAmount)}</span>
                     </li>
                   ))}
                 </ul>

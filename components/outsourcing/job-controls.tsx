@@ -48,7 +48,7 @@ export function PaymentButton({ id, paid, amount, vendor }: { id: string; paid: 
         variant="ghost"
         disabled={pending}
         aria-label={`Reverse payment to ${vendor}`}
-        onClick={() => confirm(`Mark as unpaid? The AED ${amount} freelancer expense will be removed.`) && run(() => setPaymentStatus(id, false), "Payment reversed")}
+        onClick={() => confirm(`Mark as unpaid? The QAR ${amount} freelancer expense will be removed.`) && run(() => setPaymentStatus(id, false), "Payment reversed")}
       >
         {pending ? <Loader2 className="animate-spin" /> : <RotateCcw />} Undo
       </Button>
@@ -59,7 +59,7 @@ export function PaymentButton({ id, paid, amount, vendor }: { id: string; paid: 
       size="sm"
       variant="outline"
       disabled={pending}
-      onClick={() => confirm(`Mark AED ${amount} to ${vendor} as paid? A Freelancer expense is booked automatically.`) && run(() => setPaymentStatus(id, true), "Paid — expense booked")}
+      onClick={() => confirm(`Mark QAR ${amount} to ${vendor} as paid? A Freelancer expense is booked automatically.`) && run(() => setPaymentStatus(id, true), "Paid — expense booked")}
     >
       {pending ? <Loader2 className="animate-spin" /> : <Banknote />} Mark paid
     </Button>

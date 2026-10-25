@@ -8,8 +8,8 @@ export const metadata = { title: "Sign in" };
 
 const HIGHLIGHTS = [
   { icon: ClipboardCheck, title: "Every job, every stage", text: "Work orders, translations and revisions tracked from counter to delivery." },
-  { icon: ReceiptText, title: "UAE tax invoicing", text: "AED invoices and quotations with 5% VAT, payments and collections." },
-  { icon: BellRing, title: "Nothing slips", text: "Follow-ups for passport, Emirates ID, visa and license expiries." },
+  { icon: ReceiptText, title: "Invoicing in QAR", text: "Invoices and quotations, payments and collections, with VAT ready when Qatar introduces it." },
+  { icon: BellRing, title: "Nothing slips", text: "Follow-ups for passport, QID, visa and license expiries." },
 ];
 
 export default async function LoginPage({ searchParams }: { searchParams: Promise<{ callbackUrl?: string }> }) {
@@ -69,7 +69,7 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
           </ul>
         </div>
 
-        <div className="text-sidebar-foreground/45 relative text-xs">Dubai · United Arab Emirates</div>
+        <div className="text-sidebar-foreground/45 relative text-xs">Doha · Qatar</div>
       </aside>
 
       {/* Form */}
@@ -88,7 +88,7 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
             <div className="bg-muted/50 text-muted-foreground mt-8 rounded-lg border border-dashed p-3.5 text-xs">
               <div className="text-foreground mb-1.5 font-medium">Development logins</div>
               <div className="font-mono leading-relaxed">
-                admin@ · manager@ · finance@ · typist@ · translator@typedesk.ae
+                admin@ · manager@ · finance@ · typist@ · translator@typedesk.qa
               </div>
               <div className="mt-1">
                 Password: <span className="font-mono">Password123!</span>

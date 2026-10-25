@@ -11,10 +11,10 @@ export const getSettings = cache(async () => {
   const s = Object.fromEntries(rows.map((r) => [r.key, r.value]));
   const vat = Number(s.vatRate);
   return {
-    // Guard against a mistyped setting: fall back to the UAE standard rate.
-    vatRate: new Prisma.Decimal(Number.isFinite(vat) && vat >= 0 && vat < 1 ? s.vatRate! : "0.05"),
+    // Missing or mistyped: no VAT (Qatar has none today).
+    vatRate: new Prisma.Decimal(Number.isFinite(vat) && vat >= 0 && vat < 1 ? s.vatRate! : "0"),
     companyName: s.companyName ?? "TypeDesk",
-    companyTrn: s.companyTrn ?? "",
+    companyTaxNo: s.companyTaxNo ?? "",
     companyAddress: s.companyAddress ?? "",
     companyPhone: s.companyPhone ?? "",
     companyEmail: s.companyEmail ?? "",

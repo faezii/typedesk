@@ -32,7 +32,7 @@ export function LoginForm({ callbackUrl }: { callbackUrl: string }) {
           name="email"
           type="email"
           autoComplete="username"
-          placeholder="name@typedesk.ae"
+          placeholder="name@typedesk.qa"
           defaultValue={state.email}
           required
           autoFocus

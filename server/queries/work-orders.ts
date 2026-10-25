@@ -1,7 +1,7 @@
 import "server-only";
 import { cache } from "react";
 import { Prisma, type Priority, type WorkOrderStatus } from "@prisma/client";
-import { endOfTodayDubai, parseDateInput } from "@/lib/dates";
+import { endOfTodayLocal, parseDateInput } from "@/lib/dates";
 import { prisma } from "@/lib/prisma";
 import { WORK_ORDER_FLOW } from "@/lib/work-orders";
 import { listDocuments } from "./documents";
@@ -33,7 +33,7 @@ function filterWhere(p: WorkOrderListParams, withStatus: boolean): Prisma.WorkOr
     ...(["NORMAL", "HIGH", "URGENT"].includes(p.priority ?? "") ? { priority: p.priority as Priority } : {}),
     ...(p.assignee === "none" ? { assignedToId: null } : p.assignee ? { assignedToId: p.assignee } : {}),
     ...(p.customerId ? { customerId: p.customerId } : {}),
-    ...(from || to ? { createdAt: { ...(from ? { gte: from } : {}), ...(to ? { lte: endOfTodayDubai(to) } : {}) } } : {}),
+    ...(from || to ? { createdAt: { ...(from ? { gte: from } : {}), ...(to ? { lte: endOfTodayLocal(to) } : {}) } } : {}),
     ...(q
       ? {
           OR: [

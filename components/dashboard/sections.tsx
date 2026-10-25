@@ -3,8 +3,8 @@ import { AlertTriangle, ClipboardList, Clock, FileClock, Users, Wallet } from "l
 import { Badge } from "@/components/ui/badge";
 import { can } from "@/lib/auth/permissions";
 import type { CurrentUser } from "@/lib/auth/session";
-import { formatDubai } from "@/lib/dates";
-import { formatAED, formatDate } from "@/lib/format";
+import { formatLocal } from "@/lib/dates";
+import { formatMoney, formatDate } from "@/lib/format";
 import { FOLLOW_UP_TYPE_LABEL, PAYMENT_METHOD_LABEL, PRIORITY_LABEL } from "@/lib/labels";
 import {
   getDueWorkOrders,
@@ -29,7 +29,7 @@ export async function Kpis({ user }: { user: Viewer }) {
 
   return (
     <>
-      <StatCard label="Total customers" value={k.customers.toLocaleString("en-AE")} icon={Users} href="/customers" />
+      <StatCard label="Total customers" value={k.customers.toLocaleString("en-QA")} icon={Users} href="/customers" />
       <StatCard
         label={mine ? "My active orders" : "Active work orders"}
         value={k.active}
@@ -55,7 +55,7 @@ export async function Kpis({ user }: { user: Viewer }) {
       {k.pendingInvoicing && (
         <StatCard
           label="Pending invoicing"
-          value={formatAED(k.pendingInvoicing.amount)}
+          value={formatMoney(k.pendingInvoicing.amount)}
           sub={`${k.pendingInvoicing.count} delivered ${k.pendingInvoicing.count === 1 ? "order" : "orders"} not invoiced (excl. VAT)`}
           icon={FileClock}
           href="/finance/invoices"
@@ -64,7 +64,7 @@ export async function Kpis({ user }: { user: Viewer }) {
       {k.revenue && (
         <StatCard
           label="Revenue this month"
-          value={formatAED(k.revenue.amount)}
+          value={formatMoney(k.revenue.amount)}
           sub={
             change == null ? (
               "Collected · no payments last month to compare"
@@ -125,7 +125,7 @@ export async function DueWorkOrders({ user }: { user: Viewer }) {
                     <span className="font-medium">Today</span>
                   )}
                   <div className="text-muted-foreground">
-                    {overdue ? formatDate(wo.deadline) : formatDubai(wo.deadline!, "h:mm a")}
+                    {overdue ? formatDate(wo.deadline) : formatLocal(wo.deadline!, "h:mm a")}
                   </div>
                 </div>
               </Link>
@@ -141,7 +141,7 @@ export async function DueWorkOrders({ user }: { user: Viewer }) {
 export async function FollowUps({ user }: { user: Viewer }) {
   await syncPaymentReminders();
   const { items, overdue } = await getUpcomingFollowUps(user);
-  const todayKey = formatDubai(new Date(), "yyyy-MM-dd");
+  const todayKey = formatLocal(new Date(), "yyyy-MM-dd");
 
   return (
     <>
@@ -164,7 +164,7 @@ export async function FollowUps({ user }: { user: Viewer }) {
                 </div>
               </div>
               <div className="text-muted-foreground shrink-0 text-xs">
-                {formatDubai(f.deadline, "yyyy-MM-dd") === todayKey ? "Today" : formatDubai(f.deadline, "EEE d MMM")}
+                {formatLocal(f.deadline, "yyyy-MM-dd") === todayKey ? "Today" : formatLocal(f.deadline, "EEE d MMM")}
               </div>
             </li>
           ))}
@@ -189,7 +189,7 @@ export async function RecentPayments() {
             </div>
           </div>
           <div className="shrink-0 text-right">
-            <div className="text-sm font-medium tabular-nums">{formatAED(p.amount)}</div>
+            <div className="text-sm font-medium tabular-nums">{formatMoney(p.amount)}</div>
             <div className="text-muted-foreground text-xs">{formatDate(p.date)}</div>
           </div>
         </li>

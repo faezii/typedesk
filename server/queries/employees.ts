@@ -1,10 +1,10 @@
 import "server-only";
-import { startOfMonthDubai } from "@/lib/dates";
+import { startOfMonthLocal } from "@/lib/dates";
 import { prisma } from "@/lib/prisma";
 
 /** Staff directory with live workload counters. */
 export async function listEmployees() {
-  const monthStart = startOfMonthDubai();
+  const monthStart = startOfMonthLocal();
   const [users, openTasks, activeOrders, delivered, tasksDone] = await Promise.all([
     prisma.user.findMany({
       orderBy: [{ isActive: "desc" }, { name: "asc" }],

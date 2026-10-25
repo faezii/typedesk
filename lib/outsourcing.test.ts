@@ -22,8 +22,8 @@ describe("assignmentSchema", () => {
 
 describe("vendorSchema", () => {
   const base = { name: "Elena Sokolova", type: "FREELANCER" as const, phone: "", email: "", languages: ["Russian"], notes: "" };
-  it("normalises UAE numbers and keeps international ones", () => {
-    expect(vendorSchema.parse({ ...base, phone: "0501234567" }).phone).toBe("+971 50 123 4567");
+  it("normalises Qatar numbers and keeps international ones", () => {
+    expect(vendorSchema.parse({ ...base, phone: "55123456" }).phone).toBe("+974 5512 3456");
     expect(vendorSchema.parse({ ...base, phone: "+7 912 345 6789" }).phone).toBe("+7 912 345 6789");
   });
   it("rejects junk phone numbers", () => expect(vendorSchema.safeParse({ ...base, phone: "call me" }).success).toBe(false));

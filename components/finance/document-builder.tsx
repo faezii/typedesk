@@ -20,7 +20,7 @@ import { findBillableWorkOrders, saveInvoice, saveQuotation } from "@/server/act
 
 type Billable = Awaited<ReturnType<typeof findBillableWorkOrders>>[number];
 const EMPTY_LINE = { description: "", serviceId: "", workOrderId: "", quantity: "1", unitPrice: "" };
-const fmt = (n: number) => n.toLocaleString("en-AE", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+const fmt = (n: number) => n.toLocaleString("en-QA", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
 export function DocumentBuilder({
   kind,
@@ -144,7 +144,7 @@ export function DocumentBuilder({
                 <span>Service</span>
                 <span>Description</span>
                 <span className="text-right">Qty</span>
-                <span className="text-right">Rate (AED)</span>
+                <span className="text-right">Rate (QAR)</span>
                 <span className="text-right">Amount</span>
                 <span />
               </div>
@@ -231,15 +231,17 @@ export function DocumentBuilder({
             <dl className="w-full space-y-1.5 text-sm lg:w-72">
               <div className="flex justify-between">
                 <dt className="text-muted-foreground">Subtotal</dt>
-                <dd className="tabular-nums">AED {fmt(subtotal)}</dd>
+                <dd className="tabular-nums">QAR {fmt(subtotal)}</dd>
               </div>
-              <div className="flex justify-between">
-                <dt className="text-muted-foreground">VAT ({Math.round(Number(vatRate) * 10000) / 100}%)</dt>
-                <dd className="tabular-nums">AED {fmt(vat)}</dd>
-              </div>
+              {Number(vatRate) > 0 && (
+                <div className="flex justify-between">
+                  <dt className="text-muted-foreground">VAT ({Math.round(Number(vatRate) * 10000) / 100}%)</dt>
+                  <dd className="tabular-nums">QAR {fmt(vat)}</dd>
+                </div>
+              )}
               <div className="flex justify-between border-t pt-1.5 text-base font-semibold">
                 <dt>Total</dt>
-                <dd className="tabular-nums">AED {fmt(subtotal + vat)}</dd>
+                <dd className="tabular-nums">QAR {fmt(subtotal + vat)}</dd>
               </div>
               <p className="text-muted-foreground text-xs">Final totals are calculated on save.</p>
             </dl>
@@ -278,10 +280,10 @@ export function DocumentBuilder({
                     <span className="min-w-0 flex-1">
                       <span className="block truncate">{b.description}</span>
                       <span className="text-muted-foreground text-xs">
-                        {b.quantity} × AED {b.unitPrice}
+                        {b.quantity} × QAR {b.unitPrice}
                       </span>
                     </span>
-                    <span className="tabular-nums">AED {b.totalAmount}</span>
+                    <span className="tabular-nums">QAR {b.totalAmount}</span>
                   </label>
                 </li>
               ))}

@@ -39,7 +39,7 @@ export const NAV_GROUPS: NavGroup[] = [
     label: "CRM",
     items: [
       { title: "Customers", href: "/customers", icon: Users, keywords: ["clients", "crm"] },
-      { title: "Documents", href: "/documents", icon: FolderOpen, keywords: ["files", "passport", "emirates id", "uploads"] },
+      { title: "Documents", href: "/documents", icon: FolderOpen, keywords: ["files", "passport", "qid", "uploads"] },
       { title: "Services", href: "/services", icon: BookOpen, keywords: ["rates", "price list"] },
     ],
   },
@@ -54,7 +54,7 @@ export const NAV_GROUPS: NavGroup[] = [
     ],
   },
   { label: "Reports", items: [{ title: "Reports", href: "/reports", icon: BarChart3, keywords: ["analytics", "export", "vat report"] }] },
-  { label: "Admin", items: [{ title: "Settings", href: "/settings", icon: Settings, keywords: ["company", "vat rate", "trn", "logo", "invoice terms"] }] },
+  { label: "Admin", items: [{ title: "Settings", href: "/settings", icon: Settings, keywords: ["company", "vat rate", "cr number", "logo", "invoice terms"] }] },
 ];
 
 /** Navigation filtered to what the role may open; empty groups are dropped. */

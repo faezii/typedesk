@@ -163,7 +163,7 @@ export function WorkOrderSheet({
                             <SelectLabel>{SERVICE_CATEGORY_LABEL[category as ServiceCategory]}</SelectLabel>
                             {services.map((s) => (
                               <SelectItem key={s.id} value={s.id}>
-                                {s.title} · AED {s.defaultPrice}/{SERVICE_UNIT_LABEL[s.unit]}
+                                {s.title} · QAR {s.defaultPrice}/{SERVICE_UNIT_LABEL[s.unit]}
                               </SelectItem>
                             ))}
                           </SelectGroup>
@@ -265,7 +265,7 @@ export function WorkOrderSheet({
                   name="unitPrice"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Unit rate (AED)</FormLabel>
+                      <FormLabel>Unit rate (QAR)</FormLabel>
                       <FormControl>
                         <Input inputMode="decimal" {...field} />
                       </FormControl>
@@ -277,7 +277,7 @@ export function WorkOrderSheet({
                   <div className="text-sm font-medium">Total (excl. VAT)</div>
                   <div className="flex h-8 items-center text-sm font-semibold tabular-nums" aria-live="polite">
                     {Number.isFinite(estimate) && estimate > 0
-                      ? `AED ${estimate.toLocaleString("en-AE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+                      ? `QAR ${estimate.toLocaleString("en-QA", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
                       : "—"}
                   </div>
                 </div>

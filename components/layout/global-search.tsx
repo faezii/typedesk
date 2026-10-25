@@ -116,7 +116,7 @@ export function GlobalSearch({ role }: { role: Role }) {
           <CommandInput
             value={query}
             onValueChange={setQuery}
-            placeholder="Name, phone, Emirates ID, WO-2026-…, INV-2026-…"
+            placeholder="Name, phone, QID, WO-2026-…, INV-2026-…"
           />
           <CommandList className="max-h-[min(420px,60vh)]">
             {loading && (

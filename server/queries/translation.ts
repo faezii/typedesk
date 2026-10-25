@@ -1,6 +1,6 @@
 import "server-only";
 import type { Prisma } from "@prisma/client";
-import { daysFromTodayDubai, startOfMonthDubai } from "@/lib/dates";
+import { daysFromTodayLocal, startOfMonthLocal } from "@/lib/dates";
 import { prisma } from "@/lib/prisma";
 
 const ACTIVE: Prisma.WorkOrderWhereInput = { OR: [{ status: { not: "DELIVERED" } }, { hasOpenRevision: true }] };
@@ -10,8 +10,8 @@ export async function getTranslationOverview() {
   const [total, activeAgg, monthAgg, dueThisWeek, stages, pairs, active] = await Promise.all([
     prisma.workOrder.count({ where: TRANSLATIONS }),
     prisma.translationDetail.aggregate({ where: { workOrder: { ...TRANSLATIONS, ...ACTIVE } }, _sum: { pageCount: true }, _count: true }),
-    prisma.translationDetail.aggregate({ where: { workOrder: { ...TRANSLATIONS, createdAt: { gte: startOfMonthDubai() } } }, _sum: { wordCount: true } }),
-    prisma.workOrder.count({ where: { ...TRANSLATIONS, status: { not: "DELIVERED" }, deadline: { lte: daysFromTodayDubai(7) } } }),
+    prisma.translationDetail.aggregate({ where: { workOrder: { ...TRANSLATIONS, createdAt: { gte: startOfMonthLocal() } } }, _sum: { wordCount: true } }),
+    prisma.workOrder.count({ where: { ...TRANSLATIONS, status: { not: "DELIVERED" }, deadline: { lte: daysFromTodayLocal(7) } } }),
     prisma.workOrder.groupBy({ by: ["status"], where: { ...TRANSLATIONS, status: { not: "DELIVERED" } }, _count: true }),
     prisma.translationDetail.groupBy({
       by: ["sourceLang", "targetLang"],

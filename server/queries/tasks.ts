@@ -2,7 +2,7 @@ import "server-only";
 import type { Prisma, Priority, TaskStatus } from "@prisma/client";
 import { can } from "@/lib/auth/permissions";
 import type { CurrentUser } from "@/lib/auth/session";
-import { daysFromTodayDubai, endOfTodayDubai, startOfTodayDubai } from "@/lib/dates";
+import { daysFromTodayLocal, endOfTodayLocal, startOfTodayLocal } from "@/lib/dates";
 import { prisma } from "@/lib/prisma";
 
 export const TASK_PAGE_SIZE = 25;
@@ -23,11 +23,11 @@ function filterWhere(p: TaskListParams, user: Pick<CurrentUser, "id" | "role">, 
   const open = { status: { not: "DONE" as const } };
   const due: Prisma.TaskWhereInput =
     p.due === "overdue"
-      ? { ...open, deadline: { lt: startOfTodayDubai() } }
+      ? { ...open, deadline: { lt: startOfTodayLocal() } }
       : p.due === "today"
-        ? { deadline: { gte: startOfTodayDubai(), lte: endOfTodayDubai() } }
+        ? { deadline: { gte: startOfTodayLocal(), lte: endOfTodayLocal() } }
         : p.due === "week"
-          ? { ...open, deadline: { lte: daysFromTodayDubai(7) } }
+          ? { ...open, deadline: { lte: daysFromTodayLocal(7) } }
           : p.due === "none"
             ? { deadline: null }
             : {};

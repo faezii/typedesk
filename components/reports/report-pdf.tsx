@@ -1,16 +1,15 @@
-import { Document, Font, Page, StyleSheet, Text, View } from "@react-pdf/renderer";
+import { Document, Page, StyleSheet, Text, View } from "@react-pdf/renderer";
+import { PDF_FONT, arabicLine } from "@/lib/pdf-fonts";
 import { formatCell, type ReportResult } from "@/lib/reports";
 
-Font.registerHyphenationCallback((word) => [word]);
-
 const s = StyleSheet.create({
-  page: { padding: 28, fontSize: 8, fontFamily: "Helvetica", color: "#1f2937" },
+  page: { padding: 28, fontSize: 8, fontFamily: PDF_FONT, color: "#1f2937" },
   head: { flexDirection: "row", justifyContent: "space-between", marginBottom: 12, borderBottomWidth: 1.5, borderBottomColor: "#047857", paddingBottom: 8 },
-  title: { fontSize: 14, fontFamily: "Helvetica-Bold" },
+  title: { fontSize: 14, fontWeight: 700 },
   muted: { color: "#6b7280" },
-  th: { flexDirection: "row", backgroundColor: "#ecfdf5", borderBottomWidth: 1, borderBottomColor: "#047857", fontFamily: "Helvetica-Bold" },
+  th: { flexDirection: "row", backgroundColor: "#ecfdf5", borderBottomWidth: 1, borderBottomColor: "#047857", fontWeight: 700 },
   tr: { flexDirection: "row", borderBottomWidth: 0.5, borderBottomColor: "#e5e7eb" },
-  total: { flexDirection: "row", borderTopWidth: 1, borderTopColor: "#047857", fontFamily: "Helvetica-Bold" },
+  total: { flexDirection: "row", borderTopWidth: 1, borderTopColor: "#047857", fontWeight: 700 },
   cell: { flex: 1, paddingVertical: 4, paddingHorizontal: 3 },
   note: { marginTop: 10, color: "#6b7280" },
   footer: { position: "absolute", bottom: 16, left: 28, right: 28, fontSize: 7, color: "#9ca3af", textAlign: "right" },
@@ -24,7 +23,7 @@ export function ReportPdf({ title, period, company, generated, report }: { title
   const row = (values: (string | number | null | undefined)[], style: typeof s.tr | typeof s.total) => (
     <View style={style} wrap={false}>
       {values.map((v, i) => (
-        <Text key={i} style={[s.cell, { flex: flex[i] }, align(i)]}>
+        <Text key={i} style={[s.cell, { flex: flex[i] }, align(i), arabicLine(v)]}>
           {formatCell(v, report.columns[i]!.type)}
         </Text>
       ))}
@@ -40,7 +39,7 @@ export function ReportPdf({ title, period, company, generated, report }: { title
             <Text style={s.muted}>{period}</Text>
           </View>
           <View style={{ alignItems: "flex-end" }}>
-            <Text style={{ fontFamily: "Helvetica-Bold" }}>{company}</Text>
+            <Text style={{ fontWeight: 700, ...arabicLine(company) }}>{company}</Text>
             <Text style={s.muted}>Generated {generated}</Text>
           </View>
         </View>

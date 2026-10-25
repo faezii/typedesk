@@ -10,7 +10,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { can } from "@/lib/auth/permissions";
 import { requirePagePermission } from "@/lib/auth/session";
 import { toDateInput } from "@/lib/dates";
-import { formatAED, formatDate } from "@/lib/format";
+import { formatMoney, formatDate } from "@/lib/format";
 import { EXPENSE_CATEGORY_LABEL } from "@/lib/labels";
 import { prisma } from "@/lib/prisma";
 import { EXPENSE_PAGE_SIZE, expenseTrend, listExpenses, type ExpenseParams } from "@/server/queries/finance";
@@ -48,13 +48,13 @@ export default async function ExpensesPage({ searchParams }: { searchParams: Pro
       <div className="mb-4 grid gap-4 lg:grid-cols-2">
         <section className="bg-card rounded-xl border p-5">
           <h2 className="font-medium">Monthly expenses</h2>
-          <p className="text-muted-foreground mb-3 text-xs">Last 6 months, AED excl. VAT</p>
+          <p className="text-muted-foreground mb-3 text-xs">Last 6 months, QAR excl. VAT</p>
           <MonthlyBars data={trend} label="Expenses" />
         </section>
         <section className="bg-card rounded-xl border p-5">
           <h2 className="font-medium">By category</h2>
           <p className="text-muted-foreground mb-3 text-xs">
-            {filtered ? "Matching the filters below" : "All time"} · {formatAED(sums.amount)} + {formatAED(sums.vat)} VAT
+            {filtered ? "Matching the filters below" : "All time"} · {formatMoney(sums.amount)} + {formatMoney(sums.vat)} VAT
           </p>
           {byCategory.length === 0 ? (
             <p className="text-muted-foreground py-8 text-center text-sm">No expenses.</p>
@@ -64,7 +64,7 @@ export default async function ExpensesPage({ searchParams }: { searchParams: Pro
                 <li key={c.category} className="text-sm">
                   <div className="flex justify-between gap-2">
                     <span>{EXPENSE_CATEGORY_LABEL[c.category]}</span>
-                    <span className="tabular-nums">{formatAED(c.amount)}</span>
+                    <span className="tabular-nums">{formatMoney(c.amount)}</span>
                   </div>
                   <div className="bg-muted mt-1 h-1.5 rounded-full" aria-hidden>
                     <div className="h-full rounded-full bg-[var(--chart-1)]" style={{ width: `${(c.amount.toNumber() / maxCat) * 100}%` }} />
@@ -122,8 +122,8 @@ export default async function ExpensesPage({ searchParams }: { searchParams: Pro
                       </div>
                     </TableCell>
                     <TableCell className="text-sm">{EXPENSE_CATEGORY_LABEL[e.category]}</TableCell>
-                    <TableCell className="text-right tabular-nums">{formatAED(e.amount)}</TableCell>
-                    <TableCell className="text-muted-foreground text-right tabular-nums">{e.vatAmount.isZero() ? "—" : formatAED(e.vatAmount)}</TableCell>
+                    <TableCell className="text-right tabular-nums">{formatMoney(e.amount)}</TableCell>
+                    <TableCell className="text-muted-foreground text-right tabular-nums">{e.vatAmount.isZero() ? "—" : formatMoney(e.vatAmount)}</TableCell>
                     <TableCell className="pr-4">
                       <div className="flex justify-end gap-1">
                         {e.receiptUrl && (

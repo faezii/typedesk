@@ -8,7 +8,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { can } from "@/lib/auth/permissions";
 import { requirePagePermission } from "@/lib/auth/session";
 import { toDateInput } from "@/lib/dates";
-import { formatAED, formatDate } from "@/lib/format";
+import { formatMoney, formatDate } from "@/lib/format";
 import { amountInWords } from "@/lib/invoice-math";
 import { PAYMENT_METHOD_LABEL } from "@/lib/labels";
 import { getInvoice } from "@/server/queries/invoices";
@@ -43,7 +43,7 @@ export default async function InvoicePage({ params }: { params: Promise<{ id: st
               <Link href={`/customers/${inv.customer.id}`} className="font-medium hover:underline">
                 {inv.customer.companyName ?? inv.customer.name}
               </Link>
-              {inv.customer.trn && <span className="text-muted-foreground"> · TRN {inv.customer.trn}</span>}
+              {inv.customer.taxNo && <span className="text-muted-foreground"> · CR / tax no. {inv.customer.taxNo}</span>}
             </div>
             <div className="text-muted-foreground mt-1 text-sm">
               Issued {formatDate(inv.issueDate)} · Due {formatDate(inv.dueDate)}
@@ -107,21 +107,21 @@ export default async function InvoicePage({ params }: { params: Promise<{ id: st
                     )}
                   </TableCell>
                   <TableCell className="text-right tabular-nums">{it.quantity.toString()}</TableCell>
-                  <TableCell className="text-right tabular-nums">{formatAED(it.unitPrice)}</TableCell>
-                  <TableCell className="pr-5 text-right tabular-nums">{formatAED(it.lineTotal)}</TableCell>
+                  <TableCell className="text-right tabular-nums">{formatMoney(it.unitPrice)}</TableCell>
+                  <TableCell className="pr-5 text-right tabular-nums">{formatMoney(it.lineTotal)}</TableCell>
                 </TableRow>
               ))}
             </TableBody>
           </Table>
           <dl className="ml-auto w-full max-w-xs space-y-1.5 border-t px-5 py-4 text-sm">
-            <Row label="Subtotal" value={formatAED(inv.subtotal)} />
-            <Row label={`VAT ${inv.vatRate.times(100).toDecimalPlaces(2).toString()}%`} value={formatAED(inv.vatAmount)} />
+            <Row label="Subtotal" value={formatMoney(inv.subtotal)} />
+            {!inv.vatRate.isZero() && <Row label={`VAT ${inv.vatRate.times(100).toDecimalPlaces(2).toString()}%`} value={formatMoney(inv.vatAmount)} />}
             <div className="flex justify-between border-t pt-1.5 text-base font-semibold">
               <dt>Total</dt>
-              <dd className="tabular-nums">{formatAED(inv.totalAmount)}</dd>
+              <dd className="tabular-nums">{formatMoney(inv.totalAmount)}</dd>
             </div>
-            <Row label="Paid" value={formatAED(inv.amountPaid)} />
-            {inv.status !== "CANCELLED" && <Row label="Balance due" value={formatAED(balance)} strong />}
+            <Row label="Paid" value={formatMoney(inv.amountPaid)} />
+            {inv.status !== "CANCELLED" && <Row label="Balance due" value={formatMoney(balance)} strong />}
           </dl>
           <p className="text-muted-foreground border-t px-5 py-3 text-xs">{amountInWords(inv.totalAmount)}</p>
           {inv.notes && <p className="border-t px-5 py-3 text-sm whitespace-pre-wrap">{inv.notes}</p>}
@@ -144,8 +144,8 @@ export default async function InvoicePage({ params }: { params: Promise<{ id: st
                     </div>
                   </div>
                   <div className="flex items-center gap-1">
-                    <span className="tabular-nums">{formatAED(p.amount)}</span>
-                    {canEdit && <RemovePaymentButton id={p.id} label={`${formatAED(p.amount)} on ${formatDate(p.date)}`} />}
+                    <span className="tabular-nums">{formatMoney(p.amount)}</span>
+                    {canEdit && <RemovePaymentButton id={p.id} label={`${formatMoney(p.amount)} on ${formatDate(p.date)}`} />}
                   </div>
                 </li>
               ))}

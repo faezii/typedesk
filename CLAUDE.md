@@ -1,6 +1,6 @@
 # TypeDesk — project guide
 
-Business management app for a UAE translation & typing center. Built phase by phase (see the phase prompts); keep each phase shippable.
+Business management app for a translation & typing center in Qatar (switched from UAE; other GCC countries may follow, so country rules stay in one place). Built phase by phase (see the phase prompts); keep each phase shippable.
 
 **Scope: work only inside this folder (`C:\Projects\TypeDesk`).** `C:\Projects\ProcureFlow` is a separate, unrelated project — never read, modify or delete it.
 
@@ -11,24 +11,24 @@ Business management app for a UAE translation & typing center. Built phase by ph
 - Auth.js v5 (Credentials + bcryptjs), Zod, react-hook-form, TanStack Table, dnd-kit, Recharts, @react-pdf/renderer, xlsx (SheetJS CDN build), date-fns + @date-fns/tz
 
 ## Conventions
-- **Currency**: AED. Money columns are `Decimal @db.Decimal(12,2)`. Never do money math in floats on the client for persisted values — totals are recomputed server-side.
-- **VAT**: UAE 5%, read from `Setting` key `vatRate` (default `0.05`). Invoice = subtotal + VAT = total.
-- **Timezone**: all "today / this week / this month" logic uses `Asia/Dubai` — use the helpers in `lib/dates.ts` (`startOfTodayDubai`, `monthsAgoDubai`, `formatDubai`, …) and `lib/format.ts` (`formatAED`, `formatDate`); enum display labels live in `lib/labels.ts`.
+- **Currency**: QAR (`formatMoney`). Money columns are `Decimal @db.Decimal(12,2)`. Never do money math in floats on the client for persisted values — totals are recomputed server-side.
+- **VAT**: Qatar has none today, so `Setting` key `vatRate` defaults to `0`; the machinery stays for when it arrives (expected 5%). Invoice = subtotal + VAT = total. While the rate is 0, invoices print as "Invoice" (not "Tax Invoice"), VAT lines are hidden and the VAT report is not listed.
+- **Timezone**: all "today / this week / this month" logic uses `Asia/Qatar` (`TIMEZONE`, `zone`) — use the helpers in `lib/dates.ts` (`startOfTodayLocal`, `monthsAgoLocal`, `formatLocal`, …) and `lib/format.ts` (`formatMoney`, `formatDate`); enum display labels live in `lib/labels.ts`.
 - **Charts**: series colors are `var(--chart-1..4)` (emerald, sky, amber, violet; validated for colour-blindness and contrast in both themes). Assign in that order, never by rank.
 - **Numbering**: `Counter` table, atomic upsert-increment → `WO-2026-0001`, `INV-2026-0001`, `QT-2026-0001`. Use `nextNumber(tx, prefix)` from `lib/numbering.ts` inside the creating transaction.
-- **Money math**: `lineTotal()` in `lib/money.ts` (exact `Prisma.Decimal`, half-up to fils) — server only. Client forms may show a display-only estimate. Shared money/quantity regex is `DECIMAL_RE` in `lib/validation/work-order.ts` (keep `@prisma/client` out of client bundles).
+- **Money math**: `lineTotal()` in `lib/money.ts` (exact `Prisma.Decimal`, half-up to 2 decimals) — server only. Client forms may show a display-only estimate. Shared money/quantity regex is `DECIMAL_RE` in `lib/validation/work-order.ts` (keep `@prisma/client` out of client bundles).
 - **Work orders**: stage changes go through `moveWorkOrder(id, from, to)` (optimistic-concurrency on `from`, writes ActivityLog). Orders with an open revision can't change stage. Deadlines render with `DeadlineText` (`components/shared/work-order-badges.tsx`).
-- **Phones**: `+971` format (e.g. `+971 50 123 4567`). **Emirates ID**: `784-XXXX-XXXXXXX-X`.
+- **Country formats** (`lib/validation/country.ts`, Qatar): phones `+974 5512 3456` (8 digits; mobiles 3/5/6/7, landlines 4); national ID = QID, 11 digits, stored in `Customer.nationalId` / document category `NATIONAL_ID`; `taxNo` = CR / tax number (free format, 3–20 chars). Field names are country-neutral on purpose.
 - **Soft delete**: models with `deletedAt` are filtered with `deletedAt: null` in every query.
 - **Audit**: status changes and important mutations write an `ActivityLog` row.
 - Data access for pages lives in `server/queries/*`; mutations are server actions in `server/actions/*`. Every action: auth check → role check → Zod validation → mutation → `revalidatePath`.
 - Work order revisions never reset status: a delivered order with an open revision stays `DELIVERED` with `hasOpenRevision = true`.
-- **Validation**: Zod schemas in `lib/validation/*` are shared by the client form (react-hook-form + `zodResolver`) and the server action. Actions return `ActionResult` (`lib/action-result.ts`). Phone/EID/TRN normalisers live in `lib/validation/uae.ts`.
+- **Validation**: Zod schemas in `lib/validation/*` are shared by the client form (react-hook-form + `zodResolver`) and the server action. Actions return `ActionResult` (`lib/action-result.ts`). Phone / QID / tax-no. normalisers live in `lib/validation/country.ts`.
 - **Files**: upload through `lib/storage.ts` (10 MB; PDF/JPG/PNG/DOCX checked by magic bytes) and store the returned `fileUrl` on a `Document`. Files are served by `/api/files/...` only to signed-in users and only while the `Document` isn't soft-deleted. Storage is local disk (`UPLOAD_DIR`) or an S3-compatible bucket when `S3_BUCKET` is set (`lib/s3.ts`, hand-rolled SigV4 tested against the AWS reference signature); the seed writes through the same switch.
 - **Settings**: `/settings` (ADMIN) edits the `Setting` rows read by `getSettings()`: company details, `vatRate` (stored as a fraction, entered as a percent), `invoiceTerms`, and `companyLogo` (a `fileUrl`, PNG/JPG ≤ 1 MB, served to any signed-in user and printed on invoice PDFs).
 - **Dates from forms/URLs**: validate with `parseDateInput` / `parseDateTimeInput` (`lib/dates.ts`), never a bare regex; they return null for impossible dates like `2026-02-30` instead of rolling over.
 - **Error pages**: `error.tsx` / `not-found.tsx` exist at `app/` (no shell) and `app/(app)/` (inside the shell); access-denied, not-found and error screens share `StatusPage`.
-- **Expiry follow-ups**: after changing a customer's passport/Emirates ID expiry, call `syncIdExpiryFollowUps` (`server/services/expiry-follow-ups.ts`). It keeps one follow-up per ID, keyed by `FollowUp.autoKey`, due 30 days before expiry.
+- **Expiry follow-ups**: after changing a customer's passport/QID expiry, call `syncIdExpiryFollowUps` (`server/services/expiry-follow-ups.ts`). It keeps one follow-up per ID, keyed by `FollowUp.autoKey`, due 30 days before expiry.
 - **Lists**: filters live in the URL (`components/shared/url-filters.tsx`) with server-side `Pagination`; status pills use `ToneBadge`, ID expiry uses `ExpiryBadge`.
 - **Action guard**: every server action starts with `const { user, error } = await guardAction("perm", id, …)` (`lib/auth/session.ts`) and returns `{ ok: false, error }` when `user` is missing. Pass every record id the client sent (null allowed for "create"): it rejects non-string ids, which could otherwise be Prisma filter objects (`{ not: "" }`) matching every row.
 - **Tasks**: STAFF see their own tasks by default (`?assignee=everyone` for the team) and may only change tasks assigned to them; task detail opens via `?task=<id>`.
@@ -37,7 +37,7 @@ Business management app for a UAE translation & typing center. Built phase by ph
 - **Outsourcing**: `setPaymentStatus` books exactly one FREELANCER `Expense` per job (unique `Expense.outsourcedWorkId`) and removes it on reversal; a paid job's cost can't change. Vendor deliveries are `Document`s linked to the work order and the job (`Document.outsourcedWorkId`). Margin = order amount − agreed cost (`jobMargin` in `lib/money.ts`).
 - **Invoices & quotes**: totals via `computeTotals()` and status via `paymentStatus()` (`lib/invoice-math.ts`); VAT rate and company details from `getSettings()` (`lib/settings.ts`), stored per document in `vatRate`. Invoices with payments can't be edited or cancelled. `recordPayment` locks the invoice row (`SELECT … FOR UPDATE`) so concurrent payments can't exceed the balance; `deletePayment` (mistakes only) takes the same lock, recomputes paid/status, reopens an auto-closed payment reminder and logs the removed payment's details. A work order can be on only one live (non-cancelled) invoice. PDFs: `/api/finance/{invoice|quotation}/<id>/pdf[?download]` rendered by `components/finance/invoice-pdf.tsx`.
 - **Profit & Loss**: everything net of VAT. Cash basis = payments × subtotal/total of their invoice; accrual = invoice subtotals by issue date. Expenses are stored net, with recoverable VAT in `vatAmount`. Expense receipts (`Expense.receiptUrl`) are served by `/api/files` to finance roles.
-- **Reports**: each report is an entry in `REPORTS` (`server/queries/reports.ts`) returning `{ columns, rows, totals, note }` (`lib/reports.ts`). The page `/reports/<slug>` and the export `/api/reports/<slug>?format=csv|xlsx|pdf&from&to` both call `runReport`, so screen and exports always match. CSV neutralises formula injection; Excel cells are typed with AED number formats. To add a report, add one registry entry.
+- **Reports**: each report is an entry in `REPORTS` (`server/queries/reports.ts`) returning `{ columns, rows, totals, note }` (`lib/reports.ts`). The page `/reports/<slug>` and the export `/api/reports/<slug>?format=csv|xlsx|pdf&from&to` both call `runReport`, so screen and exports always match. CSV neutralises formula injection; Excel cells are typed with 2-decimal number formats. To add a report, add one registry entry.
 - **Tests**: Vitest (`npm test`), files named `*.test.ts` next to the code.
 - **Migrations**: `prisma migrate dev` refuses to run non-interactively. Generate SQL with `prisma migrate diff --from-schema-datasource prisma/schema.prisma --to-schema-datamodel prisma/schema.prisma --script` into a new `prisma/migrations/<timestamp>_<name>/migration.sql` (UTF-8, no BOM), then `prisma migrate deploy`.
 
@@ -61,7 +61,7 @@ Business management app for a UAE translation & typing center. Built phase by ph
 
 ## Seed logins
 All seeded users use password `Password123!` (development only):
-`admin@typedesk.ae` (ADMIN), `manager@typedesk.ae` (MANAGER), `finance@typedesk.ae` (FINANCE), `typist@typedesk.ae` and `translator@typedesk.ae` (STAFF).
+`admin@typedesk.qa` (ADMIN), `manager@typedesk.qa` (MANAGER), `finance@typedesk.qa` (FINANCE), `typist@typedesk.qa` and `translator@typedesk.qa` (STAFF).
 
 ## Commands
 - `npm run dev` · `npm run build` · `npm run lint` · `npm run typecheck` · `npm test`

@@ -1,15 +1,15 @@
 import type { Prisma } from "@prisma/client";
-import { formatDubai } from "./dates";
+import { formatLocal } from "./dates";
 
 type Money = Prisma.Decimal | number | string | null | undefined;
 
-const aed = new Intl.NumberFormat("en-AE", { style: "currency", currency: "AED", minimumFractionDigits: 2, maximumFractionDigits: 2 });
-const aedCompact = new Intl.NumberFormat("en-AE", { notation: "compact", maximumFractionDigits: 1 });
+const money = new Intl.NumberFormat("en-QA", { style: "currency", currency: "QAR", minimumFractionDigits: 2, maximumFractionDigits: 2 });
+const compact = new Intl.NumberFormat("en-QA", { notation: "compact", maximumFractionDigits: 1 });
 
-/** "AED 1,234.50" — display only; never feed the result back into calculations. */
-export const formatAED = (v: Money) => aed.format(Number(v ?? 0));
+/** "QAR 1,234.50" — display only; never feed the result back into calculations. */
+export const formatMoney = (v: Money) => money.format(Number(v ?? 0));
 /** "12.4K" — for axis ticks. */
-export const formatCompact = (v: number) => aedCompact.format(v);
+export const formatCompact = (v: number) => compact.format(v);
 
 /** "Saeed Al Falasi" → "SA" */
 export const initials = (name: string) =>
@@ -20,5 +20,5 @@ export const initials = (name: string) =>
     .map((p) => p[0]!.toUpperCase())
     .join("");
 
-export const formatDate =(d: Date | null | undefined) => (d ? formatDubai(d, "d MMM yyyy") : "—");
-export const formatDateTime = (d: Date | null | undefined) => (d ? formatDubai(d, "d MMM yyyy, h:mm a") : "—");
+export const formatDate =(d: Date | null | undefined) => (d ? formatLocal(d, "d MMM yyyy") : "—");
+export const formatDateTime = (d: Date | null | undefined) => (d ? formatLocal(d, "d MMM yyyy, h:mm a") : "—");

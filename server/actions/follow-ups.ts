@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import type { ActionResult } from "@/lib/action-result";
 import { guardAction } from "@/lib/auth/session";
-import { formatDubai, parseDateInput } from "@/lib/dates";
+import { formatLocal, parseDateInput } from "@/lib/dates";
 import { snoozedDeadline } from "@/lib/follow-ups";
 import { prisma } from "@/lib/prisma";
 import { followUpSchema, type FollowUpFormValues } from "@/lib/validation/team";
@@ -62,9 +62,9 @@ export async function snoozeFollowUp(id: string): Promise<ActionResult<{ until: 
   await prisma.$transaction([
     prisma.followUp.update({ where: { id }, data: { deadline, status: "SNOOZED" } }),
     prisma.activityLog.create({
-      data: { entityType: "FollowUp", entityId: id, action: "snoozed", message: `Snoozed until ${formatDubai(deadline, "d MMM yyyy")}`, userId: user.id },
+      data: { entityType: "FollowUp", entityId: id, action: "snoozed", message: `Snoozed until ${formatLocal(deadline, "d MMM yyyy")}`, userId: user.id },
     }),
   ]);
   refresh();
-  return { ok: true, data: { until: formatDubai(deadline, "d MMM") } };
+  return { ok: true, data: { until: formatLocal(deadline, "d MMM") } };
 }

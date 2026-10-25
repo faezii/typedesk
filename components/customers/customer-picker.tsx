@@ -58,7 +58,7 @@ export function CustomerPicker({
       </PopoverTrigger>
       <PopoverContent className="w-(--radix-popover-trigger-width) p-0" align="start">
         <Command shouldFilter={false}>
-          <CommandInput value={query} onValueChange={setQuery} placeholder="Name, phone, Emirates ID…" />
+          <CommandInput value={query} onValueChange={setQuery} placeholder="Name, phone, QID…" />
           <CommandList>
             <CommandEmpty>{query.trim().length < 2 ? "Type at least 2 characters." : "No customers found."}</CommandEmpty>
             {allowClear && value && (

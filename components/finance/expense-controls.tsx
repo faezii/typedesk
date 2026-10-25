@@ -106,12 +106,12 @@ export function ExpenseDialog({
               {err("description")}
             </div>
             <div className="space-y-2">
-              <Label htmlFor="exp-amount">Amount excl. VAT (AED)</Label>
+              <Label htmlFor="exp-amount">Amount excl. VAT (QAR)</Label>
               <Input id="exp-amount" name="amount" inputMode="decimal" defaultValue={defaults.amount} required aria-invalid={!!errors.amount || undefined} />
               {err("amount")}
             </div>
             <div className="space-y-2">
-              <Label htmlFor="exp-vat">VAT (AED)</Label>
+              <Label htmlFor="exp-vat">VAT (QAR)</Label>
               <Input id="exp-vat" name="vatAmount" inputMode="decimal" defaultValue={defaults.vatAmount} placeholder="0.00" aria-invalid={!!errors.vatAmount || undefined} />
               {err("vatAmount")}
             </div>

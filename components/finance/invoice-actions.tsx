@@ -31,7 +31,7 @@ export function RecordPaymentDialog({ invoiceId, invoiceNo, balance, today }: { 
         setError(res.fieldErrors?.amount ?? res.error);
         return void toast.error(res.error);
       }
-      toast.success(`Payment of AED ${amount} recorded`);
+      toast.success(`Payment of QAR ${amount} recorded`);
       setOpen(false);
       router.refresh();
     });
@@ -58,12 +58,12 @@ export function RecordPaymentDialog({ invoiceId, invoiceNo, balance, today }: { 
       <DialogContent>
         <DialogHeader>
           <DialogTitle>Record payment — {invoiceNo}</DialogTitle>
-          <DialogDescription>Balance due: AED {balance}</DialogDescription>
+          <DialogDescription>Balance due: QAR {balance}</DialogDescription>
         </DialogHeader>
         <form onSubmit={submit} className="space-y-4" noValidate>
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-2">
-              <Label htmlFor="pay-amount">Amount (AED)</Label>
+              <Label htmlFor="pay-amount">Amount (QAR)</Label>
               <Input id="pay-amount" inputMode="decimal" value={amount} onChange={(e) => setAmount(e.target.value)} aria-invalid={!!error || undefined} aria-describedby={error ? "pay-error" : undefined} />
             </div>
             <div className="space-y-2">

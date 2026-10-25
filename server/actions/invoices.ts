@@ -6,7 +6,7 @@ import { addDays } from "date-fns";
 import { Prisma } from "@prisma/client";
 import type { ActionResult } from "@/lib/action-result";
 import { guardAction } from "@/lib/auth/session";
-import { dubai, formatDubai, parseDateInput } from "@/lib/dates";
+import { zone, formatLocal, parseDateInput } from "@/lib/dates";
 import { computeTotals, paymentStatus } from "@/lib/invoice-math";
 import { nextNumber } from "@/lib/numbering";
 import { prisma } from "@/lib/prisma";
@@ -72,7 +72,7 @@ export async function saveInvoice(id: string | null, input: DocumentFormValues):
   const fields = {
     customerId: d.customerId,
     issueDate,
-    dueDate: parseDateInput(d.dueDate) ?? new Date(addDays(issueDate, DEFAULT_PAYMENT_DAYS, { in: dubai }).getTime()),
+    dueDate: parseDateInput(d.dueDate) ?? new Date(addDays(issueDate, DEFAULT_PAYMENT_DAYS, { in: zone }).getTime()),
     notes: d.notes,
     vatRate,
     subtotal: totals.subtotal,
@@ -97,7 +97,7 @@ export async function saveInvoice(id: string | null, input: DocumentFormValues):
     } else {
       inv = await tx.invoice.create({ data: { ...fields, invoiceNo: await nextNumber(tx, "INV", issueDate), status: "UNPAID", items: { create: lineData } } });
     }
-    await logInvoice(tx, inv.id, user.id, id ? "updated" : "created", `${id ? "Updated" : "Issued"} ${inv.invoiceNo} — AED ${inv.totalAmount.toFixed(2)}`, woIds);
+    await logInvoice(tx, inv.id, user.id, id ? "updated" : "created", `${id ? "Updated" : "Issued"} ${inv.invoiceNo} — QAR ${inv.totalAmount.toFixed(2)}`, woIds);
     return inv;
   });
 
@@ -147,7 +147,7 @@ export async function recordPayment(input: PaymentFormValues): Promise<ActionRes
     if (!inv) return fail("This invoice no longer exists.");
     if (inv.status === "CANCELLED") return fail("This invoice is cancelled.");
     const balance = inv.totalAmount.minus(inv.amountPaid);
-    if (amount.gt(balance)) return fail(`The balance due is AED ${balance.toFixed(2)}. The payment can't exceed it.`, { amount: `Max ${balance.toFixed(2)}` });
+    if (amount.gt(balance)) return fail(`The balance due is QAR ${balance.toFixed(2)}. The payment can't exceed it.`, { amount: `Max ${balance.toFixed(2)}` });
 
     await tx.payment.create({
       data: { invoiceId: inv.id, customerId: inv.customerId, amount, method: d.method, reference: d.reference, date: parseDateInput(d.date)!, receivedById: user.id },
@@ -158,7 +158,7 @@ export async function recordPayment(input: PaymentFormValues): Promise<ActionRes
     if (status === "PAID") {
       await tx.followUp.updateMany({ where: { invoiceId: inv.id, type: "PAYMENT_REMINDER", status: { not: "DONE" } }, data: { status: "DONE" } });
     }
-    await logInvoice(tx, inv.id, user.id, "payment", `Payment AED ${amount.toFixed(2)} (${d.method.replace("_", " ").toLowerCase()}) on ${inv.invoiceNo} — ${status === "PAID" ? "paid in full" : `balance AED ${inv.totalAmount.minus(amountPaid).toFixed(2)}`}`);
+    await logInvoice(tx, inv.id, user.id, "payment", `Payment QAR ${amount.toFixed(2)} (${d.method.replace("_", " ").toLowerCase()}) on ${inv.invoiceNo} — ${status === "PAID" ? "paid in full" : `balance QAR ${inv.totalAmount.minus(amountPaid).toFixed(2)}`}`);
     return { ok: true as const, data: undefined };
   });
   if (result.ok) refreshFinance();
@@ -188,8 +188,8 @@ export async function deletePayment(id: string): Promise<ActionResult> {
     if (inv.status === "PAID" && status !== "PAID") {
       await tx.followUp.updateMany({ where: { invoiceId: inv.id, type: "PAYMENT_REMINDER", status: "DONE" }, data: { status: "PENDING" } });
     }
-    const details = [pay.method.replace("_", " ").toLowerCase(), formatDubai(pay.date, "d MMM yyyy"), pay.reference, pay.receivedBy && `received by ${pay.receivedBy.name}`].filter(Boolean).join(", ");
-    await logInvoice(tx, inv.id, user.id, "payment_removed", `Removed payment AED ${pay.amount.toFixed(2)} (${details}) from ${inv.invoiceNo}; balance now AED ${inv.totalAmount.minus(amountPaid).toFixed(2)}`);
+    const details = [pay.method.replace("_", " ").toLowerCase(), formatLocal(pay.date, "d MMM yyyy"), pay.reference, pay.receivedBy && `received by ${pay.receivedBy.name}`].filter(Boolean).join(", ");
+    await logInvoice(tx, inv.id, user.id, "payment_removed", `Removed payment QAR ${pay.amount.toFixed(2)} (${details}) from ${inv.invoiceNo}; balance now QAR ${inv.totalAmount.minus(amountPaid).toFixed(2)}`);
     return { ok: true as const, data: undefined };
   });
   if (result.ok) refreshFinance();
@@ -217,7 +217,7 @@ export async function saveQuotation(id: string | null, input: DocumentFormValues
   const fields = {
     customerId: d.customerId,
     issueDate,
-    validUntil: parseDateInput(d.dueDate) ?? new Date(addDays(issueDate, 30, { in: dubai }).getTime()),
+    validUntil: parseDateInput(d.dueDate) ?? new Date(addDays(issueDate, 30, { in: zone }).getTime()),
     notes: d.notes,
     vatRate,
     subtotal: totals.subtotal,
@@ -235,7 +235,7 @@ export async function saveQuotation(id: string | null, input: DocumentFormValues
       q = await tx.quotation.create({ data: { ...fields, quoteNo: await nextNumber(tx, "QT", issueDate), status: "DRAFT", items: { create: lineData } } });
     }
     await tx.activityLog.create({
-      data: { entityType: "Quotation", entityId: q.id, action: id ? "updated" : "created", message: `${id ? "Updated" : "Created"} ${q.quoteNo} — AED ${q.totalAmount.toFixed(2)}`, userId: user.id },
+      data: { entityType: "Quotation", entityId: q.id, action: id ? "updated" : "created", message: `${id ? "Updated" : "Created"} ${q.quoteNo} — QAR ${q.totalAmount.toFixed(2)}`, userId: user.id },
     });
     return q;
   });
@@ -273,7 +273,7 @@ export async function convertQuotation(id: string): Promise<ActionResult<{ invoi
         quotationId: q.id,
         status: "UNPAID",
         issueDate,
-        dueDate: new Date(addDays(issueDate, DEFAULT_PAYMENT_DAYS, { in: dubai }).getTime()),
+        dueDate: new Date(addDays(issueDate, DEFAULT_PAYMENT_DAYS, { in: zone }).getTime()),
         notes: q.notes,
         vatRate,
         subtotal: totals.subtotal,
@@ -285,7 +285,7 @@ export async function convertQuotation(id: string): Promise<ActionResult<{ invoi
       },
     });
     await tx.activityLog.create({ data: { entityType: "Quotation", entityId: id, action: "converted", message: `Converted to ${inv.invoiceNo}`, userId: user.id } });
-    await logInvoice(tx, inv.id, user.id, "created", `Issued ${inv.invoiceNo} from ${q.quoteNo} on ${formatDubai(issueDate, "d MMM yyyy")}`);
+    await logInvoice(tx, inv.id, user.id, "created", `Issued ${inv.invoiceNo} from ${q.quoteNo} on ${formatLocal(issueDate, "d MMM yyyy")}`);
     return { ok: true as const, data: { invoiceId: inv.id } };
   });
   if (result.ok) refreshFinance();

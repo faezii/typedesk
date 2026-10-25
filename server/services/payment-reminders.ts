@@ -1,6 +1,6 @@
 import "server-only";
 import { addDays } from "date-fns";
-import { dubai, startOfTodayDubai } from "@/lib/dates";
+import { zone, startOfTodayLocal } from "@/lib/dates";
 import { prisma } from "@/lib/prisma";
 
 const REMINDER_AFTER_DAYS = 7;
@@ -11,7 +11,7 @@ const REMINDER_AFTER_DAYS = 7;
  */
 // shortcut: runs when the follow-ups page or dashboard loads (the only places reminders show), not on a schedule — add a daily cron if reminders are ever sent out by email/WhatsApp.
 export async function syncPaymentReminders() {
-  const cutoff = new Date(addDays(startOfTodayDubai(), -REMINDER_AFTER_DAYS, { in: dubai }).getTime());
+  const cutoff = new Date(addDays(startOfTodayLocal(), -REMINDER_AFTER_DAYS, { in: zone }).getTime());
   const overdue = await prisma.invoice.findMany({
     where: {
       deletedAt: null,
@@ -29,10 +29,10 @@ export async function syncPaymentReminders() {
         autoKey: `invoice:${i.id}:payment`,
         title: `Payment reminder — ${i.invoiceNo}`,
         type: "PAYMENT_REMINDER" as const,
-        deadline: new Date(addDays(i.dueDate!, REMINDER_AFTER_DAYS, { in: dubai }).getTime()),
+        deadline: new Date(addDays(i.dueDate!, REMINDER_AFTER_DAYS, { in: zone }).getTime()),
         customerId: i.customerId,
         invoiceId: i.id,
-        notes: `Outstanding AED ${i.totalAmount.minus(i.amountPaid).toFixed(2)}`,
+        notes: `Outstanding QAR ${i.totalAmount.minus(i.amountPaid).toFixed(2)}`,
       })),
       skipDuplicates: true,
     });
