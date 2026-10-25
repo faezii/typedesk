@@ -1,4 +1,5 @@
-import { Document, Font, Page, StyleSheet, Text, View } from "@react-pdf/renderer";
+// PdfImage: react-pdf's <Image> draws into the PDF and takes no alt (not an HTML <img>)
+import { Document, Font, Image as PdfImage, Page, StyleSheet, Text, View } from "@react-pdf/renderer";
 import type { Prisma } from "@prisma/client";
 import { formatDubai } from "@/lib/dates";
 import { amountInWords } from "@/lib/invoice-math";
@@ -33,6 +34,7 @@ const s = StyleSheet.create({
   page: { padding: 36, fontSize: 9, fontFamily: "Helvetica", color: "#1f2937", lineHeight: 1.4 },
   row: { flexDirection: "row" },
   header: { flexDirection: "row", justifyContent: "space-between", borderBottomWidth: 2, borderBottomColor: GREEN, paddingBottom: 12, marginBottom: 16 },
+  logo: { height: 44, maxWidth: 160, objectFit: "contain", objectPosition: "left", marginBottom: 8 },
   company: { fontSize: 14, fontFamily: "Helvetica-Bold", color: GREEN, marginBottom: 3 },
   muted: { color: "#6b7280" },
   title: { fontSize: 16, fontFamily: "Helvetica-Bold", textAlign: "right", marginBottom: 6, letterSpacing: 1 },
@@ -57,7 +59,7 @@ const s = StyleSheet.create({
   footer: { position: "absolute", bottom: 24, left: 36, right: 36, textAlign: "center", fontSize: 7.5, color: "#9ca3af" },
 });
 
-export function InvoicePdf({ doc, company }: { doc: PdfDoc; company: Settings }) {
+export function InvoicePdf({ doc, company, logo }: { doc: PdfDoc; company: Settings; logo?: Buffer | null }) {
   const isInvoice = doc.kind === "invoice";
   const vatPct = doc.vatRate.times(100).toDecimalPlaces(2).toString();
   const balance = isInvoice && doc.amountPaid ? doc.totalAmount.minus(doc.amountPaid) : null;
@@ -67,6 +69,7 @@ export function InvoicePdf({ doc, company }: { doc: PdfDoc; company: Settings })
       <Page size="A4" style={s.page}>
         <View style={s.header}>
           <View style={{ maxWidth: 280 }}>
+            {logo ? <PdfImage src={{ data: logo, format: company.companyLogo.endsWith(".png") ? "png" : "jpg" }} style={s.logo} /> : null}
             <Text style={s.company}>{company.companyName}</Text>
             {company.companyAddress ? <Text style={s.muted}>{company.companyAddress}</Text> : null}
             <Text style={s.muted}>{[company.companyPhone, company.companyEmail].filter(Boolean).join("  ·  ")}</Text>

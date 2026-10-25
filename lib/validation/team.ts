@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { parseDateInput, parseDateTimeInput } from "../dates";
 import { normalizeUaePhone } from "./uae";
 
 const optionalText = (max: number) =>
@@ -11,7 +12,7 @@ const optionalText = (max: number) =>
 const optionalDateTime = z
   .string()
   .trim()
-  .refine((v) => v === "" || /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(v), "Use a valid date and time");
+  .refine((v) => v === "" || parseDateTimeInput(v) !== null, "Use a valid date and time");
 
 export const taskSchema = z.object({
   title: z.string().trim().min(3, "Describe the task").max(200),
@@ -29,7 +30,7 @@ export const followUpSchema = z.object({
   deadline: z
     .string()
     .trim()
-    .refine((v) => /^\d{4}-\d{2}-\d{2}$/.test(v), "Choose a date"),
+    .refine((v) => parseDateInput(v) !== null, "Choose a date"),
   customerId: z.string().transform((v) => v || null),
   assignedToId: z.string().transform((v) => v || null),
   notes: optionalText(2000),

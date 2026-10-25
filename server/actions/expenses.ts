@@ -15,7 +15,7 @@ function refresh() {
 
 /** Create or edit a manual expense; an attached receipt (FormData "receipt") replaces the old one. */
 export async function saveExpense(id: string | null, formData: FormData): Promise<ActionResult<{ id: string }>> {
-  const { user, error } = await guardAction("finance:edit");
+  const { user, error } = await guardAction("finance:edit", id);
   if (!user) return { ok: false, error };
   const fields = Object.fromEntries([...formData.entries()].filter(([k]) => k !== "receipt").map(([k, v]) => [k, String(v)]));
   const parsed = expenseSchema.safeParse(fields);
@@ -61,7 +61,7 @@ export async function saveExpense(id: string | null, formData: FormData): Promis
 }
 
 export async function deleteExpense(id: string): Promise<ActionResult> {
-  const { user, error } = await guardAction("finance:edit");
+  const { user, error } = await guardAction("finance:edit", id);
   if (!user) return { ok: false, error };
   const e = await prisma.expense.findUnique({ where: { id } });
   if (!e) return { ok: false, error: "This expense no longer exists." };

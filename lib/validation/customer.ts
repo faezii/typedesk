@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { parseDateInput } from "../dates";
 import { normalizeEmiratesId, normalizeTrn, normalizeUaePhone } from "./uae";
 
 const optionalText = (max: number) =>
@@ -12,7 +13,7 @@ const optionalText = (max: number) =>
 const optionalDate = z
   .string()
   .trim()
-  .refine((v) => v === "" || /^\d{4}-\d{2}-\d{2}$/.test(v), "Use a valid date")
+  .refine((v) => v === "" || parseDateInput(v) !== null, "Use a valid date")
   .transform((v) => v || null);
 
 /** Shared by the client form (react-hook-form) and the server action. */

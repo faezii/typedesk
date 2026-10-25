@@ -1,9 +1,10 @@
 import { can } from "@/lib/auth/permissions";
 import { getCurrentUser } from "@/lib/auth/session";
 import { prisma } from "@/lib/prisma";
+import { getSettings } from "@/lib/settings";
 import { fileUrlFor, mimeForKey, readKey } from "@/lib/storage";
 
-/** Serves uploaded files to signed-in users: live documents (documents:view) and expense receipts (finance:view). */
+/** Serves uploaded files to signed-in users: the company logo, live documents (documents:view) and expense receipts (finance:view). */
 export async function GET(req: Request, { params }: { params: Promise<{ key: string[] }> }) {
   const user = await getCurrentUser();
   if (!user) return new Response("Not found", { status: 404 });
@@ -11,6 +12,7 @@ export async function GET(req: Request, { params }: { params: Promise<{ key: str
   const key = (await params).key.join("/");
   const fileUrl = fileUrlFor(key);
   const doc =
+    ((await getSettings()).companyLogo === fileUrl && { name: "logo" }) ||
     (can(user.role, "documents:view") && (await prisma.document.findFirst({ where: { fileUrl, deletedAt: null }, select: { name: true } }))) ||
     (can(user.role, "finance:view") &&
       (await prisma.expense.findFirst({ where: { receiptUrl: fileUrl }, select: { description: true } }).then((e) => (e ? { name: `Receipt - ${e.description}` } : null)))) ||

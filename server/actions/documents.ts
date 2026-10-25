@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { DocumentCategory } from "@prisma/client";
 import { z } from "zod";
 import type { ActionResult } from "@/lib/action-result";
-import { AuthorizationError, requirePermission } from "@/lib/auth/session";
+import { guardAction } from "@/lib/auth/session";
 import { parseDateInput } from "@/lib/dates";
 import { DOCUMENT_CATEGORY_LABEL, EXPIRING_CATEGORIES } from "@/lib/labels";
 import { prisma } from "@/lib/prisma";
@@ -21,21 +21,12 @@ const uploadSchema = z.object({
     .string()
     .trim()
     .optional()
-    .refine((v) => !v || /^\d{4}-\d{2}-\d{2}$/.test(v), "Use a valid date"),
+    .refine((v) => !v || parseDateInput(v) !== null, "Use a valid date"),
 });
 
-async function guard(permission: "documents:edit" | "documents:view") {
-  try {
-    return { user: await requirePermission(permission) };
-  } catch (e) {
-    if (e instanceof AuthorizationError) return { error: e.message };
-    throw e;
-  }
-}
-
 export async function uploadDocument(formData: FormData): Promise<ActionResult<{ id: string }>> {
-  const g = await guard("documents:edit");
-  if (!g.user) return { ok: false, error: g.error! };
+  const g = await guardAction("documents:edit");
+  if (!g.user) return { ok: false, error: g.error };
 
   const file = formData.get("file");
   if (!(file instanceof File)) return { ok: false, error: "Choose a file to upload." };
@@ -97,8 +88,8 @@ export async function uploadDocument(formData: FormData): Promise<ActionResult<{
 }
 
 export async function deleteDocument(id: string): Promise<ActionResult> {
-  const g = await guard("documents:edit");
-  if (!g.user) return { ok: false, error: g.error! };
+  const g = await guardAction("documents:edit", id);
+  if (!g.user) return { ok: false, error: g.error };
 
   const doc = await prisma.document.findFirst({ where: { id, deletedAt: null }, select: { name: true } });
   if (!doc) return { ok: false, error: "Document not found." };
@@ -116,7 +107,7 @@ export async function deleteDocument(id: string): Promise<ActionResult> {
 
 /** Picker lookups for the upload dialog. */
 export async function findCustomerWorkOrders(customerId: string) {
-  const g = await guard("documents:view");
+  const g = await guardAction("documents:view", customerId);
   if (!g.user || !customerId) return [];
   return customerWorkOrderOptions(customerId);
 }

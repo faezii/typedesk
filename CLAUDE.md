@@ -24,10 +24,13 @@ Business management app for a UAE translation & typing center. Built phase by ph
 - Data access for pages lives in `server/queries/*`; mutations are server actions in `server/actions/*`. Every action: auth check → role check → Zod validation → mutation → `revalidatePath`.
 - Work order revisions never reset status: a delivered order with an open revision stays `DELIVERED` with `hasOpenRevision = true`.
 - **Validation**: Zod schemas in `lib/validation/*` are shared by the client form (react-hook-form + `zodResolver`) and the server action. Actions return `ActionResult` (`lib/action-result.ts`). Phone/EID/TRN normalisers live in `lib/validation/uae.ts`.
-- **Files**: upload through `lib/storage.ts` (10 MB; PDF/JPG/PNG/DOCX checked by magic bytes) and store the returned `fileUrl` on a `Document`. Files are served by `/api/files/...` only to signed-in users and only while the `Document` isn't soft-deleted.
+- **Files**: upload through `lib/storage.ts` (10 MB; PDF/JPG/PNG/DOCX checked by magic bytes) and store the returned `fileUrl` on a `Document`. Files are served by `/api/files/...` only to signed-in users and only while the `Document` isn't soft-deleted. Storage is local disk (`UPLOAD_DIR`) or an S3-compatible bucket when `S3_BUCKET` is set (`lib/s3.ts`, hand-rolled SigV4 tested against the AWS reference signature); the seed writes through the same switch.
+- **Settings**: `/settings` (ADMIN) edits the `Setting` rows read by `getSettings()`: company details, `vatRate` (stored as a fraction, entered as a percent), `invoiceTerms`, and `companyLogo` (a `fileUrl`, PNG/JPG ≤ 1 MB, served to any signed-in user and printed on invoice PDFs).
+- **Dates from forms/URLs**: validate with `parseDateInput` / `parseDateTimeInput` (`lib/dates.ts`), never a bare regex; they return null for impossible dates like `2026-02-30` instead of rolling over.
+- **Error pages**: `error.tsx` / `not-found.tsx` exist at `app/` (no shell) and `app/(app)/` (inside the shell); access-denied, not-found and error screens share `StatusPage`.
 - **Expiry follow-ups**: after changing a customer's passport/Emirates ID expiry, call `syncIdExpiryFollowUps` (`server/services/expiry-follow-ups.ts`). It keeps one follow-up per ID, keyed by `FollowUp.autoKey`, due 30 days before expiry.
 - **Lists**: filters live in the URL (`components/shared/url-filters.tsx`) with server-side `Pagination`; status pills use `ToneBadge`, ID expiry uses `ExpiryBadge`.
-- **Action guard**: new server actions start with `const { user, error } = await guardAction("perm")` (`lib/auth/session.ts`) and return `{ ok: false, error }` when `user` is missing.
+- **Action guard**: every server action starts with `const { user, error } = await guardAction("perm", id, …)` (`lib/auth/session.ts`) and returns `{ ok: false, error }` when `user` is missing. Pass every record id the client sent (null allowed for "create"): it rejects non-string ids, which could otherwise be Prisma filter objects (`{ not: "" }`) matching every row.
 - **Tasks**: STAFF see their own tasks by default (`?assignee=everyone` for the team) and may only change tasks assigned to them; task detail opens via `?task=<id>`.
 - **Follow-ups**: overdue-invoice reminders come from `syncPaymentReminders()` (`server/services/payment-reminders.ts`, keyed `invoice:<id>:payment`), run on the follow-ups page and dashboard. Snooze = 7 days past the later of today and the deadline.
 - **Accounts**: new users and password resets get a one-time temp password (`lib/passwords.ts`) and `mustChangePassword`, which shows a banner until they change it at `/account`. Only ADMIN may create/change/reset/deactivate admins; nobody can deactivate themselves, change their own role, or remove the last active admin.
@@ -42,8 +45,7 @@ Business management app for a UAE translation & typing center. Built phase by ph
 - `auth.config.ts` — proxy-safe Auth.js config (JWT session with `id/role/department`, `authorized` callback does route gating). `auth.ts` adds the Credentials provider (bcrypt, per-email lockout). `proxy.ts` runs it on every request.
 - `lib/auth/permissions.ts` is the single source of role rules (`can(role, perm)`, route → permission map). Update it, not individual pages.
 - `lib/auth/session.ts`: `requirePagePermission()` in pages (redirects to `/login` or `/forbidden`), `requirePermission()` in server actions (throws). Both re-read the user from the DB, so deactivation applies immediately.
-- App pages live under `app/(app)/` inside `AppShell` (sidebar nav from `lib/nav.ts`, filtered by role). Sections not built yet are `[[...slug]]` placeholder pages — delete the placeholder when building the real route.
-
+- App pages live under `app/(app)/` inside `AppShell` (sidebar nav from `lib/nav.ts`, filtered by role).
 ## Roles & permissions
 | Area | ADMIN | MANAGER | FINANCE | STAFF |
 |---|---|---|---|---|
@@ -63,7 +65,8 @@ All seeded users use password `Password123!` (development only):
 
 ## Commands
 - `npm run dev` · `npm run build` · `npm run lint` · `npm run typecheck` · `npm test`
-- `npm run db:migrate` (dev migration) · `npm run db:seed` · `npm run db:reset` (drop, migrate, seed)
+- `npm run db:migrate` (dev migration) · `npm run db:seed` (wipes all data first) · `npm run db:reset` (drop, migrate, seed) · `npm run create-admin -- <email> "<name>"` (first admin on a production DB)
+- Setup, env vars and Vercel + Neon/Supabase + R2 deployment: `README.md`.
 - Local Postgres: `docker compose up -d db`, or point `DATABASE_URL` at an existing server.
 
 <!-- BEGIN:nextjs-agent-rules -->

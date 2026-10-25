@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import type { ActionResult } from "@/lib/action-result";
-import { AuthorizationError, getCurrentUser, requirePermission } from "@/lib/auth/session";
+import { getCurrentUser, guardAction } from "@/lib/auth/session";
 import { parseDateInput } from "@/lib/dates";
 import { prisma } from "@/lib/prisma";
 import { customerSchema, type CustomerFormValues } from "@/lib/validation/customer";
@@ -13,19 +13,14 @@ import { can } from "@/lib/auth/permissions";
 /** Lookup for customer pickers. */
 export async function findCustomers(q: string) {
   const user = await getCurrentUser();
-  if (!user || !can(user.role, "customers:view") || q.trim().length < 2) return [];
+  if (!user || !can(user.role, "customers:view") || typeof q !== "string" || q.trim().length < 2) return [];
   return searchCustomers(q);
 }
 
 /** Create (id = null) or update a customer; keeps ID-expiry follow-ups in sync. */
 export async function saveCustomer(id: string | null, input: CustomerFormValues): Promise<ActionResult<{ id: string }>> {
-  let user;
-  try {
-    user = await requirePermission("customers:edit");
-  } catch (e) {
-    if (e instanceof AuthorizationError) return { ok: false, error: e.message };
-    throw e;
-  }
+  const { user, error } = await guardAction("customers:edit", id);
+  if (!user) return { ok: false, error };
 
   const parsed = customerSchema.safeParse(input);
   if (!parsed.success) {

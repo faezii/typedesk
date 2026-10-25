@@ -17,6 +17,7 @@ import bcrypt from "bcryptjs";
 import { addDays, addHours, differenceInCalendarDays, format, startOfDay, startOfMonth, subDays, subMonths } from "date-fns";
 import { mkdirSync, writeFileSync } from "node:fs";
 import { WORK_ORDER_STATUS_LABEL } from "../lib/labels";
+import { s3, s3Put } from "../lib/s3";
 import path from "node:path";
 
 const prisma = new PrismaClient();
@@ -711,15 +712,17 @@ async function main() {
   }
   await prisma.followUp.createMany({ data: followUps.slice(0, 25) });
 
-  // ───────────── Documents (sample PDFs on disk) ─────────────
+  // ───────────── Documents (sample PDFs, in the same store the app reads: disk or S3/R2) ─────────────
   console.log("Seeding documents…");
   const seedDir = path.resolve(process.env.UPLOAD_DIR ?? "./uploads", "seed");
-  mkdirSync(seedDir, { recursive: true });
+  if (!s3) mkdirSync(seedDir, { recursive: true });
+  const uploads: Promise<void>[] = [];
   const documents: Prisma.DocumentCreateManyInput[] = [];
   const addDoc = (d: Omit<Prisma.DocumentCreateManyInput, "fileUrl" | "mimeType" | "size" | "uploadedById">, lines: string[]) => {
     const file = `doc-${String(documents.length + 1).padStart(3, "0")}.pdf`;
     const bytes = samplePdf(lines);
-    writeFileSync(path.join(seedDir, file), bytes);
+    if (s3) uploads.push(s3Put(`seed/${file}`, bytes));
+    else writeFileSync(path.join(seedDir, file), bytes);
     documents.push({ ...d, fileUrl: `/api/files/seed/${file}`, mimeType: "application/pdf", size: bytes.length, uploadedById: pick([typist, manager, translator]).id });
   };
   for (const c of customers.slice(0, 18)) {
@@ -755,6 +758,7 @@ async function main() {
       [docTitle.toUpperCase(), `Work order: ${wo.orderNo}`, "Source document received at counter", "Sample file for demonstration"],
     );
   }
+  await Promise.all(uploads);
   await prisma.document.createMany({ data: documents });
 
   // ───────────── Activity log & counters ─────────────

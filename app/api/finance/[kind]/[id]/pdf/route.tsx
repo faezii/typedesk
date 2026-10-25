@@ -3,6 +3,7 @@ import { InvoicePdf, type PdfDoc } from "@/components/finance/invoice-pdf";
 import { can } from "@/lib/auth/permissions";
 import { getCurrentUser } from "@/lib/auth/session";
 import { getSettings } from "@/lib/settings";
+import { keyFromUrl, readKey } from "@/lib/storage";
 import { getInvoice, getQuotation } from "@/server/queries/invoices";
 
 /** GET /api/finance/invoice/<id>/pdf (or /quotation/…); add ?download for an attachment. */
@@ -21,7 +22,10 @@ export async function GET(req: Request, { params }: { params: Promise<{ kind: st
   }
   if (!doc) return new Response("Not found", { status: 404 });
 
-  const pdf = await renderToBuffer(<InvoicePdf doc={doc} company={await getSettings()} />);
+  const company = await getSettings();
+  // A missing or unreachable logo must not block the invoice.
+  const logo = company.companyLogo ? await readKey(keyFromUrl(company.companyLogo)).catch(() => null) : null;
+  const pdf = await renderToBuffer(<InvoicePdf doc={doc} company={company} logo={logo} />);
   const download = new URL(req.url).searchParams.has("download");
   return new Response(new Uint8Array(pdf), {
     headers: {

@@ -1,8 +1,9 @@
 import { z } from "zod";
+import { parseDateInput } from "../dates";
 import { DECIMAL_RE } from "./work-order";
 
-const date = z.string().trim().refine((v) => /^\d{4}-\d{2}-\d{2}$/.test(v), "Choose a date");
-const optionalDate = z.string().trim().refine((v) => v === "" || /^\d{4}-\d{2}-\d{2}$/.test(v), "Use a valid date");
+const date = z.string().trim().refine((v) => parseDateInput(v) !== null, "Choose a date");
+const optionalDate = z.string().trim().refine((v) => v === "" || parseDateInput(v) !== null, "Use a valid date");
 const money = (msg: string) => z.string().trim().refine((v) => DECIMAL_RE.test(v), msg);
 
 export const lineSchema = z.object({

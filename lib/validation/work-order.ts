@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { parseDateTimeInput } from "../dates";
 
 /** Up to 9 digits with at most 2 decimals — used for both AED amounts and quantities. */
 export const DECIMAL_RE = /^\d{1,9}(\.\d{1,2})?$/;
@@ -32,7 +33,7 @@ export const workOrderSchema = z.object({
   deadline: z
     .string()
     .trim()
-    .refine((v) => v === "" || /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(v), "Use a valid date and time"),
+    .refine((v) => v === "" || parseDateTimeInput(v) !== null, "Use a valid date and time"),
   assignedToId: z.string().transform((v) => v || null),
   notes: optionalText(2000),
   // Only used when the chosen service is a translation service (checked on the server).

@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import type { WorkOrderStatus } from "@prisma/client";
 import type { ActionResult } from "@/lib/action-result";
-import { AuthorizationError, guardAction, requirePermission } from "@/lib/auth/session";
+import { guardAction } from "@/lib/auth/session";
 import { parseDateTimeInput } from "@/lib/dates";
 import { WORK_ORDER_STATUS_LABEL } from "@/lib/labels";
 import { lineTotal } from "@/lib/money";
@@ -13,16 +13,6 @@ import { prisma } from "@/lib/prisma";
 import { workOrderSchema, type WorkOrderFormValues } from "@/lib/validation/work-order";
 import { isTranslation } from "@/lib/work-orders";
 
-type Guarded = { user: Awaited<ReturnType<typeof requirePermission>> } | { error: string };
-
-async function guard(): Promise<Guarded> {
-  try {
-    return { user: await requirePermission("workOrders:edit") };
-  } catch (e) {
-    if (e instanceof AuthorizationError) return { error: e.message };
-    throw e;
-  }
-}
 
 function refresh(id?: string) {
   revalidatePath("/work-orders", "layout");
@@ -35,8 +25,8 @@ const fail = (error: string, fieldErrors?: Record<string, string>) => ({ ok: fal
 
 /** Create (id = null) or update a work order. Totals are computed here, never trusted from the client. */
 export async function saveWorkOrder(id: string | null, input: WorkOrderFormValues): Promise<ActionResult<{ id: string }>> {
-  const g = await guard();
-  if ("error" in g) return fail(g.error);
+  const g = await guardAction("workOrders:edit", id);
+  if (!g.user) return fail(g.error);
 
   const parsed = workOrderSchema.safeParse(input);
   if (!parsed.success) {
@@ -115,7 +105,7 @@ export async function saveWorkOrder(id: string | null, input: WorkOrderFormValue
 /** Lookup for work order pickers (tasks, outsourcing). */
 export async function findWorkOrders(q: string) {
   const { user } = await guardAction("workOrders:view");
-  const term = q.trim();
+  const term = typeof q === "string" ? q.trim() : "";
   if (!user || term.length < 2) return [];
   return prisma.workOrder.findMany({
     where: {
@@ -135,8 +125,8 @@ const statusSchema = z.enum(["RECEIVED", "IN_PROGRESS", "QUALITY_CHECK", "READY"
  * `from` is the status the user saw; if someone else moved it meanwhile, nothing changes.
  */
 export async function moveWorkOrder(id: string, from: WorkOrderStatus, to: WorkOrderStatus): Promise<ActionResult> {
-  const g = await guard();
-  if ("error" in g) return fail(g.error);
+  const g = await guardAction("workOrders:edit", id);
+  if (!g.user) return fail(g.error);
   const parsed = z.object({ id: z.string().min(1), from: statusSchema, to: statusSchema }).safeParse({ id, from, to });
   if (!parsed.success) return fail("Invalid status.");
   if (from === to) return { ok: true, data: undefined };
@@ -174,8 +164,8 @@ const noteSchema = z.string().trim().min(3, "Describe the correction (at least 3
 
 /** Flag a delivered order for correction. Status stays DELIVERED; history is kept. */
 export async function requestRevision(id: string, reason: string): Promise<ActionResult> {
-  const g = await guard();
-  if ("error" in g) return fail(g.error);
+  const g = await guardAction("workOrders:edit", id);
+  if (!g.user) return fail(g.error);
   const r = noteSchema.safeParse(reason);
   if (!r.success) return fail(r.error.issues[0]!.message);
 
@@ -197,8 +187,8 @@ export async function requestRevision(id: string, reason: string): Promise<Actio
 }
 
 export async function resolveRevision(id: string, resolution: string): Promise<ActionResult> {
-  const g = await guard();
-  if ("error" in g) return fail(g.error);
+  const g = await guardAction("workOrders:edit", id);
+  if (!g.user) return fail(g.error);
   const r = noteSchema.safeParse(resolution);
   if (!r.success) return fail(r.error.issues[0]!.message);
 

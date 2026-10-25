@@ -2,9 +2,10 @@ import "server-only";
 import { randomUUID } from "node:crypto";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
+import { s3, s3Get, s3Put } from "./s3";
 
-// shortcut: local disk only — files live on this server; Phase 10 adds S3/R2 behind the same functions.
-const ROOT = path.resolve(process.env.UPLOAD_DIR ?? "./uploads");
+// Local disk (UPLOAD_DIR) unless S3_BUCKET is set — use S3/R2 on hosts without a persistent disk (Vercel).
+const ROOT = path.resolve(/*turbopackIgnore: true*/ process.env.UPLOAD_DIR ?? "./uploads");
 
 export const MAX_UPLOAD_BYTES = 10 * 1024 * 1024;
 
@@ -21,14 +22,16 @@ const KEY_RE = /^[\w-]+(\/[\w-]+)*\.(pdf|jpg|png|docx)$/;
 
 export class UploadError extends Error {}
 
-export async function saveUpload(file: File) {
+export async function saveUpload(file: File, accept: readonly (typeof TYPES)[number]["ext"][] = ["pdf", "jpg", "png", "docx"]) {
   if (file.size === 0) throw new UploadError("The file is empty.");
   if (file.size > MAX_UPLOAD_BYTES) throw new UploadError("Files must be 10 MB or smaller.");
 
   const bytes = Buffer.from(await file.arrayBuffer());
   const type = TYPES.find((t) => t.magic.every((b, i) => bytes[i] === b));
   const ext = file.name.split(".").pop()?.toLowerCase();
-  if (!type || (type.ext === "docx" && ext !== "docx")) throw new UploadError("Only PDF, JPG, PNG and DOCX files are allowed.");
+  if (!type || !accept.includes(type.ext) || (type.ext === "docx" && ext !== "docx")) {
+    throw new UploadError(`Only ${new Intl.ListFormat("en-GB").format(accept.map((e) => e.toUpperCase()))} files are allowed.`);
+  }
 
   const now = new Date();
   const key = `${now.getUTCFullYear()}/${String(now.getUTCMonth() + 1).padStart(2, "0")}/${randomUUID()}.${type.ext}`;
@@ -38,19 +41,20 @@ export async function saveUpload(file: File) {
 
 export async function writeKey(key: string, bytes: Buffer) {
   const target = resolveKey(key);
-  await mkdir(path.dirname(target), { recursive: true });
-  await writeFile(target, bytes);
+  if (s3) return s3Put(key, bytes);
+  // turbopackIgnore: uploads are runtime data; never trace them (customer IDs!) into the build output
+  await mkdir(/*turbopackIgnore: true*/ path.dirname(target), { recursive: true });
+  await writeFile(/*turbopackIgnore: true*/ target, bytes);
 }
 
 export async function readKey(key: string): Promise<Buffer | null> {
-  try {
-    return await readFile(resolveKey(key));
-  } catch {
-    return null;
-  }
+  const target = resolveKey(key);
+  if (s3) return s3Get(key);
+  return readFile(/*turbopackIgnore: true*/ target).catch(() => null);
 }
 
 export const fileUrlFor = (key: string) => `/api/files/${key}`;
+export const keyFromUrl = (fileUrl: string) => fileUrl.replace(/^\/api\/files\//, "");
 
 export function mimeForKey(key: string) {
   const ext = key.split(".").pop();

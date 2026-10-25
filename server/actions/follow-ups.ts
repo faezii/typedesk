@@ -15,7 +15,7 @@ function refresh() {
 }
 
 export async function saveFollowUp(id: string | null, input: FollowUpFormValues): Promise<ActionResult<{ id: string }>> {
-  const { user, error } = await guardAction("followUps:edit");
+  const { user, error } = await guardAction("followUps:edit", id);
   if (!user) return { ok: false, error };
   const parsed = followUpSchema.safeParse(input);
   if (!parsed.success) {
@@ -41,7 +41,7 @@ export async function saveFollowUp(id: string | null, input: FollowUpFormValues)
 
 /** One-click Done / reopen. */
 export async function setFollowUpDone(id: string, done: boolean): Promise<ActionResult> {
-  const { user, error } = await guardAction("followUps:edit");
+  const { user, error } = await guardAction("followUps:edit", id);
   if (!user) return { ok: false, error };
   const { count } = await prisma.followUp.updateMany({ where: { id }, data: { status: done ? "DONE" : "PENDING" } });
   if (count === 0) return { ok: false, error: "This follow-up no longer exists." };
@@ -54,7 +54,7 @@ export async function setFollowUpDone(id: string, done: boolean): Promise<Action
 
 /** Push 7 days past the later of today and the current deadline. */
 export async function snoozeFollowUp(id: string): Promise<ActionResult<{ until: string }>> {
-  const { user, error } = await guardAction("followUps:edit");
+  const { user, error } = await guardAction("followUps:edit", id);
   if (!user) return { ok: false, error };
   const f = await prisma.followUp.findUnique({ where: { id }, select: { deadline: true } });
   if (!f) return { ok: false, error: "This follow-up no longer exists." };

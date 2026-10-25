@@ -1,6 +1,7 @@
 import "server-only";
 import { cache } from "react";
 import { redirect } from "next/navigation";
+import { z } from "zod";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { can, type Permission } from "./permissions";
@@ -42,10 +43,21 @@ export class AuthorizationError extends Error {
   }
 }
 
-/** For server actions that return ActionResult: `{ user }` or `{ error }` instead of throwing. */
-export async function guardAction(permission: Permission): Promise<{ user: CurrentUser; error?: undefined } | { error: string; user?: undefined }> {
+const idSchema = z.string().regex(/^[\w-]{1,64}$/).nullable();
+
+/**
+ * For server actions that return ActionResult: `{ user }` or `{ error }` instead of throwing.
+ * Pass every record id the action received from the client (null = "create"): a crafted request
+ * could otherwise send a Prisma filter such as `{ not: "" }` and match every row.
+ */
+export async function guardAction(
+  permission: Permission,
+  ...ids: unknown[]
+): Promise<{ user: CurrentUser; error?: undefined } | { error: string; user?: undefined }> {
   try {
-    return { user: await requirePermission(permission) };
+    const user = await requirePermission(permission);
+    if (!ids.every((id) => idSchema.safeParse(id).success)) return { error: "Invalid request." };
+    return { user };
   } catch (e) {
     if (e instanceof AuthorizationError) return { error: e.message };
     throw e;

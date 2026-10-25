@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { amountInWords, computeTotals, paymentStatus } from "./invoice-math";
 import { documentSchema } from "./validation/finance";
+import { settingsSchema } from "./validation/settings";
 
 describe("computeTotals", () => {
   it("6 pages × 120 + 2 × 35 at 5% VAT", () => {
@@ -21,6 +22,25 @@ describe("computeTotals", () => {
     expect(t.totalAmount.toFixed(2)).toBe("911.77");
   });
   it("respects a different VAT rate from settings", () => expect(computeTotals([{ quantity: "1", unitPrice: "100" }], "0").totalAmount.toFixed(2)).toBe("100.00"));
+  it("VAT of exactly half a fil rounds up (no float drift)", () => {
+    expect(computeTotals([{ quantity: "1", unitPrice: "0.30" }], "0.05").vatAmount.toFixed(2)).toBe("0.02"); // 0.015; as a float this would be 0.01
+    expect(computeTotals([{ quantity: "3", unitPrice: "0.10" }], "0.05").vatAmount.toFixed(2)).toBe("0.02");
+  });
+  it("VAT is charged once on the subtotal, not per line", () => {
+    // 3 × 0.30 = 0.90 → VAT 0.045 → 0.05. Rounding VAT per line would give 3 × 0.02 = 0.06.
+    const t = computeTotals([0, 1, 2].map(() => ({ quantity: "1", unitPrice: "0.30" })), "0.05");
+    expect(t.vatAmount.toFixed(2)).toBe("0.05");
+  });
+});
+
+describe("settingsSchema VAT rate", () => {
+  const base = { companyName: "TypeDesk", companyTrn: "", companyPhone: "", companyEmail: "", companyAddress: "", invoiceTerms: "" };
+  it.each(["5", "0", "7.5", "12.25"])("accepts %s%%", (v) => expect(settingsSchema.safeParse({ ...base, vatPercent: v }).success).toBe(true));
+  it.each(["", "100", "-5", "5%", "abc", "5.555", "0.05.1"])("rejects %j", (v) => expect(settingsSchema.safeParse({ ...base, vatPercent: v }).success).toBe(false));
+  it("normalises TRN and phone", () => {
+    const r = settingsSchema.parse({ ...base, vatPercent: "5", companyTrn: "100-3859-2640-0003", companyPhone: "043321180", companyEmail: "Info@TypeDesk.ae" });
+    expect([r.companyTrn, r.companyPhone, r.companyEmail]).toEqual(["100385926400003", "+971 4 332 1180", "info@typedesk.ae"]);
+  });
 });
 
 describe("paymentStatus", () => {
@@ -30,6 +50,11 @@ describe("paymentStatus", () => {
     expect(paymentStatus("829.50", "829.50")).toBe("PAID");
   });
   it("cancelled stays cancelled", () => expect(paymentStatus("100", "100", "CANCELLED")).toBe("CANCELLED"));
+  it("a fil short is still partial; overpaid counts as paid", () => {
+    expect(paymentStatus("829.50", "829.49")).toBe("PARTIAL");
+    expect(paymentStatus("829.50", "830")).toBe("PAID");
+  });
+  it("re-derives after a payment is removed", () => expect(paymentStatus("829.50", "0", "PAID")).toBe("UNPAID"));
 });
 
 describe("amountInWords", () => {

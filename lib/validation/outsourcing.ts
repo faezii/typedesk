@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { parseDateInput } from "../dates";
 import { normalizeUaePhone } from "./uae";
 import { DECIMAL_RE } from "./work-order";
 
@@ -9,7 +10,7 @@ const optionalText = (max: number) =>
     .max(max)
     .transform((v) => v || null);
 
-const dateInput = z.string().trim().refine((v) => v === "" || /^\d{4}-\d{2}-\d{2}$/.test(v), "Use a valid date");
+const dateInput = z.string().trim().refine((v) => v === "" || parseDateInput(v) !== null, "Use a valid date");
 
 export const vendorSchema = z.object({
   name: z.string().trim().min(2, "Enter the vendor's name").max(120),

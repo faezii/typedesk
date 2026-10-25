@@ -43,7 +43,7 @@ async function cleanServiceIds(items: ParsedDoc["items"]) {
 // ───────────── Invoices ─────────────
 
 export async function saveInvoice(id: string | null, input: DocumentFormValues): Promise<ActionResult<{ id: string }>> {
-  const { user, error } = await guardAction("finance:edit");
+  const { user, error } = await guardAction("finance:edit", id);
   if (!user) return fail(error);
   const parsed = parseDoc(input);
   if (parsed.error) return parsed.error;
@@ -114,7 +114,7 @@ async function logInvoice(tx: Tx, invoiceId: string, userId: string, action: str
 
 /** Cancel an unpaid invoice; its work orders become billable again. */
 export async function cancelInvoice(id: string): Promise<ActionResult> {
-  const { user, error } = await guardAction("finance:edit");
+  const { user, error } = await guardAction("finance:edit", id);
   if (!user) return fail(error);
   const inv = await prisma.invoice.findFirst({ where: { id, deletedAt: null }, select: { invoiceNo: true, amountPaid: true, status: true } });
   if (!inv) return fail("This invoice no longer exists.");
@@ -168,7 +168,7 @@ export async function recordPayment(input: PaymentFormValues): Promise<ActionRes
 // ───────────── Quotations ─────────────
 
 export async function saveQuotation(id: string | null, input: DocumentFormValues): Promise<ActionResult<{ id: string }>> {
-  const { user, error } = await guardAction("finance:edit");
+  const { user, error } = await guardAction("finance:edit", id);
   if (!user) return fail(error);
   const parsed = parseDoc(input);
   if (parsed.error) return parsed.error;
@@ -213,7 +213,7 @@ export async function saveQuotation(id: string | null, input: DocumentFormValues
 }
 
 export async function setQuotationStatus(id: string, status: "DRAFT" | "SENT" | "ACCEPTED" | "REJECTED"): Promise<ActionResult> {
-  const { user, error } = await guardAction("finance:edit");
+  const { user, error } = await guardAction("finance:edit", id);
   if (!user) return fail(error);
   if (!z.enum(["DRAFT", "SENT", "ACCEPTED", "REJECTED"]).safeParse(status).success) return fail("Invalid status.");
   const { count } = await prisma.quotation.updateMany({ where: { id, status: { not: "CONVERTED" } }, data: { status } });
@@ -225,7 +225,7 @@ export async function setQuotationStatus(id: string, status: "DRAFT" | "SENT" | 
 
 /** Copies the quotation's lines into a new invoice dated today (at the current VAT rate). */
 export async function convertQuotation(id: string): Promise<ActionResult<{ invoiceId: string }>> {
-  const { user, error } = await guardAction("finance:edit");
+  const { user, error } = await guardAction("finance:edit", id);
   if (!user) return fail(error);
   const vatRate = (await getSettings()).vatRate;
 
@@ -263,7 +263,7 @@ export async function convertQuotation(id: string): Promise<ActionResult<{ invoi
 
 /** Delivered, not-yet-invoiced orders for the builder's "Import work orders". */
 export async function findBillableWorkOrders(customerId: string) {
-  const { user } = await guardAction("finance:view");
+  const { user } = await guardAction("finance:view", customerId);
   if (!user || !customerId) return [];
   const rows = await uninvoicedWorkOrders(customerId);
   return rows.map((w) => ({

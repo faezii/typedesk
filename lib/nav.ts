@@ -11,6 +11,7 @@ import {
   LayoutDashboard,
   ListTodo,
   Receipt,
+  Settings,
   TrendingUp,
   Users,
   Wallet,
@@ -53,6 +54,7 @@ export const NAV_GROUPS: NavGroup[] = [
     ],
   },
   { label: "Reports", items: [{ title: "Reports", href: "/reports", icon: BarChart3, keywords: ["analytics", "export", "vat report"] }] },
+  { label: "Admin", items: [{ title: "Settings", href: "/settings", icon: Settings, keywords: ["company", "vat rate", "trn", "logo", "invoice terms"] }] },
 ];
 
 /** Navigation filtered to what the role may open; empty groups are dropped. */

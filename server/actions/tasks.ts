@@ -23,7 +23,7 @@ function refresh(workOrderId?: string | null) {
 }
 
 export async function saveTask(id: string | null, input: TaskFormValues): Promise<ActionResult<{ id: string }>> {
-  const { user, error } = await guardAction("tasks:edit");
+  const { user, error } = await guardAction("tasks:edit", id);
   if (!user) return { ok: false, error };
 
   const parsed = taskSchema.safeParse(input);
@@ -62,7 +62,7 @@ export async function saveTask(id: string | null, input: TaskFormValues): Promis
 }
 
 export async function moveTask(id: string, to: TaskStatus): Promise<ActionResult> {
-  const { user, error } = await guardAction("tasks:edit");
+  const { user, error } = await guardAction("tasks:edit", id);
   if (!user) return { ok: false, error };
   if (!z.enum(["TODO", "IN_PROGRESS", "DONE"]).safeParse(to).success) return { ok: false, error: "Invalid status." };
 

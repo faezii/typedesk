@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { parseDateTimeInput, toDateTimeInput } from "./dates";
+import { parseDateInput, parseDateTimeInput, toDateTimeInput } from "./dates";
 import { lineTotal } from "./money";
 import { formatNumber } from "./numbering";
 import { workOrderSchema } from "./validation/work-order";
@@ -34,6 +34,12 @@ describe("date-time input (Asia/Dubai)", () => {
   it("parses wall-clock Dubai time", () => expect(parseDateTimeInput("2026-10-25T17:00")?.toISOString()).toBe("2026-10-25T13:00:00.000Z"));
   it("round-trips", () => expect(toDateTimeInput(parseDateTimeInput("2026-01-02T09:30"))).toBe("2026-01-02T09:30"));
   it("rejects junk", () => expect(parseDateTimeInput("tomorrow")).toBeNull());
+  it.each(["2026-02-29T10:00", "2026-13-01T10:00", "2026-10-25T24:00", "2026-10-25T10:60"])("rejects impossible %s instead of rolling over", (v) => expect(parseDateTimeInput(v)).toBeNull());
+  it("dates: impossible days are rejected, leap days kept", () => {
+    expect(parseDateInput("2026-02-30")).toBeNull();
+    expect(parseDateInput("2026-13-45")).toBeNull();
+    expect(parseDateInput("2028-02-29")?.toISOString()).toBe("2028-02-28T20:00:00.000Z");
+  });
 });
 
 describe("workOrderSchema", () => {

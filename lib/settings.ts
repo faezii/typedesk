@@ -19,6 +19,8 @@ export const getSettings = cache(async () => {
     companyPhone: s.companyPhone ?? "",
     companyEmail: s.companyEmail ?? "",
     invoiceTerms: s.invoiceTerms ?? "",
+    /** fileUrl of the uploaded logo, "" when none. */
+    companyLogo: s.companyLogo ?? "",
   };
 });
 

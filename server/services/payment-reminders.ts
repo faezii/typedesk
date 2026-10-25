@@ -9,7 +9,7 @@ const REMINDER_AFTER_DAYS = 7;
  * Create a PAYMENT_REMINDER follow-up for every unpaid/partial invoice that is 7+ days past due,
  * and close reminders whose invoice has since been paid, cancelled or deleted. Idempotent.
  */
-// shortcut: runs when the follow-ups page or dashboard loads, not on a schedule — add a daily cron (Phase 10) if nobody opens those pages for days.
+// shortcut: runs when the follow-ups page or dashboard loads (the only places reminders show), not on a schedule — add a daily cron if reminders are ever sent out by email/WhatsApp.
 export async function syncPaymentReminders() {
   const cutoff = new Date(addDays(startOfTodayDubai(), -REMINDER_AFTER_DAYS, { in: dubai }).getTime());
   const overdue = await prisma.invoice.findMany({

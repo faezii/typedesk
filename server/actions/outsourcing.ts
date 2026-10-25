@@ -26,7 +26,7 @@ const woLog = (workOrderId: string, userId: string, action: string, message: str
 // ───────────── Vendors ─────────────
 
 export async function saveVendor(id: string | null, input: VendorFormValues): Promise<ActionResult<{ id: string }>> {
-  const { user, error } = await guardAction("outsourced:edit");
+  const { user, error } = await guardAction("outsourced:edit", id);
   if (!user) return { ok: false, error };
   const parsed = vendorSchema.safeParse(input);
   if (!parsed.success) return { ok: false, error: "Please fix the highlighted fields.", fieldErrors: fieldErrors(parsed.error.issues) };
@@ -42,7 +42,7 @@ export async function saveVendor(id: string | null, input: VendorFormValues): Pr
 }
 
 export async function setVendorActive(id: string, active: boolean): Promise<ActionResult> {
-  const { user, error } = await guardAction("outsourced:edit");
+  const { user, error } = await guardAction("outsourced:edit", id);
   if (!user) return { ok: false, error };
   const { count } = await prisma.vendor.updateMany({ where: { id }, data: { isActive: Boolean(active) } });
   if (count === 0) return { ok: false, error: "Vendor not found." };
@@ -53,7 +53,7 @@ export async function setVendorActive(id: string, active: boolean): Promise<Acti
 // ───────────── Assignments ─────────────
 
 export async function saveAssignment(id: string | null, input: AssignmentFormValues): Promise<ActionResult<{ id: string }>> {
-  const { user, error } = await guardAction("outsourced:edit");
+  const { user, error } = await guardAction("outsourced:edit", id);
   if (!user) return { ok: false, error };
   const parsed = assignmentSchema.safeParse(input);
   if (!parsed.success) return { ok: false, error: "Please fix the highlighted fields.", fieldErrors: fieldErrors(parsed.error.issues) };
@@ -89,7 +89,7 @@ export async function saveAssignment(id: string | null, input: AssignmentFormVal
 
 /** QA approve / reject (or back to pending). A QA decision implies the vendor delivered. */
 export async function setQaStatus(id: string, status: QaStatus): Promise<ActionResult> {
-  const { user, error } = await guardAction("outsourced:edit");
+  const { user, error } = await guardAction("outsourced:edit", id);
   if (!user) return { ok: false, error };
   if (!z.enum(["PENDING", "APPROVED", "REJECTED"]).safeParse(status).success) return { ok: false, error: "Invalid QA status." };
   const job = await prisma.outsourcedWork.findUnique({ where: { id }, select: { workOrderId: true, receivedAt: true, vendor: { select: { name: true } } } });
@@ -106,7 +106,7 @@ export async function setQaStatus(id: string, status: QaStatus): Promise<ActionR
  * marking it unpaid again removes that expense so the books stay consistent.
  */
 export async function setPaymentStatus(id: string, paid: boolean): Promise<ActionResult> {
-  const { user, error } = await guardAction("outsourced:payment");
+  const { user, error } = await guardAction("outsourced:payment", id);
   if (!user) return { ok: false, error };
   const job = await prisma.outsourcedWork.findUnique({
     where: { id },
@@ -153,7 +153,7 @@ export async function setPaymentStatus(id: string, paid: boolean): Promise<Actio
 
 /** Vendor's delivered file → a Document on the work order (and this job); marks the job received. */
 export async function uploadDelivery(id: string, formData: FormData): Promise<ActionResult> {
-  const { user, error } = await guardAction("outsourced:edit");
+  const { user, error } = await guardAction("outsourced:edit", id);
   if (!user) return { ok: false, error };
   const file = formData.get("file");
   if (!(file instanceof File)) return { ok: false, error: "Choose a file to upload." };

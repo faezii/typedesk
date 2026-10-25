@@ -56,6 +56,13 @@ export default async function ServicesPage() {
             </TableRow>
           </TableHeader>
           <TableBody>
+            {services.length === 0 && (
+              <TableRow>
+                <TableCell colSpan={canEdit ? 6 : 5} className="text-muted-foreground py-12 text-center">
+                  No services yet.{canEdit && " Add your first service to start taking work orders."}
+                </TableCell>
+              </TableRow>
+            )}
             {services.map((s) => (
               <TableRow key={s.id} className={cn(!s.isActive && "opacity-60")}>
                 <TableCell className="max-w-96 pl-4">

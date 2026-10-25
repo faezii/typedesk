@@ -46,7 +46,7 @@ export async function createEmployee(input: EmployeeFormValues): Promise<ActionR
 }
 
 export async function updateEmployee(id: string, input: EmployeeFormValues): Promise<ActionResult> {
-  const { user, error } = await guardAction("employees:edit");
+  const { user, error } = await guardAction("employees:edit", id);
   if (!user) return { ok: false, error };
   const parsed = employeeSchema.safeParse(input);
   if (!parsed.success) return { ok: false, error: "Please fix the highlighted fields.", fieldErrors: fieldErrors(parsed.error.issues) };
@@ -70,7 +70,7 @@ export async function updateEmployee(id: string, input: EmployeeFormValues): Pro
 
 /** Deactivated users can't sign in; their history stays. Takes effect on their next request. */
 export async function setEmployeeActive(id: string, active: boolean): Promise<ActionResult> {
-  const { user, error } = await guardAction("employees:edit");
+  const { user, error } = await guardAction("employees:edit", id);
   if (!user) return { ok: false, error };
   if (id === user.id) return { ok: false, error: "You can't deactivate your own account." };
   const target = await prisma.user.findUnique({ where: { id }, select: { role: true, name: true } });
@@ -86,7 +86,7 @@ export async function setEmployeeActive(id: string, active: boolean): Promise<Ac
 
 /** Issues a new temporary password (shown once) and asks the user to choose their own on next sign-in. */
 export async function resetEmployeePassword(id: string): Promise<ActionResult<{ tempPassword: string }>> {
-  const { user, error } = await guardAction("employees:edit");
+  const { user, error } = await guardAction("employees:edit", id);
   if (!user) return { ok: false, error };
   const target = await prisma.user.findUnique({ where: { id }, select: { role: true, name: true } });
   if (!target) return { ok: false, error: "Employee not found." };
