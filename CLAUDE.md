@@ -31,6 +31,7 @@ Business management app for a UAE translation & typing center. Built phase by ph
 - **Tasks**: STAFF see their own tasks by default (`?assignee=everyone` for the team) and may only change tasks assigned to them; task detail opens via `?task=<id>`.
 - **Follow-ups**: overdue-invoice reminders come from `syncPaymentReminders()` (`server/services/payment-reminders.ts`, keyed `invoice:<id>:payment`), run on the follow-ups page and dashboard. Snooze = 7 days past the later of today and the deadline.
 - **Accounts**: new users and password resets get a one-time temp password (`lib/passwords.ts`) and `mustChangePassword`, which shows a banner until they change it at `/account`. Only ADMIN may create/change/reset/deactivate admins; nobody can deactivate themselves, change their own role, or remove the last active admin.
+- **Outsourcing**: `setPaymentStatus` books exactly one FREELANCER `Expense` per job (unique `Expense.outsourcedWorkId`) and removes it on reversal; a paid job's cost can't change. Vendor deliveries are `Document`s linked to the work order and the job (`Document.outsourcedWorkId`). Margin = order amount − agreed cost (`jobMargin` in `lib/money.ts`).
 - **Tests**: Vitest (`npm test`), files named `*.test.ts` next to the code.
 - **Migrations**: `prisma migrate dev` refuses to run non-interactively. Generate SQL with `prisma migrate diff --from-schema-datasource prisma/schema.prisma --to-schema-datamodel prisma/schema.prisma --script` into a new `prisma/migrations/<timestamp>_<name>/migration.sql` (UTF-8, no BOM), then `prisma migrate deploy`.
 

@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowLeft, FilePlus2, Pencil, Plus, Upload } from "lucide-react";
+import { ArrowLeft, FilePlus2, Handshake, Pencil, Plus, Upload } from "lucide-react";
+import { AssignmentDialog } from "@/components/outsourcing/outsourcing-dialogs";
+import { vendorOptions } from "@/server/queries/outsourcing";
 import { TaskDialog } from "@/components/tasks/task-dialog";
 import { activeUserOptions } from "@/server/queries/employees";
 import { DocumentTable } from "@/components/documents/document-table";
@@ -35,9 +37,10 @@ export default async function WorkOrderPage({ params }: { params: Promise<{ id: 
   const finance = can(user.role, "finance:view");
   const now = new Date();
 
-  const [options, taskUsers] = await Promise.all([
+  const [options, taskUsers, vendors] = await Promise.all([
     canEdit ? workOrderFormOptions() : null,
     can(user.role, "tasks:edit") ? activeUserOptions() : null,
+    can(user.role, "outsourced:edit") ? vendorOptions() : null,
   ]);
   // Keep a retired service selectable when editing an order that already uses it.
   if (options && !options.services.some((s) => s.id === wo.serviceId)) {
@@ -221,8 +224,20 @@ export default async function WorkOrderPage({ params }: { params: Promise<{ id: 
             )}
           </Card>
 
-          {wo.outsourced.length > 0 && (
-            <Card title="Outsourced">
+          {can(user.role, "outsourced:view") && (wo.outsourced.length > 0 || vendors) && (
+            <Card
+              title="Outsourced"
+              action={
+                vendors && (
+                  <AssignmentDialog vendors={vendors} defaultWorkOrder={{ id: wo.id, orderNo: wo.orderNo, subtitle: wo.customer.name }}>
+                    <Button size="sm" variant="outline">
+                      <Handshake /> Outsource
+                    </Button>
+                  </AssignmentDialog>
+                )
+              }
+            >
+              {wo.outsourced.length === 0 && <Empty>Not outsourced.</Empty>}
               <ul className="divide-y">
                 {wo.outsourced.map((o) => (
                   <li key={o.id} className="flex items-center gap-3 py-2.5 text-sm">

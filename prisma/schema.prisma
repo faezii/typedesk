@@ -349,6 +349,7 @@ model OutsourcedWork {
   workOrder WorkOrder @relation(fields: [workOrderId], references: [id], onDelete: Cascade)
   vendor    Vendor    @relation(fields: [vendorId], references: [id])
   expense   Expense? // created automatically when marked PAID
+  documents Document[]
 
   @@index([vendorId])
   @@index([workOrderId])
@@ -365,13 +366,16 @@ model Document {
   category     DocumentCategory
   customerId   String?
   workOrderId  String?
+  /// Set for files a vendor delivered for an outsourced job.
+  outsourcedWorkId String?
   expiryDate   DateTime?
   uploadedById String
   deletedAt    DateTime?
   createdAt    DateTime         @default(now())
 
-  customer   Customer?  @relation(fields: [customerId], references: [id], onDelete: SetNull)
-  workOrder  WorkOrder? @relation(fields: [workOrderId], references: [id], onDelete: SetNull)
+  customer       Customer?       @relation(fields: [customerId], references: [id], onDelete: SetNull)
+  workOrder      WorkOrder?      @relation(fields: [workOrderId], references: [id], onDelete: SetNull)
+  outsourcedWork OutsourcedWork? @relation(fields: [outsourcedWorkId], references: [id], onDelete: SetNull)
   uploadedBy User       @relation("DocumentUploader", fields: [uploadedById], references: [id])
 
   @@index([category])
