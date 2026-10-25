@@ -672,6 +672,7 @@ async function main() {
     followUps.push({
       title: `Payment reminder — ${inv.invoiceNo}`,
       type: "PAYMENT_REMINDER",
+      autoKey: `invoice:${inv.id}:payment`, // matches server/services/payment-reminders.ts
       status: "PENDING",
       deadline: addDays(inv.dueDate!, 7),
       customerId: inv.customerId,

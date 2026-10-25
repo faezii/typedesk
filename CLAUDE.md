@@ -27,6 +27,10 @@ Business management app for a UAE translation & typing center. Built phase by ph
 - **Files**: upload through `lib/storage.ts` (10 MB; PDF/JPG/PNG/DOCX checked by magic bytes) and store the returned `fileUrl` on a `Document`. Files are served by `/api/files/...` only to signed-in users and only while the `Document` isn't soft-deleted.
 - **Expiry follow-ups**: after changing a customer's passport/Emirates ID expiry, call `syncIdExpiryFollowUps` (`server/services/expiry-follow-ups.ts`). It keeps one follow-up per ID, keyed by `FollowUp.autoKey`, due 30 days before expiry.
 - **Lists**: filters live in the URL (`components/shared/url-filters.tsx`) with server-side `Pagination`; status pills use `ToneBadge`, ID expiry uses `ExpiryBadge`.
+- **Action guard**: new server actions start with `const { user, error } = await guardAction("perm")` (`lib/auth/session.ts`) and return `{ ok: false, error }` when `user` is missing.
+- **Tasks**: STAFF see their own tasks by default (`?assignee=everyone` for the team) and may only change tasks assigned to them; task detail opens via `?task=<id>`.
+- **Follow-ups**: overdue-invoice reminders come from `syncPaymentReminders()` (`server/services/payment-reminders.ts`, keyed `invoice:<id>:payment`), run on the follow-ups page and dashboard. Snooze = 7 days past the later of today and the deadline.
+- **Accounts**: new users and password resets get a one-time temp password (`lib/passwords.ts`) and `mustChangePassword`, which shows a banner until they change it at `/account`. Only ADMIN may create/change/reset/deactivate admins; nobody can deactivate themselves, change their own role, or remove the last active admin.
 - **Tests**: Vitest (`npm test`), files named `*.test.ts` next to the code.
 - **Migrations**: `prisma migrate dev` refuses to run non-interactively. Generate SQL with `prisma migrate diff --from-schema-datasource prisma/schema.prisma --to-schema-datamodel prisma/schema.prisma --script` into a new `prisma/migrations/<timestamp>_<name>/migration.sql` (UTF-8, no BOM), then `prisma migrate deploy`.
 

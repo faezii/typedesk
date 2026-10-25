@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import Link from "next/link";
 import { Menu, PanelLeftClose, PanelLeftOpen } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetDescription, SheetTitle } from "@/components/ui/sheet";
@@ -17,10 +18,12 @@ export const SIDEBAR_COOKIE = "sidebar_collapsed";
 export function AppShell({
   user,
   defaultCollapsed,
+  mustChangePassword = false,
   children,
 }: {
   user: ShellUser;
   defaultCollapsed: boolean;
+  mustChangePassword?: boolean;
   children: React.ReactNode;
 }) {
   const [collapsed, setCollapsed] = useState(defaultCollapsed);
@@ -118,6 +121,14 @@ export function AppShell({
             <UserMenu user={user} />
           </div>
         </header>
+        {mustChangePassword && (
+          <div role="status" className="border-b border-amber-500/30 bg-amber-500/10 px-4 py-2 text-sm sm:px-6 lg:px-8">
+            You&apos;re signed in with a temporary password.{" "}
+            <Link href="/account" className="font-medium underline underline-offset-2">
+              Choose your own password
+            </Link>
+          </div>
+        )}
         <main className="flex-1 px-4 py-6 sm:px-6 lg:px-8">{children}</main>
       </div>
     </div>

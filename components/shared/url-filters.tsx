@@ -70,22 +70,25 @@ export function FilterSelect({
   param,
   label,
   allLabel,
+  defaultValue = "all",
   options,
 }: {
   param: string;
   label: string;
-  /** Text for the "no filter" option, e.g. "All types". */
-  allLabel: string;
+  /** Text for the "no filter" option, e.g. "All types". Omit when the options cover every case. */
+  allLabel?: string;
+  /** What the server applies when the param is absent; choosing it clears the param. */
+  defaultValue?: string;
   options: { value: string; label: string }[];
 }) {
   const { params, set } = useSetParam();
   return (
-    <Select value={params.get(param) ?? "all"} onValueChange={(v) => set(param, v === "all" ? null : v)}>
+    <Select value={params.get(param) ?? defaultValue} onValueChange={(v) => set(param, v === defaultValue ? null : v)}>
       <SelectTrigger className="h-9 w-full sm:w-48" aria-label={label}>
         <SelectValue />
       </SelectTrigger>
       <SelectContent>
-        <SelectItem value="all">{allLabel}</SelectItem>
+        {allLabel && <SelectItem value="all">{allLabel}</SelectItem>}
         {options.map((o) => (
           <SelectItem key={o.value} value={o.value}>
             {o.label}

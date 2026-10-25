@@ -1,6 +1,7 @@
 "use client";
 
-import { LogOut } from "lucide-react";
+import Link from "next/link";
+import { KeyRound, LogOut } from "lucide-react";
 import type { Department, Role } from "@prisma/client";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -12,6 +13,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { initials } from "@/lib/format";
 import { logout } from "@/server/actions/auth";
 
 export type ShellUser = { name: string; email: string; role: Role; department: Department };
@@ -23,15 +25,6 @@ const DEPT_LABEL: Record<Department, string> = {
   TRANSLATION: "Translation",
   FINANCE: "Finance",
 };
-
-export function initials(name: string) {
-  return name
-    .split(/\s+/)
-    .filter(Boolean)
-    .slice(0, 2)
-    .map((p) => p[0]!.toUpperCase())
-    .join("");
-}
 
 export function UserMenu({ user }: { user: ShellUser }) {
   return (
@@ -53,6 +46,11 @@ export function UserMenu({ user }: { user: ShellUser }) {
           </div>
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
+        <DropdownMenuItem asChild>
+          <Link href="/account">
+            <KeyRound /> Account &amp; password
+          </Link>
+        </DropdownMenuItem>
         <form action={logout}>
           <DropdownMenuItem asChild variant="destructive">
             <button type="submit" className="w-full">

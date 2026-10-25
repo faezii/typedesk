@@ -151,6 +151,8 @@ model User {
   department   Department
   phone        String?
   isActive     Boolean    @default(true)
+  /// Set when an admin creates the user or resets their password; cleared when they choose their own.
+  mustChangePassword Boolean @default(false)
   lastLoginAt  DateTime?
   createdAt    DateTime   @default(now())
   updatedAt    DateTime   @updatedAt

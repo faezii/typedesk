@@ -16,7 +16,7 @@ export const getCurrentUser = cache(async () => {
   if (!session?.user?.id) return null;
   const user = await prisma.user.findUnique({
     where: { id: session.user.id },
-    select: { id: true, name: true, email: true, role: true, department: true, isActive: true },
+    select: { id: true, name: true, email: true, role: true, department: true, isActive: true, mustChangePassword: true },
   });
   return user?.isActive ? user : null;
 });
@@ -39,6 +39,16 @@ export class AuthorizationError extends Error {
   constructor(message = "You don't have permission to do that.") {
     super(message);
     this.name = "AuthorizationError";
+  }
+}
+
+/** For server actions that return ActionResult: `{ user }` or `{ error }` instead of throwing. */
+export async function guardAction(permission: Permission): Promise<{ user: CurrentUser; error?: undefined } | { error: string; user?: undefined }> {
+  try {
+    return { user: await requirePermission(permission) };
+  } catch (e) {
+    if (e instanceof AuthorizationError) return { error: e.message };
+    throw e;
   }
 }
 

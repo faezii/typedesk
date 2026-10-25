@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import type { WorkOrderStatus } from "@prisma/client";
 import type { ActionResult } from "@/lib/action-result";
-import { AuthorizationError, requirePermission } from "@/lib/auth/session";
+import { AuthorizationError, guardAction, requirePermission } from "@/lib/auth/session";
 import { parseDateTimeInput } from "@/lib/dates";
 import { WORK_ORDER_STATUS_LABEL } from "@/lib/labels";
 import { lineTotal } from "@/lib/money";
@@ -110,6 +110,22 @@ export async function saveWorkOrder(id: string | null, input: WorkOrderFormValue
 
   refresh(saved.id);
   return { ok: true, data: { id: saved.id } };
+}
+
+/** Lookup for work order pickers (tasks, outsourcing). */
+export async function findWorkOrders(q: string) {
+  const { user } = await guardAction("workOrders:view");
+  const term = q.trim();
+  if (!user || term.length < 2) return [];
+  return prisma.workOrder.findMany({
+    where: {
+      deletedAt: null,
+      OR: [{ orderNo: { contains: term, mode: "insensitive" } }, { customer: { name: { contains: term, mode: "insensitive" } } }],
+    },
+    orderBy: { createdAt: "desc" },
+    take: 8,
+    select: { id: true, orderNo: true, customer: { select: { name: true } }, service: { select: { title: true } } },
+  });
 }
 
 const statusSchema = z.enum(["RECEIVED", "IN_PROGRESS", "QUALITY_CHECK", "READY", "DELIVERED"]);

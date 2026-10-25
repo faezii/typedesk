@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowLeft, FilePlus2, Pencil, Upload } from "lucide-react";
+import { ArrowLeft, FilePlus2, Pencil, Plus, Upload } from "lucide-react";
+import { TaskDialog } from "@/components/tasks/task-dialog";
+import { activeUserOptions } from "@/server/queries/employees";
 import { DocumentTable } from "@/components/documents/document-table";
 import { UploadDialog } from "@/components/documents/upload-dialog";
 import { ToneBadge, type Tone } from "@/components/shared/tone-badge";
@@ -33,7 +35,10 @@ export default async function WorkOrderPage({ params }: { params: Promise<{ id: 
   const finance = can(user.role, "finance:view");
   const now = new Date();
 
-  const options = canEdit ? await workOrderFormOptions() : null;
+  const [options, taskUsers] = await Promise.all([
+    canEdit ? workOrderFormOptions() : null,
+    can(user.role, "tasks:edit") ? activeUserOptions() : null,
+  ]);
   // Keep a retired service selectable when editing an order that already uses it.
   if (options && !options.services.some((s) => s.id === wo.serviceId)) {
     options.services.push({ id: wo.service.id, title: `${wo.service.title} (inactive)`, category: wo.service.category, unit: wo.service.unit, defaultPrice: wo.service.defaultPrice.toFixed(2) });
@@ -179,7 +184,23 @@ export default async function WorkOrderPage({ params }: { params: Promise<{ id: 
             </div>
           </Card>
 
-          <Card title="Tasks">
+          <Card
+            title="Tasks"
+            action={
+              can(user.role, "tasks:edit") &&
+              taskUsers && (
+                <TaskDialog
+                  users={taskUsers}
+                  defaultWorkOrder={{ id: wo.id, orderNo: wo.orderNo, subtitle: wo.customer.name }}
+                  defaultValues={{ title: "", description: "", priority: wo.priority, deadline: toDateTimeInput(wo.deadline), assignedToId: wo.assignedToId ?? "", workOrderId: wo.id }}
+                >
+                  <Button size="sm" variant="outline">
+                    <Plus /> Add task
+                  </Button>
+                </TaskDialog>
+              )
+            }
+          >
             {wo.tasks.length === 0 ? (
               <Empty>No tasks linked to this order.</Empty>
             ) : (
@@ -187,7 +208,9 @@ export default async function WorkOrderPage({ params }: { params: Promise<{ id: 
                 {wo.tasks.map((t) => (
                   <li key={t.id} className="flex items-center gap-3 py-2.5 text-sm">
                     <div className="min-w-0 flex-1">
-                      <div className="truncate">{t.title}</div>
+                      <Link href={`/tasks?assignee=everyone&task=${t.id}`} className="block truncate hover:underline">
+                        {t.title}
+                      </Link>
                       <div className="text-muted-foreground text-xs">{t.assignedTo?.name ?? "Unassigned"}</div>
                     </div>
                     <PriorityBadge priority={t.priority} />

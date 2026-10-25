@@ -11,5 +11,14 @@ export const formatAED = (v: Money) => aed.format(Number(v ?? 0));
 /** "12.4K" — for axis ticks. */
 export const formatCompact = (v: number) => aedCompact.format(v);
 
-export const formatDate = (d: Date | null | undefined) => (d ? formatDubai(d, "d MMM yyyy") : "—");
+/** "Saeed Al Falasi" → "SA" */
+export const initials = (name: string) =>
+  name
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((p) => p[0]!.toUpperCase())
+    .join("");
+
+export const formatDate =(d: Date | null | undefined) => (d ? formatDubai(d, "d MMM yyyy") : "—");
 export const formatDateTime = (d: Date | null | undefined) => (d ? formatDubai(d, "d MMM yyyy, h:mm a") : "—");

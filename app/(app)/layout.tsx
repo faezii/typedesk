@@ -10,6 +10,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
     <AppShell
       user={{ name: user.name, email: user.email, role: user.role, department: user.department }}
       defaultCollapsed={collapsed}
+      mustChangePassword={user.mustChangePassword}
     >
       {children}
     </AppShell>

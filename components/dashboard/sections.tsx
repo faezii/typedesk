@@ -14,6 +14,7 @@ import {
   getStatusBreakdown,
   getUpcomingFollowUps,
 } from "@/server/queries/dashboard";
+import { syncPaymentReminders } from "@/server/services/payment-reminders";
 import { EmptyList } from "./panel";
 import { RevenueChart } from "./revenue-chart";
 import { StatCard } from "./stat-card";
@@ -138,6 +139,7 @@ export async function DueWorkOrders({ user }: { user: Viewer }) {
 }
 
 export async function FollowUps({ user }: { user: Viewer }) {
+  await syncPaymentReminders();
   const { items, overdue } = await getUpcomingFollowUps(user);
   const todayKey = formatDubai(new Date(), "yyyy-MM-dd");
 
