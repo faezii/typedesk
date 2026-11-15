@@ -65,7 +65,9 @@ All seeded users use password `Password123!` (development only):
 
 ## Commands
 - `npm run dev` · `npm run build` · `npm run lint` · `npm run typecheck` · `npm test`
-- `npm run db:migrate` (dev migration) · `npm run db:seed` (wipes all data first) · `npm run db:reset` (drop, migrate, seed) · `npm run create-admin -- <email> "<name>"` (first admin on a production DB)
+- `npm run db:migrate` (dev migration) · `npm run db:seed` (wipes all data first; refuses non-local hosts unless `ALLOW_REMOTE_SEED=1`) · `npm run db:reset` (drop, migrate, seed; asks to confirm) · `npm run create-admin -- <email> "<name>"` (first admin on a production DB)
+- **Real data**: `.env` `DATABASE_URL` points at the Neon project *typedesk.procuregcc.com* (`red-cloud-02850771`, Singapore), which holds live data. Never seed, reset or run destructive SQL against it; use a local or branch database for development.
+- `typedesk.cmd` (project root) is the user's launcher: builds when the git commit changes, runs `next start -p 3000`, opens Edge in app mode.
 - Setup, env vars and Vercel + Neon/Supabase + R2 deployment: `README.md`.
 - Local Postgres: `docker compose up -d db`, or point `DATABASE_URL` at an existing server.
 

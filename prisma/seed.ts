@@ -160,6 +160,11 @@ async function reset() {
 }
 
 async function main() {
+  // The seed deletes everything first: never let it touch a cloud database by accident.
+  const host = new URL(process.env.DATABASE_URL ?? "postgresql://localhost").hostname;
+  if (!["localhost", "127.0.0.1", "[::1]"].includes(host) && process.env.ALLOW_REMOTE_SEED !== "1") {
+    throw new Error(`Refusing to seed ${host}: the seed deletes all data first. Set ALLOW_REMOTE_SEED=1 to seed a remote demo database on purpose.`);
+  }
   console.log("Resetting data…");
   await reset();
 

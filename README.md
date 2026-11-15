@@ -5,9 +5,19 @@ Business management for a translation & typing center in Qatar: customers and th
 **Stack:** Next.js 16 (App Router) · React 19 · TypeScript · Tailwind CSS 4 + shadcn/ui · PostgreSQL + Prisma 6 · Auth.js v5 · Zod · Vitest.
 Coding conventions and the role/permission table live in [CLAUDE.md](CLAUDE.md).
 
-## Run it locally
+## Use it day to day (this PC + cloud data)
 
-Needs Node.js 20.9+ and PostgreSQL 15+ (Docker is easiest).
+Double-click **`typedesk.cmd`** in the project folder. It starts TypeDesk on this PC (port 3000) if it isn't running, and opens it in its own window. The first start, and the first start after the code changes, builds the app first (about a minute).
+
+- **Data** lives in the Neon cloud database set as `DATABASE_URL` in `.env` (project *typedesk.procuregcc.com*, Singapore). Restarting or replacing this PC loses nothing, and Neon keeps a 6-hour restore window.
+- **Uploaded scans** are stored on this PC in `uploads/`. Back that folder up, or set the `S3_*` variables to keep them in the cloud too.
+- **Other office PCs** can open `http://<this-pc-name>:3000` while this PC is on. Allow Node.js through Windows Firewall when Windows asks the first time.
+- **Stop** TypeDesk by closing the minimised *TypeDesk server* window.
+- **First admin** was created with `npm run create-admin -- <email> "<name>"`; use the same command to reset a forgotten admin password.
+
+## Run it locally (development)
+
+Needs Node.js 20.9+ and PostgreSQL 15+ (Docker is easiest). Use a separate database for development: `npm run db:seed` and `npm run db:reset` wipe everything. The seed refuses to run against a non-local database unless `ALLOW_REMOTE_SEED=1` is set.
 
 ```bash
 npm install
@@ -84,7 +94,7 @@ Vercel functions have no persistent disk, so uploads must go to a bucket.
 
 **Later releases** that add a migration: run step 2's `prisma migrate deploy` (direct connection) before the new version goes live.
 
-**A demo site** instead of a real one: after step 2, run `npm run db:seed` with the direct `DATABASE_URL` and the `S3_*` variables set, so the sample documents land in the bucket.
+**A demo site** instead of a real one: after step 2, run `npm run db:seed` with the direct `DATABASE_URL`, `ALLOW_REMOTE_SEED=1` and the `S3_*` variables set, so the sample documents land in the bucket.
 
 ## Tests
 
