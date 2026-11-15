@@ -9,6 +9,7 @@ import { guardAction, type CurrentUser } from "@/lib/auth/session";
 import { generateTempPassword } from "@/lib/passwords";
 import { prisma } from "@/lib/prisma";
 import { employeeSchema, type EmployeeFormValues } from "@/lib/validation/team";
+import { HISTORY_COUNT, hasHistory } from "@/server/queries/employees";
 
 /** Only admins may create, change or reset ADMIN accounts, or grant the ADMIN role. */
 function mayManage(actor: CurrentUser, targetRole: Role | null, newRole?: Role) {
@@ -81,6 +82,27 @@ export async function setEmployeeActive(id: string, active: boolean): Promise<Ac
   await prisma.user.update({ where: { id }, data: { isActive: Boolean(active) } });
   await log(user.id, id, active ? "activated" : "deactivated", `${active ? "Reactivated" : "Deactivated"} ${target.name}`);
   revalidatePath("/employees");
+  return { ok: true, data: undefined };
+}
+
+/**
+ * Permanently removes an account with nothing on record (e.g. created by mistake).
+ * Anyone with history is deactivated instead, so their work keeps their name.
+ */
+export async function deleteEmployee(id: string): Promise<ActionResult> {
+  const { user, error } = await guardAction("employees:edit", id);
+  if (!user) return { ok: false, error };
+  if (id === user.id) return { ok: false, error: "You can't delete your own account." };
+  const target = await prisma.user.findUnique({ where: { id }, select: { role: true, name: true, email: true, isActive: true, _count: { select: HISTORY_COUNT } } });
+  if (!target) return { ok: false, error: "Employee not found." };
+  if (!mayManage(user, target.role)) return { ok: false, error: "Only an admin can delete an admin." };
+  if (target.role === "ADMIN" && target.isActive && (await otherActiveAdmins(id)) === 0) return { ok: false, error: "This is the last active admin." };
+  if (hasHistory(target._count)) return { ok: false, error: `${target.name} has work on record. Deactivate them instead so their history keeps their name.` };
+
+  await prisma.user.delete({ where: { id } });
+  await log(user.id, id, "deleted", `Deleted ${target.role.toLowerCase()} account for ${target.name} (${target.email})`);
+  revalidatePath("/employees");
+  revalidatePath("/settings");
   return { ok: true, data: undefined };
 }
 

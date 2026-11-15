@@ -63,7 +63,7 @@ export const passwordChangeSchema = z
     current: z.string().min(1, "Enter your current password"),
     next: z
       .string()
-      .min(10, "At least 10 characters")
+      .min(8, "At least 8 characters")
       .max(200)
       .refine((v) => /[A-Za-z]/.test(v) && /\d/.test(v), "Use letters and at least one number"),
     confirm: z.string(),

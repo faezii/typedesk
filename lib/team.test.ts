@@ -46,7 +46,8 @@ describe("passwordChangeSchema", () => {
   const ok = { current: "Password123!", next: "new-secret-42", confirm: "new-secret-42" };
   it("accepts a good change", () => expect(passwordChangeSchema.safeParse(ok).success).toBe(true));
   it("rejects short, digit-less, mismatched or unchanged passwords", () => {
-    expect(passwordChangeSchema.safeParse({ ...ok, next: "short1", confirm: "short1" }).success).toBe(false);
+    expect(passwordChangeSchema.safeParse({ ...ok, next: "short12", confirm: "short12" }).success).toBe(false); // 7 chars
+    expect(passwordChangeSchema.safeParse({ ...ok, next: "eight8ch", confirm: "eight8ch" }).success).toBe(true); // 8 chars is enough
     expect(passwordChangeSchema.safeParse({ ...ok, next: "nodigitsatall", confirm: "nodigitsatall" }).success).toBe(false);
     expect(passwordChangeSchema.safeParse({ ...ok, confirm: "different-42" }).success).toBe(false);
     expect(passwordChangeSchema.safeParse({ current: "same-pass-123", next: "same-pass-123", confirm: "same-pass-123" }).success).toBe(false);

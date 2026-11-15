@@ -4,7 +4,7 @@ import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Copy, KeyRound, Loader2, UserCheck, UserX } from "lucide-react";
+import { Copy, KeyRound, Loader2, Trash2, UserCheck, UserX } from "lucide-react";
 import { toast } from "sonner";
 import type { z } from "zod";
 import type { Role } from "@prisma/client";
@@ -14,7 +14,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { employeeSchema, type EmployeeFormValues } from "@/lib/validation/team";
-import { createEmployee, resetEmployeePassword, setEmployeeActive, updateEmployee } from "@/server/actions/employees";
+import { createEmployee, deleteEmployee, resetEmployeePassword, setEmployeeActive, updateEmployee } from "@/server/actions/employees";
 
 const ROLE_OPTIONS: { value: Role; label: string; hint: string }[] = [
   { value: "STAFF", label: "Staff", hint: "Own tasks, work orders, customers" },
@@ -204,7 +204,22 @@ function TempPasswordView({ name, password, onDone }: { name: string; password: 
   );
 }
 
-export function EmployeeRowActions({ id, name, active, editable, isSelf }: { id: string; name: string; active: boolean; editable: boolean; isSelf: boolean }) {
+export function EmployeeRowActions({
+  id,
+  name,
+  active,
+  editable,
+  isSelf,
+  deletable,
+}: {
+  id: string;
+  name: string;
+  active: boolean;
+  editable: boolean;
+  isSelf: boolean;
+  /** No work on record, so the account can be removed for good. */
+  deletable: boolean;
+}) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   const [password, setPassword] = useState<string | null>(null);
@@ -252,6 +267,27 @@ export function EmployeeRowActions({ id, name, active, editable, isSelf }: { id:
           }}
         >
           {active ? <UserX /> : <UserCheck />}
+        </Button>
+      )}
+      {!isSelf && deletable && (
+        <Button
+          variant="ghost"
+          size="icon-sm"
+          disabled={pending}
+          aria-label={`Delete ${name}`}
+          title="Delete account"
+          className="text-muted-foreground hover:text-destructive"
+          onClick={() => {
+            if (!confirm(`Delete ${name}'s account for good? This can't be undone.`)) return;
+            startTransition(async () => {
+              const res = await deleteEmployee(id);
+              if (!res.ok) toast.error(res.error);
+              else toast.success(`${name} deleted`);
+              router.refresh();
+            });
+          }}
+        >
+          <Trash2 />
         </Button>
       )}
     </div>

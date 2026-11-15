@@ -12,7 +12,7 @@ export default async function AccountPage() {
       <section className="bg-card max-w-lg rounded-xl border p-5">
         <h2 className="font-medium">Change password</h2>
         <p className="text-muted-foreground mt-0.5 mb-4 text-sm">
-          {user.mustChangePassword ? "You're using a temporary password. Choose your own to continue." : "At least 10 characters with letters and a number."}
+          {user.mustChangePassword ? "You're using a temporary password. Choose your own to continue." : "At least 8 characters with letters and a number."}
         </p>
         <ChangePasswordForm />
       </section>
