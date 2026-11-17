@@ -1,3 +1,4 @@
+import { getT } from "@/lib/i18n/server";
 import { Plus } from "lucide-react";
 import { EmployeeDialog } from "@/components/employees/employee-controls";
 import { EmployeeTable } from "@/components/employees/employee-table";
@@ -7,9 +8,12 @@ import { can } from "@/lib/auth/permissions";
 import { requirePagePermission } from "@/lib/auth/session";
 import { listEmployees } from "@/server/queries/employees";
 
-export const metadata = { title: "Employees" };
+export async function generateMetadata() {
+  return { title: (await getT())("Employees") };
+}
 
 export default async function EmployeesPage() {
+  const t = await getT();
   const user = await requirePagePermission("employees:view");
   const employees = await listEmployees();
   const active = employees.filter((e) => e.isActive);
@@ -17,14 +21,13 @@ export default async function EmployeesPage() {
   return (
     <>
       <PageHeader
-        title="Employees"
-        description={`${active.length} active staff. Counters are live: open tasks and orders now, completions this month.`}
+        title={t("Employees")}
+        description={t("{count} active staff. Counters are live: open tasks and orders now, completions this month.", { count: active.length })}
         actions={
           can(user.role, "employees:edit") && (
             <EmployeeDialog canGrantAdmin={can(user.role, "employees:manageAdmins")}>
               <Button>
-                <Plus /> New employee
-              </Button>
+                <Plus /> {t("New employee")}</Button>
             </EmployeeDialog>
           )
         }

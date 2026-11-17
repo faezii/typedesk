@@ -1,19 +1,22 @@
 "use client";
 
+
+import { useT } from "@/components/i18n";
 import { Bar, BarChart, CartesianGrid, Line, LineChart, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { formatMoney, formatCompact } from "@/lib/format";
 
 const axis = { tickLine: false, axisLine: false, tick: { fill: "var(--muted-foreground)", fontSize: 12 } } as const;
 
 function TooltipBox({ title, rows }: { title?: string; rows: { label: string; value: number; color: string }[] }) {
+  const t = useT();
   return (
     <div className="bg-popover text-popover-foreground rounded-lg border px-3 py-2 text-xs shadow-md">
-      {title && <div className="mb-1 font-medium">{title}</div>}
+      {title && <div className="mb-1 font-medium">{t(title)}</div>}
       {rows.map((r) => (
         <div key={r.label} className="flex items-center gap-2">
           <span className="size-2 rounded-[2px]" style={{ background: r.color }} />
           <span className="text-muted-foreground">{r.label}</span>
-          <span className="ml-auto pl-4 font-medium tabular-nums">{formatMoney(r.value)}</span>
+          <span className="ms-auto ps-4 font-medium tabular-nums">{formatMoney(r.value)}</span>
         </div>
       ))}
     </div>
@@ -22,13 +25,14 @@ function TooltipBox({ title, rows }: { title?: string; rows: { label: string; va
 
 /** Single-series monthly bars (e.g. expenses per month). */
 export function MonthlyBars({ data, label }: { data: { label: string; value: number }[]; label: string }) {
+  const t = useT();
   return (
     <>
       <div className="h-52">
         <ResponsiveContainer width="100%" height="100%">
           <BarChart data={data} margin={{ top: 4, right: 4, bottom: 0, left: 0 }}>
             <CartesianGrid vertical={false} stroke="var(--border)" />
-            <XAxis dataKey="label" {...axis} />
+            <XAxis dataKey="label" {...axis} tickFormatter={(v) => t(String(v))} />
             <YAxis width={44} tickFormatter={formatCompact} {...axis} />
             <Tooltip
               cursor={{ fill: "var(--muted)", opacity: 0.6 }}
@@ -41,11 +45,11 @@ export function MonthlyBars({ data, label }: { data: { label: string; value: num
         </ResponsiveContainer>
       </div>
       <table className="sr-only">
-        <caption>{label} by month, QAR</caption>
+        <caption>{t("{label} by month, QAR", { label })}</caption>
         <tbody>
           {data.map((d) => (
             <tr key={d.label}>
-              <th>{d.label}</th>
+              <th>{t(d.label)}</th>
               <td>{formatMoney(d.value)}</td>
             </tr>
           ))}
@@ -63,13 +67,14 @@ const PNL_SERIES = [
 
 /** 12-month income / expenses / net lines (QAR, net of VAT). */
 export function PnlTrend({ data }: { data: { label: string; income: number; expenses: number; net: number }[] }) {
+  const t = useT();
   return (
     <>
       <ul className="text-muted-foreground mb-3 flex gap-4 text-xs" aria-hidden>
         {PNL_SERIES.map((s) => (
           <li key={s.key} className="flex items-center gap-1.5">
             <span className="h-0.5 w-3 rounded" style={{ background: s.color }} />
-            {s.label}
+            {t(s.label)}
           </li>
         ))}
       </ul>
@@ -77,7 +82,7 @@ export function PnlTrend({ data }: { data: { label: string; income: number; expe
         <ResponsiveContainer width="100%" height="100%">
           <LineChart data={data} margin={{ top: 4, right: 8, bottom: 0, left: 0 }}>
             <CartesianGrid vertical={false} stroke="var(--border)" />
-            <XAxis dataKey="label" {...axis} />
+            <XAxis dataKey="label" {...axis} tickFormatter={(v) => t(String(v))} />
             <YAxis width={48} tickFormatter={formatCompact} {...axis} />
             <ReferenceLine y={0} stroke="var(--muted-foreground)" strokeOpacity={0.4} />
             <Tooltip
@@ -85,31 +90,31 @@ export function PnlTrend({ data }: { data: { label: string; income: number; expe
                 active && payload?.length ? (
                   <TooltipBox
                     title={String(label)}
-                    rows={PNL_SERIES.map((s) => ({ label: s.label, value: Number(payload.find((p) => p.dataKey === s.key)?.value ?? 0), color: s.color }))}
+                    rows={PNL_SERIES.map((s) => ({ label: t(s.label), value: Number(payload.find((p) => p.dataKey === s.key)?.value ?? 0), color: s.color }))}
                   />
                 ) : null
               }
             />
             {PNL_SERIES.map((s) => (
-              <Line key={s.key} type="monotone" dataKey={s.key} name={s.label} stroke={s.color} strokeWidth={2} dot={{ r: 3 }} activeDot={{ r: 5 }} />
+              <Line key={s.key} type="monotone" dataKey={s.key} name={t(s.label)} stroke={s.color} strokeWidth={2} dot={{ r: 3 }} activeDot={{ r: 5 }} />
             ))}
           </LineChart>
         </ResponsiveContainer>
       </div>
       <table className="sr-only">
-        <caption>Monthly income, expenses and net, QAR</caption>
+        <caption>{t("Monthly income, expenses and net, QAR")}</caption>
         <thead>
           <tr>
-            <th>Month</th>
-            <th>Income</th>
-            <th>Expenses</th>
-            <th>Net</th>
+            <th>{t("Month")}</th>
+            <th>{t("Income")}</th>
+            <th>{t("Expenses")}</th>
+            <th>{t("Net")}</th>
           </tr>
         </thead>
         <tbody>
           {data.map((d) => (
             <tr key={d.label}>
-              <td>{d.label}</td>
+              <td>{t(d.label)}</td>
               <td>{formatMoney(d.income)}</td>
               <td>{formatMoney(d.expenses)}</td>
               <td>{formatMoney(d.net)}</td>

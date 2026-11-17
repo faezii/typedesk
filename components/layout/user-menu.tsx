@@ -1,7 +1,9 @@
 "use client";
 
+
+import { useSwitchLanguage, useT } from "@/components/i18n";
 import Link from "next/link";
-import { KeyRound, LogOut } from "lucide-react";
+import { KeyRound, Languages, LogOut } from "lucide-react";
 import type { Department, Role } from "@prisma/client";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -27,10 +29,12 @@ const DEPT_LABEL: Record<Department, string> = {
 };
 
 export function UserMenu({ user }: { user: ShellUser }) {
+  const t = useT();
+  const language = useSwitchLanguage();
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="ghost" className="h-9 gap-2 px-1.5 sm:pr-2.5" aria-label="Account menu">
+        <Button variant="ghost" className="h-9 gap-2 px-1.5 sm:pe-2.5" aria-label={t("Account menu")}>
           <Avatar className="size-7">
             <AvatarFallback className="bg-primary/15 text-primary text-xs font-semibold">{initials(user.name)}</AvatarFallback>
           </Avatar>
@@ -42,20 +46,28 @@ export function UserMenu({ user }: { user: ShellUser }) {
           <div className="text-foreground truncate text-sm font-medium">{user.name}</div>
           <div className="text-muted-foreground truncate text-xs">{user.email}</div>
           <div className="text-muted-foreground mt-1.5 text-xs">
-            {ROLE_LABEL[user.role]} · {DEPT_LABEL[user.department]}
+            {t(ROLE_LABEL[user.role])} · {t(DEPT_LABEL[user.department])}
           </div>
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
         <DropdownMenuItem asChild>
           <Link href="/account">
-            <KeyRound /> Account &amp; password
-          </Link>
+            <KeyRound /> {t("Account & password")}</Link>
+        </DropdownMenuItem>
+        <DropdownMenuItem
+          lang={language.next}
+          disabled={language.pending}
+          onSelect={(e) => {
+            e.preventDefault(); // keep the menu open until the page switches
+            language.toggle();
+          }}
+        >
+          <Languages /> {language.label}
         </DropdownMenuItem>
         <form action={logout}>
           <DropdownMenuItem asChild variant="destructive">
             <button type="submit" className="w-full">
-              <LogOut /> Log out
-            </button>
+              <LogOut /> {t("Log out")}</button>
           </DropdownMenuItem>
         </form>
       </DropdownMenuContent>

@@ -1,3 +1,4 @@
+import { getT } from "@/lib/i18n/server";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowLeft, Download, Pencil, Printer } from "lucide-react";
@@ -11,10 +12,11 @@ import { formatMoney, formatDate } from "@/lib/format";
 import { getQuotation } from "@/server/queries/invoices";
 
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }) {
-  return { title: (await getQuotation((await params).id))?.quoteNo ?? "Quotation" };
+  return { title: (await getQuotation((await params).id))?.quoteNo ?? (await getT())("Quotation") };
 }
 
 export default async function QuotationPage({ params }: { params: Promise<{ id: string }> }) {
+  const t = await getT();
   const user = await requirePagePermission("finance:view");
   const q = await getQuotation((await params).id);
   if (!q) notFound();
@@ -25,8 +27,7 @@ export default async function QuotationPage({ params }: { params: Promise<{ id: 
   return (
     <>
       <Link href="/finance/invoices?tab=quotes" className="text-muted-foreground hover:text-foreground mb-4 inline-flex items-center gap-1 text-sm">
-        <ArrowLeft className="size-4" /> Quotations
-      </Link>
+        <ArrowLeft className="rtl:-scale-x-100 size-4" /> {t("Quotations")}</Link>
       <section className="bg-card mb-4 rounded-xl border p-5">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
           <div>
@@ -40,11 +41,11 @@ export default async function QuotationPage({ params }: { params: Promise<{ id: 
               </Link>
             </div>
             <div className="text-muted-foreground mt-1 text-sm">
-              {formatDate(q.issueDate)} · Valid until {formatDate(q.validUntil)}
+              {t("{date} · Valid until {date2}", { date: formatDate(q.issueDate, t.lang), date2: formatDate(q.validUntil, t.lang) })}
               {q.invoices.map((i) => (
                 <span key={i.id}>
-                  {" "}
-                  · Invoiced as{" "}
+                  {" · "}
+                  {t("Invoiced as")}{" "}
                   <Link href={`/finance/invoices/${i.id}`} className="font-mono hover:underline">
                     {i.invoiceNo}
                   </Link>
@@ -59,20 +60,17 @@ export default async function QuotationPage({ params }: { params: Promise<{ id: 
                 <ConvertQuotationButton id={q.id} />
                 <Button variant="outline" asChild>
                   <Link href={`/finance/invoices/quotes/${q.id}/edit`}>
-                    <Pencil /> Edit
-                  </Link>
+                    <Pencil /> {t("Edit")}</Link>
                 </Button>
               </>
             )}
             <Button variant="outline" asChild>
               <a href={pdf} target="_blank" rel="noopener">
-                <Printer /> View / print
-              </a>
+                <Printer /> {t("View / print")}</a>
             </Button>
             <Button variant="outline" asChild>
               <a href={`${pdf}?download`}>
-                <Download /> PDF
-              </a>
+                <Download /> {t("PDF")}</a>
             </Button>
           </div>
         </div>
@@ -82,36 +80,36 @@ export default async function QuotationPage({ params }: { params: Promise<{ id: 
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead className="pl-5">Description</TableHead>
-              <TableHead className="text-right">Qty</TableHead>
-              <TableHead className="text-right">Rate</TableHead>
-              <TableHead className="pr-5 text-right">Amount</TableHead>
+              <TableHead className="ps-5">{t("Description")}</TableHead>
+              <TableHead className="text-end">{t("Qty")}</TableHead>
+              <TableHead className="text-end">{t("Rate")}</TableHead>
+              <TableHead className="pe-5 text-end">{t("Amount")}</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {q.items.map((it) => (
               <TableRow key={it.id}>
-                <TableCell className="pl-5 whitespace-normal">{it.description}</TableCell>
-                <TableCell className="text-right tabular-nums">{it.quantity.toString()}</TableCell>
-                <TableCell className="text-right tabular-nums">{formatMoney(it.unitPrice)}</TableCell>
-                <TableCell className="pr-5 text-right tabular-nums">{formatMoney(it.lineTotal)}</TableCell>
+                <TableCell className="ps-5 whitespace-normal">{it.description}</TableCell>
+                <TableCell className="text-end tabular-nums">{it.quantity.toString()}</TableCell>
+                <TableCell className="text-end tabular-nums">{formatMoney(it.unitPrice)}</TableCell>
+                <TableCell className="pe-5 text-end tabular-nums">{formatMoney(it.lineTotal)}</TableCell>
               </TableRow>
             ))}
           </TableBody>
         </Table>
-        <dl className="ml-auto w-full max-w-xs space-y-1.5 border-t px-5 py-4 text-sm">
+        <dl className="ms-auto w-full max-w-xs space-y-1.5 border-t px-5 py-4 text-sm">
           <div className="flex justify-between">
-            <dt className="text-muted-foreground">Subtotal</dt>
+            <dt className="text-muted-foreground">{t("Subtotal")}</dt>
             <dd className="tabular-nums">{formatMoney(q.subtotal)}</dd>
           </div>
           {!q.vatRate.isZero() && (
             <div className="flex justify-between">
-              <dt className="text-muted-foreground">VAT {q.vatRate.times(100).toDecimalPlaces(2).toString()}%</dt>
+              <dt className="text-muted-foreground">{t("VAT {value}%", { value: q.vatRate.times(100).toDecimalPlaces(2).toString() })}</dt>
               <dd className="tabular-nums">{formatMoney(q.vatAmount)}</dd>
             </div>
           )}
           <div className="flex justify-between border-t pt-1.5 text-base font-semibold">
-            <dt>Total</dt>
+            <dt>{t("Total")}</dt>
             <dd className="tabular-nums">{formatMoney(q.totalAmount)}</dd>
           </div>
         </dl>

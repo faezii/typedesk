@@ -1,4 +1,7 @@
+"use client";
+
 import type { InvoiceStatus, QuotationStatus } from "@prisma/client";
+import { useT } from "@/components/i18n";
 import { ToneBadge, type Tone } from "@/components/shared/tone-badge";
 import { INVOICE_STATUS_LABEL } from "@/lib/labels";
 
@@ -11,5 +14,12 @@ const QUOTE: Record<QuotationStatus, { label: string; tone: Tone }> = {
   CONVERTED: { label: "Invoiced", tone: "violet" },
 };
 
-export const InvoiceStatusBadge = ({ status }: { status: InvoiceStatus }) => <ToneBadge tone={INVOICE_TONE[status]}>{INVOICE_STATUS_LABEL[status]}</ToneBadge>;
-export const QuoteStatusBadge = ({ status }: { status: QuotationStatus }) => <ToneBadge tone={QUOTE[status].tone}>{QUOTE[status].label}</ToneBadge>;
+export function InvoiceStatusBadge({ status }: { status: InvoiceStatus }) {
+  const t = useT();
+  return <ToneBadge tone={INVOICE_TONE[status]}>{t(INVOICE_STATUS_LABEL[status])}</ToneBadge>;
+}
+
+export function QuoteStatusBadge({ status }: { status: QuotationStatus }) {
+  const t = useT();
+  return <ToneBadge tone={QUOTE[status].tone}>{t(QUOTE[status].label)}</ToneBadge>;
+}

@@ -1,5 +1,7 @@
 import { TZDate, tz } from "@date-fns/tz";
 import { addDays, endOfDay, format, startOfDay, startOfMonth, subMonths } from "date-fns";
+import { ar } from "date-fns/locale/ar";
+import type { Lang } from "./i18n/translate";
 
 export const TIMEZONE = "Asia/Qatar";
 export const zone = tz(TIMEZONE);
@@ -13,7 +15,8 @@ export const startOfMonthLocal = (d = new Date()) => plain(startOfMonth(d, { in:
 export const monthsAgoLocal = (n: number, d = new Date()) => plain(startOfMonth(subMonths(d, n, { in: zone }), { in: zone }));
 export const daysFromTodayLocal = (n: number, now = new Date()) => plain(endOfDay(addDays(now, n, { in: zone }), { in: zone }));
 
-export const formatLocal = (d: Date, pattern: string) => format(d, pattern, { in: zone });
+/** Pass `lang` for screen text ("14 نوفمبر 2026"); documents and exports leave it out and stay English. */
+export const formatLocal = (d: Date, pattern: string, lang?: Lang) => format(d, pattern, { in: zone, locale: lang === "ar" ? ar : undefined });
 
 /** Doha wall-clock time, or null when a part would roll over (2026-02-30, 13th month, 24:00). */
 function localTime(y: number, mo: number, d: number, h = 0, mi = 0) {

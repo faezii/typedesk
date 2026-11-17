@@ -1,5 +1,7 @@
 "use client";
 
+
+import { useT } from "@/components/i18n";
 import { useEffect, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { FileUp, Loader2, X } from "lucide-react";
@@ -29,6 +31,7 @@ export function UploadDialog({
   defaultWorkOrderId?: string;
   children: React.ReactNode;
 }) {
+  const t = useT();
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [pending, startTransition] = useTransition();
@@ -66,8 +69,8 @@ export function UploadDialog({
 
   function pick(f: File | undefined) {
     if (!f) return;
-    if (!OK_EXT.test(f.name)) return setFileError("Only PDF, JPG, PNG and DOCX files are allowed.");
-    if (f.size > MAX_BYTES) return setFileError("Files must be 10 MB or smaller.");
+    if (!OK_EXT.test(f.name)) return setFileError(t("Only PDF, JPG, PNG and DOCX files are allowed."));
+    if (f.size > MAX_BYTES) return setFileError(t("Files must be 10 MB or smaller."));
     setFileError(null);
     setFile(f);
     if (!name) setName(f.name.replace(/\.[^.]+$/, ""));
@@ -88,8 +91,8 @@ export function UploadDialog({
     if (showExpiry && expiryDate) fd.set("expiryDate", expiryDate);
     startTransition(async () => {
       const res = await uploadDocument(fd);
-      if (!res.ok) return void toast.error(res.error);
-      toast.success("Document uploaded");
+      if (!res.ok) return void toast.error(t(res.error));
+      toast.success(t("Document uploaded"));
       setOpen(false);
       reset();
       router.refresh();
@@ -107,8 +110,8 @@ export function UploadDialog({
       <DialogTrigger asChild>{children}</DialogTrigger>
       <DialogContent className="sm:max-w-lg">
         <DialogHeader>
-          <DialogTitle>Upload document</DialogTitle>
-          <DialogDescription>PDF, JPG, PNG or DOCX, up to 10 MB.</DialogDescription>
+          <DialogTitle>{t("Upload document")}</DialogTitle>
+          <DialogDescription>{t("PDF, JPG, PNG or DOCX, up to 10 MB.")}</DialogDescription>
         </DialogHeader>
         <form onSubmit={submit} className="space-y-4">
           {/* Drop zone — the hidden input keeps it keyboard and screen-reader accessible. */}
@@ -132,19 +135,19 @@ export function UploadDialog({
           >
             <input ref={inputRef} type="file" accept={ACCEPT} className="sr-only" onChange={(e) => pick(e.target.files?.[0])} />
             {file ? (
-              <div className="flex w-full items-center gap-3 text-left">
+              <div className="flex w-full items-center gap-3 text-start">
                 <FileUp className="text-primary size-5 shrink-0" />
                 <div className="min-w-0 flex-1">
                   <div className="truncate font-medium">{file.name}</div>
                   <div className="text-muted-foreground text-xs">
-                    {file.size < 1024 * 1024 ? `${Math.max(1, Math.round(file.size / 1024))} KB` : `${(file.size / 1024 / 1024).toFixed(1)} MB`}
+                    {file.size < 1024 * 1024 ? t("{value} KB", { value: Math.max(1, Math.round(file.size / 1024)) }) : t("{amount} MB", { amount: (file.size / 1024 / 1024).toFixed(1) })}
                   </div>
                 </div>
                 <Button
                   type="button"
                   variant="ghost"
                   size="icon-sm"
-                  aria-label="Remove file"
+                  aria-label={t("Remove file")}
                   onClick={(e) => {
                     e.preventDefault();
                     setFile(null);
@@ -158,8 +161,7 @@ export function UploadDialog({
               <>
                 <FileUp className="text-muted-foreground size-6" />
                 <span>
-                  <span className="text-primary font-medium">Choose a file</span> or drag it here
-                </span>
+                  <span className="text-primary font-medium">{t("Choose a file")}</span> {t("or drag it here")}</span>
               </>
             )}
           </label>
@@ -171,14 +173,14 @@ export function UploadDialog({
 
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-2 sm:col-span-2">
-              <Label htmlFor="doc-name">Document name</Label>
+              <Label htmlFor="doc-name">{t("Document name")}</Label>
               <Input id="doc-name" value={name} onChange={(e) => setName(e.target.value)} maxLength={160} required />
             </div>
             <div className="space-y-2">
-              <Label>Category</Label>
+              <Label>{t("Category")}</Label>
               <Select value={category} onValueChange={(v) => setCategory(v as DocumentCategory)}>
-                <SelectTrigger className="w-full" aria-label="Category">
-                  <SelectValue placeholder="Choose…" />
+                <SelectTrigger className="w-full" aria-label={t("Category")}>
+                  <SelectValue placeholder={t("Choose…")} />
                 </SelectTrigger>
                 <SelectContent>
                   {Object.entries(DOCUMENT_CATEGORY_LABEL).map(([value, label]) => (
@@ -191,25 +193,25 @@ export function UploadDialog({
             </div>
             {showExpiry && (
               <div className="space-y-2">
-                <Label htmlFor="doc-expiry">Expiry date</Label>
+                <Label htmlFor="doc-expiry">{t("Expiry date")}</Label>
                 <Input id="doc-expiry" type="date" value={expiryDate} onChange={(e) => setExpiryDate(e.target.value)} />
               </div>
             )}
             {!defaultCustomer && (
               <div className="space-y-2 sm:col-span-2">
-                <Label>Customer</Label>
+                <Label>{t("Customer")}</Label>
                 <CustomerPicker value={customer} onChange={(c) => (setCustomer(c), setWorkOrderId("none"))} />
               </div>
             )}
             {customer && (
               <div className="space-y-2 sm:col-span-2">
-                <Label>Work order</Label>
+                <Label>{t("Work order")}</Label>
                 <Select value={workOrderId} onValueChange={setWorkOrderId}>
-                  <SelectTrigger className="w-full" aria-label="Work order">
+                  <SelectTrigger className="w-full" aria-label={t("Work order")}>
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="none">Not linked to a work order</SelectItem>
+                    <SelectItem value="none">{t("Not linked to a work order")}</SelectItem>
                     {workOrders.map((w) => (
                       <SelectItem key={w.id} value={w.id}>
                         {w.label}
@@ -221,19 +223,15 @@ export function UploadDialog({
             )}
           </div>
           {showExpiry && customer && (category === "PASSPORT" || category === "NATIONAL_ID") && expiryDate && (
-            <p className="text-muted-foreground text-xs">
-              This becomes {customer.name}&apos;s current {DOCUMENT_CATEGORY_LABEL[category]} expiry, and its renewal follow-up is updated.
-            </p>
+            <p className="text-muted-foreground text-xs">{t("This becomes {name}'s current {label} expiry, and its renewal follow-up is updated.", { name: customer.name, label: t(DOCUMENT_CATEGORY_LABEL[category]) })}</p>
           )}
 
           <DialogFooter>
             <Button type="button" variant="outline" onClick={() => setOpen(false)}>
-              Cancel
-            </Button>
+              {t("Cancel")}</Button>
             <Button type="submit" disabled={!canSubmit}>
               {pending && <Loader2 className="animate-spin" />}
-              Upload
-            </Button>
+              {t("Upload")}</Button>
           </DialogFooter>
         </form>
       </DialogContent>

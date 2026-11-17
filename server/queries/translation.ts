@@ -48,7 +48,7 @@ export async function getTranslationOverview() {
       dueThisWeek,
     },
     stages: Object.fromEntries(stages.map((s) => [s.status, s._count])) as Partial<Record<string, number>>,
-    pairs: pairs.map((p) => ({ pair: `${p.sourceLang} → ${p.targetLang}`, orders: p._count, pages: p._sum.pageCount ?? 0 })),
+    pairs: pairs.map((p) => ({ pair: `${p.sourceLang} → ${p.targetLang}`, from: p.sourceLang, to: p.targetLang, orders: p._count, pages: p._sum.pageCount ?? 0 })),
     active,
   };
 }

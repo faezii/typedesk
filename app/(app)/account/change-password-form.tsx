@@ -1,5 +1,7 @@
 "use client";
 
+
+import { useT } from "@/components/i18n";
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { Loader2 } from "lucide-react";
@@ -16,6 +18,7 @@ const FIELDS = [
 ] as const;
 
 export function ChangePasswordForm() {
+  const t = useT();
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -31,18 +34,18 @@ export function ChangePasswordForm() {
           const res = await changePassword({ current: String(fd.get("current")), next: String(fd.get("next")), confirm: String(fd.get("confirm")) });
           if (!res.ok) {
             setErrors(res.fieldErrors ?? {});
-            return void toast.error(res.error);
+            return void toast.error(t(res.error));
           }
           setErrors({});
           form.reset();
-          toast.success("Password changed");
+          toast.success(t("Password changed"));
           router.refresh();
         });
       }}
     >
       {FIELDS.map((f) => (
         <div key={f.name} className="space-y-2">
-          <Label htmlFor={f.name}>{f.label}</Label>
+          <Label htmlFor={f.name}>{t(f.label)}</Label>
           <Input id={f.name} name={f.name} type="password" autoComplete={f.autoComplete} required aria-invalid={!!errors[f.name] || undefined} aria-describedby={errors[f.name] ? `${f.name}-error` : undefined} />
           {errors[f.name] && (
             <p id={`${f.name}-error`} className="text-destructive text-sm">
@@ -53,8 +56,7 @@ export function ChangePasswordForm() {
       ))}
       <Button type="submit" disabled={pending}>
         {pending && <Loader2 className="animate-spin" />}
-        Change password
-      </Button>
+        {t("Change password")}</Button>
     </form>
   );
 }

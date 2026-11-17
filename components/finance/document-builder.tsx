@@ -1,5 +1,7 @@
 "use client";
 
+
+import { useT } from "@/components/i18n";
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { useFieldArray, useForm, useWatch } from "react-hook-form";
@@ -38,6 +40,7 @@ export function DocumentBuilder({
   /** Display only — the server recomputes every total. */
   vatRate: string;
 }) {
+  const t = useT();
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   const [customer, setCustomer] = useState<CustomerOption | null>(defaultCustomer ?? null);
@@ -53,7 +56,7 @@ export function DocumentBuilder({
   const isInvoice = kind === "invoice";
 
   async function openImport() {
-    if (!customer) return void toast.error("Choose the customer first.");
+    if (!customer) return void toast.error(t("Choose the customer first."));
     const rows = await findBillableWorkOrders(customer.id);
     const already = new Set(items.map((i) => i.workOrderId).filter(Boolean));
     setBillable(rows.filter((r) => !already.has(r.id)));
@@ -74,9 +77,9 @@ export function DocumentBuilder({
       const res = isInvoice ? await saveInvoice(docId ?? null, values) : await saveQuotation(docId ?? null, values);
       if (!res.ok) {
         for (const [f, m] of Object.entries(res.fieldErrors ?? {})) form.setError(f as never, { message: m });
-        return void toast.error(res.error);
+        return void toast.error(t(res.error));
       }
-      toast.success(docId ? "Saved" : isInvoice ? "Invoice issued" : "Quotation created");
+      toast.success(docId ? t("Saved") : isInvoice ? t("Invoice issued") : t("Quotation created"));
       router.push(isInvoice ? `/finance/invoices/${res.data.id}` : `/finance/invoices/quotes/${res.data.id}`);
       router.refresh();
     });
@@ -91,7 +94,7 @@ export function DocumentBuilder({
             name="customerId"
             render={({ fieldState }) => (
               <FormItem className="sm:col-span-2">
-                <FormLabel>Customer</FormLabel>
+                <FormLabel>{t("Customer")}</FormLabel>
                 <CustomerPicker
                   value={customer}
                   allowClear={false}
@@ -112,7 +115,7 @@ export function DocumentBuilder({
               name={name}
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>{name === "issueDate" ? (isInvoice ? "Invoice date" : "Quote date") : isInvoice ? "Due date" : "Valid until"}</FormLabel>
+                  <FormLabel>{name === "issueDate" ? (isInvoice ? t("Invoice date") : t("Quote date")) : isInvoice ? t("Due date") : t("Valid until")}</FormLabel>
                   <FormControl>
                     <Input type="date" {...field} />
                   </FormControl>
@@ -125,27 +128,25 @@ export function DocumentBuilder({
 
         <section className="bg-card rounded-xl border">
           <header className="flex flex-wrap items-center justify-between gap-2 border-b px-5 py-3">
-            <h2 className="font-medium">Line items</h2>
+            <h2 className="font-medium">{t("Line items")}</h2>
             <div className="flex gap-2">
               {isInvoice && (
                 <Button type="button" size="sm" variant="outline" onClick={openImport}>
-                  <ClipboardList /> Import work orders
-                </Button>
+                  <ClipboardList /> {t("Import work orders")}</Button>
               )}
               <Button type="button" size="sm" variant="outline" onClick={() => append({ ...EMPTY_LINE })}>
-                <Plus /> Add line
-              </Button>
+                <Plus /> {t("Add line")}</Button>
             </div>
           </header>
 
           <div className="overflow-x-auto">
             <div className="min-w-[760px] divide-y">
               <div className="text-muted-foreground grid grid-cols-[180px_1fr_80px_110px_110px_36px] gap-2 px-5 py-2 text-xs font-medium">
-                <span>Service</span>
-                <span>Description</span>
-                <span className="text-right">Qty</span>
-                <span className="text-right">Rate (QAR)</span>
-                <span className="text-right">Amount</span>
+                <span>{t("Service")}</span>
+                <span>{t("Description")}</span>
+                <span className="text-end">{t("Qty")}</span>
+                <span className="text-end">{t("Rate (QAR)")}</span>
+                <span className="text-end">{t("Amount")}</span>
                 <span />
               </div>
               {fields.map((f, i) => (
@@ -161,13 +162,13 @@ export function DocumentBuilder({
                       }
                     }}
                   >
-                    <SelectTrigger className="w-full min-w-0" aria-label={`Line ${i + 1} service`}>
-                      <span className="min-w-0 flex-1 truncate text-left">
+                    <SelectTrigger className="w-full min-w-0" aria-label={t("Line {n} service", { n: i + 1 })}>
+                      <span className="min-w-0 flex-1 truncate text-start">
                         <SelectValue />
                       </span>
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="custom">Custom item</SelectItem>
+                      <SelectItem value="custom">{t("Custom item")}</SelectItem>
                       {services.map((s) => (
                         <SelectItem key={s.id} value={s.id}>
                           {s.title}
@@ -181,9 +182,9 @@ export function DocumentBuilder({
                     render={({ field }) => (
                       <FormItem>
                         <FormControl>
-                          <Input aria-label={`Line ${i + 1} description`} {...field} />
+                          <Input aria-label={t("Line {n} description", { n: i + 1 })} {...field} />
                         </FormControl>
-                        {items[i]?.workOrderId && <p className="text-muted-foreground text-[11px]">Linked to a work order</p>}
+                        {items[i]?.workOrderId && <p className="text-muted-foreground text-[11px]">{t("Linked to a work order")}</p>}
                         <FormMessage />
                       </FormItem>
                     )}
@@ -196,7 +197,7 @@ export function DocumentBuilder({
                       render={({ field }) => (
                         <FormItem>
                           <FormControl>
-                            <Input inputMode="decimal" className="text-right" aria-label={`Line ${i + 1} ${name === "quantity" ? "quantity" : "rate"}`} {...field} />
+                            <Input inputMode="decimal" className="text-end" aria-label={name === "quantity" ? t("Line {n} quantity", { n: i + 1 }) : t("Line {n} rate", { n: i + 1 })} {...field} />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -204,7 +205,7 @@ export function DocumentBuilder({
                     />
                   ))}
                   <div className="flex h-8 items-center justify-end text-sm tabular-nums">{fmt(lineTotals[i] ?? 0)}</div>
-                  <Button type="button" variant="ghost" size="icon-sm" className="mt-0.5" aria-label={`Remove line ${i + 1}`} disabled={fields.length === 1} onClick={() => remove(i)}>
+                  <Button type="button" variant="ghost" size="icon-sm" className="mt-0.5" aria-label={t("Remove line {n}", { n: i + 1 })} disabled={fields.length === 1} onClick={() => remove(i)}>
                     <Trash2 />
                   </Button>
                 </div>
@@ -221,7 +222,7 @@ export function DocumentBuilder({
               name="notes"
               render={({ field }) => (
                 <FormItem className="lg:w-1/2">
-                  <FormLabel>Notes (printed on the {isInvoice ? "invoice" : "quotation"})</FormLabel>
+                  <FormLabel>{isInvoice ? t("Notes (printed on the invoice)") : t("Notes (printed on the quotation)")}</FormLabel>
                   <FormControl>
                     <Textarea rows={3} {...field} value={field.value ?? ""} />
                   </FormControl>
@@ -230,31 +231,30 @@ export function DocumentBuilder({
             />
             <dl className="w-full space-y-1.5 text-sm lg:w-72">
               <div className="flex justify-between">
-                <dt className="text-muted-foreground">Subtotal</dt>
-                <dd className="tabular-nums">QAR {fmt(subtotal)}</dd>
+                <dt className="text-muted-foreground">{t("Subtotal")}</dt>
+                <dd className="tabular-nums">{t("QAR {value}", { value: fmt(subtotal) })}</dd>
               </div>
               {Number(vatRate) > 0 && (
                 <div className="flex justify-between">
-                  <dt className="text-muted-foreground">VAT ({Math.round(Number(vatRate) * 10000) / 100}%)</dt>
-                  <dd className="tabular-nums">QAR {fmt(vat)}</dd>
+                  <dt className="text-muted-foreground">{t("VAT ({value}%)", { value: Math.round(Number(vatRate) * 10000) / 100 })}</dt>
+                  <dd className="tabular-nums">{t("QAR {value}", { value: fmt(vat) })}</dd>
                 </div>
               )}
               <div className="flex justify-between border-t pt-1.5 text-base font-semibold">
-                <dt>Total</dt>
-                <dd className="tabular-nums">QAR {fmt(subtotal + vat)}</dd>
+                <dt>{t("Total")}</dt>
+                <dd className="tabular-nums">{t("QAR {value}", { value: fmt(subtotal + vat) })}</dd>
               </div>
-              <p className="text-muted-foreground text-xs">Final totals are calculated on save.</p>
+              <p className="text-muted-foreground text-xs">{t("Final totals are calculated on save.")}</p>
             </dl>
           </div>
         </section>
 
         <div className="flex justify-end gap-2">
           <Button type="button" variant="outline" onClick={() => router.back()}>
-            Cancel
-          </Button>
+            {t("Cancel")}</Button>
           <Button type="submit" disabled={pending}>
             {pending && <Loader2 className="animate-spin" />}
-            {docId ? "Save changes" : isInvoice ? "Issue invoice" : "Create quotation"}
+            {docId ? t("Save changes") : isInvoice ? t("Issue invoice") : t("Create quotation")}
           </Button>
         </div>
       </form>
@@ -262,11 +262,11 @@ export function DocumentBuilder({
       <Dialog open={billable !== null} onOpenChange={(o) => !o && setBillable(null)}>
         <DialogContent className="sm:max-w-lg">
           <DialogHeader>
-            <DialogTitle>Import delivered work orders</DialogTitle>
-            <DialogDescription>Delivered orders for {customer?.name} that haven&apos;t been invoiced yet.</DialogDescription>
+            <DialogTitle>{t("Import delivered work orders")}</DialogTitle>
+            <DialogDescription>{t("Delivered orders for {name} that haven't been invoiced yet.", { name: customer?.name ?? "" })}</DialogDescription>
           </DialogHeader>
           {billable?.length === 0 ? (
-            <p className="text-muted-foreground py-6 text-center text-sm">Nothing left to invoice for this customer.</p>
+            <p className="text-muted-foreground py-6 text-center text-sm">{t("Nothing left to invoice for this customer.")}</p>
           ) : (
             <ul className="max-h-80 divide-y overflow-y-auto">
               {billable?.map((b) => (
@@ -279,11 +279,9 @@ export function DocumentBuilder({
                     />
                     <span className="min-w-0 flex-1">
                       <span className="block truncate">{b.description}</span>
-                      <span className="text-muted-foreground text-xs">
-                        {b.quantity} × QAR {b.unitPrice}
-                      </span>
+                      <span className="text-muted-foreground text-xs">{t("{quantity} × QAR {unitPrice}", { quantity: b.quantity, unitPrice: b.unitPrice })}</span>
                     </span>
-                    <span className="tabular-nums">QAR {b.totalAmount}</span>
+                    <span className="tabular-nums">{t("QAR {totalAmount}", { totalAmount: b.totalAmount })}</span>
                   </label>
                 </li>
               ))}
@@ -291,11 +289,8 @@ export function DocumentBuilder({
           )}
           <DialogFooter>
             <Button variant="outline" onClick={() => setBillable(null)}>
-              Cancel
-            </Button>
-            <Button onClick={importPicked} disabled={picked.size === 0}>
-              Add {picked.size || ""} line{picked.size === 1 ? "" : "s"}
-            </Button>
+              {t("Cancel")}</Button>
+            <Button onClick={importPicked} disabled={picked.size === 0}>{picked.size === 1 ? t("Add 1 line") : picked.size ? t("Add {count} lines", { count: picked.size }) : t("Add lines")}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

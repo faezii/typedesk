@@ -1,5 +1,7 @@
 "use client";
 
+
+import { useT } from "@/components/i18n";
 import { useActionState, useState } from "react";
 import { AlertCircle, Eye, EyeOff, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -8,6 +10,7 @@ import { Label } from "@/components/ui/label";
 import { login, type LoginState } from "@/server/actions/auth";
 
 export function LoginForm({ callbackUrl }: { callbackUrl: string }) {
+  const t = useT();
   const [state, action, pending] = useActionState<LoginState, FormData>(login, {});
   const [showPassword, setShowPassword] = useState(false);
 
@@ -26,13 +29,13 @@ export function LoginForm({ callbackUrl }: { callbackUrl: string }) {
       )}
 
       <div className="space-y-2">
-        <Label htmlFor="email">Email</Label>
+        <Label htmlFor="email">{t("Email")}</Label>
         <Input
           id="email"
           name="email"
           type="email"
           autoComplete="username"
-          placeholder="name@typedesk.qa"
+          placeholder={t("name@typedesk.qa")}
           defaultValue={state.email}
           required
           autoFocus
@@ -42,7 +45,7 @@ export function LoginForm({ callbackUrl }: { callbackUrl: string }) {
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="password">Password</Label>
+        <Label htmlFor="password">{t("Password")}</Label>
         <div className="relative">
           <Input
             id="password"
@@ -57,7 +60,7 @@ export function LoginForm({ callbackUrl }: { callbackUrl: string }) {
             type="button"
             onClick={() => setShowPassword((s) => !s)}
             className="text-muted-foreground hover:text-foreground absolute inset-y-0 right-0 grid w-10 place-items-center"
-            aria-label={showPassword ? "Hide password" : "Show password"}
+            aria-label={showPassword ? t("Hide password") : t("Show password")}
           >
             {showPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
           </button>
@@ -66,7 +69,7 @@ export function LoginForm({ callbackUrl }: { callbackUrl: string }) {
 
       <Button type="submit" className="h-10 w-full" disabled={pending}>
         {pending && <Loader2 className="animate-spin" />}
-        {pending ? "Signing in…" : "Sign in"}
+        {pending ? t("Signing in…") : t("Sign in")}
       </Button>
     </form>
   );

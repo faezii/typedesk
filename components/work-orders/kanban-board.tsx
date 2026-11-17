@@ -1,5 +1,7 @@
 "use client";
 
+
+import { useT } from "@/components/i18n";
 import { useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -24,6 +26,7 @@ import { moveWorkOrder } from "@/server/actions/work-orders";
 import type { BoardCard } from "@/server/queries/work-orders";
 
 export function KanbanBoard({ cards: initial, canEdit, now }: { cards: BoardCard[]; canEdit: boolean; now: string }) {
+  const t = useT();
   const router = useRouter();
   const [cards, setCards] = useState(initial);
   const [syncedFrom, setSyncedFrom] = useState(initial);
@@ -48,7 +51,7 @@ export function KanbanBoard({ cards: initial, canEdit, now }: { cards: BoardCard
     const to = over?.id as WorkOrderStatus | undefined;
     if (!card || !to || card.status === to) return;
     if (card.hasOpenRevision) {
-      toast.error("This order has an open revision. Resolve it first — it stays Delivered while being corrected.");
+      toast.error(t("This order has an open revision. Resolve it first — it stays Delivered while being corrected."));
       return;
     }
     const from = card.status;
@@ -57,9 +60,9 @@ export function KanbanBoard({ cards: initial, canEdit, now }: { cards: BoardCard
       const res = await moveWorkOrder(card.id, from, to);
       if (!res.ok) {
         setCards((cs) => cs.map((c) => (c.id === card.id ? { ...c, status: from } : c)));
-        toast.error(res.error);
+        toast.error(t(res.error));
       } else {
-        toast.success(`${card.orderNo} → ${WORK_ORDER_STATUS_LABEL[to]}`);
+        toast.success(`${card.orderNo} → ${t(WORK_ORDER_STATUS_LABEL[to])}`);
       }
       router.refresh();
     });
@@ -75,11 +78,11 @@ export function KanbanBoard({ cards: initial, canEdit, now }: { cards: BoardCard
       onDragEnd={onDragEnd}
       accessibility={{
         announcements: {
-          onDragStart: ({ active }) => `Picked up ${cards.find((c) => c.id === active.id)?.orderNo}.`,
-          onDragOver: ({ over }) => (over ? `Over ${WORK_ORDER_STATUS_LABEL[over.id as WorkOrderStatus]}.` : "Not over a column."),
+          onDragStart: ({ active }) => t("Picked up {orderNo}.", { orderNo: cards.find((c) => c.id === active.id)?.orderNo ?? "" }),
+          onDragOver: ({ over }) => (over ? t("Over {status}.", { status: t(WORK_ORDER_STATUS_LABEL[over.id as WorkOrderStatus]) }) : t("Not over a column.")),
           onDragEnd: ({ active, over }) =>
-            over ? `Moved ${cards.find((c) => c.id === active.id)?.orderNo} to ${WORK_ORDER_STATUS_LABEL[over.id as WorkOrderStatus]}.` : "Move cancelled.",
-          onDragCancel: () => "Move cancelled.",
+            over ? t("Moved {orderNo} to {status}.", { orderNo: cards.find((c) => c.id === active.id)?.orderNo ?? "", status: t(WORK_ORDER_STATUS_LABEL[over.id as WorkOrderStatus]) }) : t("Move cancelled."),
+          onDragCancel: () => t("Move cancelled."),
         },
       }}
     >
@@ -103,35 +106,37 @@ export function KanbanBoard({ cards: initial, canEdit, now }: { cards: BoardCard
 }
 
 function Column({ status, count, children }: { status: WorkOrderStatus; count: number; children: React.ReactNode }) {
+  const t = useT();
   const { setNodeRef, isOver } = useDroppable({ id: status });
   return (
     <section
       ref={setNodeRef}
-      aria-label={`${WORK_ORDER_STATUS_LABEL[status]}, ${count} orders`}
+      aria-label={t("{label}, {count} orders", { label: t(WORK_ORDER_STATUS_LABEL[status]), count })}
       className={cn("bg-muted/40 flex min-h-[60vh] flex-col rounded-xl border p-2 transition-colors", isOver && "border-primary bg-primary/5")}
     >
       <header className="flex items-center justify-between px-1.5 pt-1 pb-2">
-        <h2 className="text-sm font-medium">{WORK_ORDER_STATUS_LABEL[status]}</h2>
+        <h2 className="text-sm font-medium">{t(WORK_ORDER_STATUS_LABEL[status])}</h2>
         <span className="text-muted-foreground bg-background rounded-full border px-2 text-xs tabular-nums">{count}</span>
       </header>
       <div className="flex flex-1 flex-col gap-2">
         {children}
-        {count === 0 && <p className="text-muted-foreground px-2 py-6 text-center text-xs">No orders</p>}
+        {count === 0 && <p className="text-muted-foreground px-2 py-6 text-center text-xs">{t("No orders")}</p>}
       </div>
-      {status === "DELIVERED" && <p className="text-muted-foreground px-2 pt-2 text-[11px]">Last 14 days and open revisions. Older orders are in the table view.</p>}
+      {status === "DELIVERED" && <p className="text-muted-foreground px-2 pt-2 text-[11px]">{t("Last 14 days and open revisions. Older orders are in the table view.")}</p>}
     </section>
   );
 }
 
 function DraggableCard({ card, disabled, now }: { card: BoardCard; disabled: boolean; now: Date }) {
+  const t = useT();
   const { attributes, listeners, setNodeRef, isDragging } = useDraggable({ id: card.id, disabled });
   return (
     <div
       ref={setNodeRef}
       {...listeners}
       {...attributes}
-      aria-roledescription="Draggable work order"
-      aria-label={`${card.orderNo}, ${card.customer.name}. Press space to pick up and move with arrow keys.`}
+      aria-roledescription={t("Draggable work order")}
+      aria-label={t("{orderNo}, {name}. Press space to pick up and move with arrow keys.", { orderNo: card.orderNo, name: card.customer.name })}
       className={cn("rounded-lg outline-none focus-visible:ring-3 focus-visible:ring-ring/50", !disabled && "cursor-grab active:cursor-grabbing", isDragging && "opacity-40")}
     >
       <CardBody card={card} now={now} />
@@ -140,6 +145,7 @@ function DraggableCard({ card, disabled, now }: { card: BoardCard; disabled: boo
 }
 
 function CardBody({ card, now, dragging = false }: { card: BoardCard; now: Date; dragging?: boolean }) {
+  const t = useT();
   return (
     <article className={cn("bg-card space-y-2 rounded-lg border p-3 text-sm shadow-xs", dragging && "rotate-1 shadow-lg")}>
       <div className="flex items-start justify-between gap-2">
@@ -152,12 +158,12 @@ function CardBody({ card, now, dragging = false }: { card: BoardCard; now: Date;
         <div className="truncate font-medium">{card.customer.name}</div>
         <div className="text-muted-foreground truncate text-xs">
           {card.service.title}
-          {card.translation && ` · ${card.translation.sourceLang} → ${card.translation.targetLang}`}
+          {card.translation && ` · ${t("{from} → {to}", { from: t(card.translation.sourceLang), to: t(card.translation.targetLang) })}`}
         </div>
       </div>
       <div className="flex flex-wrap items-center justify-between gap-2">
         <DeadlineText deadline={card.deadline} done={card.status === "DELIVERED"} now={now} />
-        <span className="text-muted-foreground truncate text-xs">{card.assignedTo?.name.split(" ")[0] ?? "Unassigned"}</span>
+        <span className="text-muted-foreground truncate text-xs">{card.assignedTo?.name.split(" ")[0] ?? t("Unassigned")}</span>
       </div>
       {card.hasOpenRevision && <RevisionBadge />}
     </article>

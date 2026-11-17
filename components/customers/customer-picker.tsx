@@ -1,5 +1,7 @@
 "use client";
 
+
+import { useT } from "@/components/i18n";
 import { useEffect, useState } from "react";
 import { Check, ChevronsUpDown, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -14,7 +16,7 @@ export type CustomerOption = { id: string; name: string; subtitle?: string };
 export function CustomerPicker({
   value,
   onChange,
-  placeholder = "Search by name or phone",
+  placeholder,
   allowClear = true,
   invalid,
 }: {
@@ -24,6 +26,7 @@ export function CustomerPicker({
   allowClear?: boolean;
   invalid?: boolean;
 }) {
+  const t = useT();
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<CustomerOption[]>([]);
@@ -52,24 +55,23 @@ export function CustomerPicker({
           aria-invalid={invalid || undefined}
           className="w-full justify-between font-normal"
         >
-          <span className={cn("truncate", !value && "text-muted-foreground")}>{value?.name ?? placeholder}</span>
+          <span className={cn("truncate", !value && "text-muted-foreground")}>{value?.name ?? placeholder ?? t("Search by name or phone")}</span>
           <ChevronsUpDown className="opacity-50" />
         </Button>
       </PopoverTrigger>
       <PopoverContent className="w-(--radix-popover-trigger-width) p-0" align="start">
         <Command shouldFilter={false}>
-          <CommandInput value={query} onValueChange={setQuery} placeholder="Name, phone, QID…" />
+          <CommandInput value={query} onValueChange={setQuery} placeholder={t("Name, phone, QID…")} />
           <CommandList>
-            <CommandEmpty>{query.trim().length < 2 ? "Type at least 2 characters." : "No customers found."}</CommandEmpty>
+            <CommandEmpty>{query.trim().length < 2 ? t("Type at least 2 characters.") : t("No customers found.")}</CommandEmpty>
             {allowClear && value && (
               <CommandGroup>
                 <CommandItem value="__clear" onSelect={() => (onChange(null), setOpen(false))}>
-                  <X /> Clear selection
-                </CommandItem>
+                  <X /> {t("Clear selection")}</CommandItem>
               </CommandGroup>
             )}
             {query.trim().length >= 2 && results.length > 0 && (
-              <CommandGroup heading="Customers">
+              <CommandGroup heading={t("Customers")}>
                 {results.map((c) => (
                   <CommandItem key={c.id} value={c.id} onSelect={() => (onChange(c), setOpen(false))}>
                     <Check className={cn(value?.id === c.id ? "opacity-100" : "opacity-0")} />

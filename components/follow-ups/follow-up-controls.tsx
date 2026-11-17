@@ -1,5 +1,7 @@
 "use client";
 
+
+import { useT } from "@/components/i18n";
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
@@ -33,6 +35,7 @@ export function FollowUpDialog({
   defaultCustomer?: CustomerOption;
   children: React.ReactNode;
 }) {
+  const t = useT();
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [pending, startTransition] = useTransition();
@@ -45,9 +48,9 @@ export function FollowUpDialog({
       const res = await saveFollowUp(followUpId ?? null, form.getValues());
       if (!res.ok) {
         for (const [field, message] of Object.entries(res.fieldErrors ?? {})) form.setError(field as keyof FollowUpFormValues, { message });
-        return void toast.error(res.error);
+        return void toast.error(t(res.error ?? ""));
       }
-      toast.success(followUpId ? "Follow-up updated" : "Follow-up scheduled");
+      toast.success(followUpId ? t("Follow-up updated") : t("Follow-up scheduled"));
       setOpen(false);
       router.refresh();
     });
@@ -67,8 +70,8 @@ export function FollowUpDialog({
       <DialogTrigger asChild>{children}</DialogTrigger>
       <DialogContent className="sm:max-w-lg">
         <DialogHeader>
-          <DialogTitle>{followUpId ? "Edit follow-up" : "New follow-up"}</DialogTitle>
-          <DialogDescription>Passport and QID renewals and overdue-invoice reminders are scheduled automatically.</DialogDescription>
+          <DialogTitle>{followUpId ? t("Edit follow-up") : t("New follow-up")}</DialogTitle>
+          <DialogDescription>{t("Passport and QID renewals and overdue-invoice reminders are scheduled automatically.")}</DialogDescription>
         </DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4" noValidate>
@@ -77,9 +80,9 @@ export function FollowUpDialog({
               name="title"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Title</FormLabel>
+                  <FormLabel>{t("Title")}</FormLabel>
                   <FormControl>
-                    <Input placeholder="e.g. Residence visa stamping — collect passport" {...field} />
+                    <Input placeholder={t("e.g. Residence permit renewal — collect passport")} {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -91,7 +94,7 @@ export function FollowUpDialog({
                 name="type"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Type</FormLabel>
+                    <FormLabel>{t("Type")}</FormLabel>
                     <Select value={field.value} onValueChange={field.onChange}>
                       <FormControl>
                         <SelectTrigger className="w-full">
@@ -114,7 +117,7 @@ export function FollowUpDialog({
                 name="deadline"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Due date</FormLabel>
+                    <FormLabel>{t("Due date")}</FormLabel>
                     <FormControl>
                       <Input type="date" {...field} />
                     </FormControl>
@@ -128,10 +131,10 @@ export function FollowUpDialog({
               name="customerId"
               render={() => (
                 <FormItem>
-                  <FormLabel>Customer</FormLabel>
+                  <FormLabel>{t("Customer")}</FormLabel>
                   <CustomerPicker
                     value={customer}
-                    placeholder="Optional — search by name or phone"
+                    placeholder={t("Optional — search by name or phone")}
                     onChange={(c) => {
                       setCustomer(c);
                       form.setValue("customerId", c?.id ?? "");
@@ -146,7 +149,7 @@ export function FollowUpDialog({
               name="assignedToId"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Assigned to</FormLabel>
+                  <FormLabel>{t("Assigned to")}</FormLabel>
                   <Select value={field.value || "none"} onValueChange={(v) => field.onChange(v === "none" ? "" : v)}>
                     <FormControl>
                       <SelectTrigger className="w-full">
@@ -154,7 +157,7 @@ export function FollowUpDialog({
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      <SelectItem value="none">Unassigned</SelectItem>
+                      <SelectItem value="none">{t("Unassigned")}</SelectItem>
                       {users.map((u) => (
                         <SelectItem key={u.id} value={u.id}>
                           {u.name}
@@ -171,7 +174,7 @@ export function FollowUpDialog({
               name="notes"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Notes</FormLabel>
+                  <FormLabel>{t("Notes")}</FormLabel>
                   <FormControl>
                     <Textarea rows={3} {...field} value={field.value ?? ""} />
                   </FormControl>
@@ -181,11 +184,10 @@ export function FollowUpDialog({
             />
             <DialogFooter>
               <Button type="button" variant="outline" onClick={() => setOpen(false)}>
-                Cancel
-              </Button>
+                {t("Cancel")}</Button>
               <Button type="submit" disabled={pending}>
                 {pending && <Loader2 className="animate-spin" />}
-                {followUpId ? "Save" : "Schedule"}
+                {followUpId ? t("Save") : t("Schedule")}
               </Button>
             </DialogFooter>
           </form>
@@ -197,44 +199,42 @@ export function FollowUpDialog({
 
 /** One-click Done (or Reopen) and Snooze 7 days. */
 export function FollowUpQuickActions({ id, done, title }: { id: string; done: boolean; title: string }) {
+  const t = useT();
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   const run = (fn: () => Promise<{ ok: boolean; error?: string }>, success: string) =>
     startTransition(async () => {
       const res = await fn();
-      if (!res.ok) toast.error(res.error);
-      else toast.success(success);
+      if (!res.ok) toast.error(t(res.error));
+      else toast.success(t(success));
       router.refresh();
     });
 
   if (done) {
     return (
-      <Button size="sm" variant="outline" disabled={pending} onClick={() => run(() => setFollowUpDone(id, false), "Reopened")} aria-label={`Reopen ${title}`}>
-        <RotateCcw /> Reopen
-      </Button>
+      <Button size="sm" variant="outline" disabled={pending} onClick={() => run(() => setFollowUpDone(id, false), "Reopened")} aria-label={t("Reopen {title}", { title })}>
+        <RotateCcw /> {t("Reopen")}</Button>
     );
   }
   return (
     <div className="flex shrink-0 gap-1">
-      <Button size="sm" variant="outline" disabled={pending} onClick={() => run(() => setFollowUpDone(id, true), "Marked done")} aria-label={`Mark ${title} done`}>
-        {pending ? <Loader2 className="animate-spin" /> : <Check />} Done
-      </Button>
+      <Button size="sm" variant="outline" disabled={pending} onClick={() => run(() => setFollowUpDone(id, true), "Marked done")} aria-label={t("Mark {title} done", { title })}>
+        {pending ? <Loader2 className="animate-spin" /> : <Check />} {t("Done")}</Button>
       <Button
         size="sm"
         variant="ghost"
         disabled={pending}
-        aria-label={`Snooze ${title} for 7 days`}
+        aria-label={t("Snooze {title} for 7 days", { title })}
         onClick={() =>
           startTransition(async () => {
             const res = await snoozeFollowUp(id);
-            if (!res.ok) toast.error(res.error);
-            else toast.success(`Snoozed until ${res.data.until}`);
+            if (!res.ok) toast.error(t(res.error));
+            else toast.success(t("Snoozed until {until}", { until: res.data.until }));
             router.refresh();
           })
         }
       >
-        <AlarmClockPlus /> 7 days
-      </Button>
+        <AlarmClockPlus /> {t("7 days")}</Button>
     </div>
   );
 }

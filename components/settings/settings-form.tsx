@@ -1,5 +1,7 @@
 "use client";
 
+
+import { useT } from "@/components/i18n";
 import { useRef, useTransition } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
@@ -23,6 +25,7 @@ const TEXT_FIELDS = [
 ] as const;
 
 export function SettingsForm({ defaultValues }: { defaultValues: SettingsFormValues }) {
+  const t = useT();
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   const form = useForm<SettingsFormValues, unknown, z.output<typeof settingsSchema>>({ resolver: zodResolver(settingsSchema), defaultValues });
@@ -32,9 +35,9 @@ export function SettingsForm({ defaultValues }: { defaultValues: SettingsFormVal
       const res = await saveSettings(data);
       if (!res.ok) {
         for (const [field, message] of Object.entries(res.fieldErrors ?? {})) form.setError(field as keyof SettingsFormValues, { message });
-        return void toast.error(res.error);
+        return void toast.error(t(res.error));
       }
-      toast.success("Settings saved");
+      toast.success(t("Settings saved"));
       form.reset(data); // show the normalised tax no. / phone
       router.refresh();
     });
@@ -44,8 +47,8 @@ export function SettingsForm({ defaultValues }: { defaultValues: SettingsFormVal
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="bg-card space-y-6 rounded-xl border p-5" noValidate>
         <section>
-          <h2 className="font-medium">Company</h2>
-          <p className="text-muted-foreground mt-0.5 mb-4 text-sm">Shown in the header of invoices, quotations and report PDFs.</p>
+          <h2 className="font-medium">{t("Company")}</h2>
+          <p className="text-muted-foreground mt-0.5 mb-4 text-sm">{t("Shown in the header of invoices, quotations and report PDFs.")}</p>
           <div className="grid gap-4 sm:grid-cols-2">
             {TEXT_FIELDS.map((f) => (
               <FormField
@@ -54,9 +57,9 @@ export function SettingsForm({ defaultValues }: { defaultValues: SettingsFormVal
                 name={f.name}
                 render={({ field }) => (
                   <FormItem className={"span" in f ? "sm:col-span-2" : undefined}>
-                    <FormLabel>{f.label}</FormLabel>
+                    <FormLabel>{t(f.label)}</FormLabel>
                     <FormControl>
-                      <Input {...field} placeholder={"placeholder" in f ? f.placeholder : undefined} inputMode={"inputMode" in f ? f.inputMode : undefined} />
+                      <Input {...field} placeholder={"placeholder" in f ? t(f.placeholder) : undefined} inputMode={"inputMode" in f ? f.inputMode : undefined} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -68,7 +71,7 @@ export function SettingsForm({ defaultValues }: { defaultValues: SettingsFormVal
               name="companyAddress"
               render={({ field }) => (
                 <FormItem className="sm:col-span-2">
-                  <FormLabel>Address</FormLabel>
+                  <FormLabel>{t("Address")}</FormLabel>
                   <FormControl>
                     <Textarea rows={2} {...field} />
                   </FormControl>
@@ -80,18 +83,18 @@ export function SettingsForm({ defaultValues }: { defaultValues: SettingsFormVal
         </section>
 
         <section className="border-t pt-5">
-          <h2 className="font-medium">VAT and invoicing</h2>
+          <h2 className="font-medium">{t("VAT and invoicing")}</h2>
           <div className="mt-4 grid gap-4">
             <FormField
               control={form.control}
               name="vatPercent"
               render={({ field }) => (
                 <FormItem className="max-w-48">
-                  <FormLabel>VAT rate (%)</FormLabel>
+                  <FormLabel>{t("VAT rate (%)")}</FormLabel>
                   <FormControl>
                     <Input inputMode="decimal" {...field} />
                   </FormControl>
-                  <FormDescription>Qatar has no VAT today, so leave this at 0. If VAT is introduced, set the rate here; it applies to new invoices and quotes only.</FormDescription>
+                  <FormDescription>{t("Qatar has no VAT today, so leave this at 0. If VAT is introduced, set the rate here; it applies to new invoices and quotes only.")}</FormDescription>
                   <FormMessage />
                 </FormItem>
               )}
@@ -101,11 +104,11 @@ export function SettingsForm({ defaultValues }: { defaultValues: SettingsFormVal
               name="invoiceTerms"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Invoice terms</FormLabel>
+                  <FormLabel>{t("Invoice terms")}</FormLabel>
                   <FormControl>
                     <Textarea rows={3} {...field} />
                   </FormControl>
-                  <FormDescription>Printed at the bottom of every invoice and quotation, e.g. payment terms and bank details.</FormDescription>
+                  <FormDescription>{t("Printed at the bottom of every invoice and quotation, e.g. payment terms and bank details.")}</FormDescription>
                   <FormMessage />
                 </FormItem>
               )}
@@ -116,8 +119,7 @@ export function SettingsForm({ defaultValues }: { defaultValues: SettingsFormVal
         <div className="flex justify-end border-t pt-5">
           <Button type="submit" disabled={pending}>
             {pending && <Loader2 className="animate-spin" />}
-            Save settings
-          </Button>
+            {t("Save settings")}</Button>
         </div>
       </form>
     </Form>
@@ -125,6 +127,7 @@ export function SettingsForm({ defaultValues }: { defaultValues: SettingsFormVal
 }
 
 export function LogoCard({ url }: { url: string }) {
+  const t = useT();
   const router = useRouter();
   const input = useRef<HTMLInputElement>(null);
   const [pending, startTransition] = useTransition();
@@ -135,34 +138,33 @@ export function LogoCard({ url }: { url: string }) {
       if (file) fd.set("logo", file);
       const res = await saveLogo(fd);
       if (input.current) input.current.value = "";
-      if (!res.ok) return void toast.error(res.error);
-      toast.success(file ? "Logo updated" : "Logo removed");
+      if (!res.ok) return void toast.error(t(res.error));
+      toast.success(file ? t("Logo updated") : t("Logo removed"));
       router.refresh();
     });
 
   return (
     <section className="bg-card rounded-xl border p-5">
-      <h2 className="font-medium">Logo</h2>
-      <p className="text-muted-foreground mt-0.5 mb-4 text-sm">PNG or JPG up to 1 MB, printed on invoices and quotations.</p>
+      <h2 className="font-medium">{t("Logo")}</h2>
+      <p className="text-muted-foreground mt-0.5 mb-4 text-sm">{t("PNG or JPG up to 1 MB, printed on invoices and quotations.")}</p>
       <div className="bg-muted/40 grid h-28 place-items-center rounded-lg border border-dashed p-3">
         {url ? (
           // unoptimized: the file route needs the signed-in user's cookies
-          <Image src={url} alt="Company logo" width={240} height={96} unoptimized className="max-h-20 w-auto max-w-full object-contain" />
+          <Image src={url} alt={t("Company logo")} width={240} height={96} unoptimized className="max-h-20 w-auto max-w-full object-contain" />
         ) : (
           <div className="text-muted-foreground flex flex-col items-center gap-1 text-sm">
             <ImageIcon className="size-5" />
-            No logo yet
-          </div>
+            {t("No logo yet")}</div>
         )}
       </div>
-      <input ref={input} type="file" accept="image/png,image/jpeg" className="sr-only" aria-label="Choose logo file" onChange={(e) => e.target.files?.[0] && submit(e.target.files[0])} />
+      <input ref={input} type="file" accept="image/png,image/jpeg" className="sr-only" aria-label={t("Choose logo file")} onChange={(e) => e.target.files?.[0] && submit(e.target.files[0])} />
       <div className="mt-3 flex gap-2">
         <Button type="button" variant="outline" className="flex-1" disabled={pending} onClick={() => input.current?.click()}>
           {pending ? <Loader2 className="animate-spin" /> : <Upload />}
-          {url ? "Replace" : "Upload logo"}
+          {url ? t("Replace") : t("Upload logo")}
         </Button>
         {url && (
-          <Button type="button" variant="ghost" size="icon" disabled={pending} onClick={() => submit(null)} aria-label="Remove logo">
+          <Button type="button" variant="ghost" size="icon" disabled={pending} onClick={() => submit(null)} aria-label={t("Remove logo")}>
             <Trash2 />
           </Button>
         )}

@@ -1,3 +1,4 @@
+import { getT } from "@/lib/i18n/server";
 import Link from "next/link";
 import { BellRing, CalendarDays, ChevronLeft, ChevronRight, List, Pencil, Plus } from "lucide-react";
 import { FollowUpDialog, FollowUpQuickActions } from "@/components/follow-ups/follow-up-controls";
@@ -15,7 +16,9 @@ import { followUpCalendar, listFollowUps, type FollowUpItem, type FollowUpParams
 import { syncPaymentReminders } from "@/server/services/payment-reminders";
 import type { FollowUpType } from "@prisma/client";
 
-export const metadata = { title: "Follow-ups" };
+export async function generateMetadata() {
+  return { title: (await getT())("Follow-ups") };
+}
 
 const TYPE_TONE: Record<FollowUpType, Tone> = {
   PASSPORT_EXPIRY: "violet",
@@ -28,6 +31,7 @@ const TYPE_TONE: Record<FollowUpType, Tone> = {
 const GROUP_STYLE: Record<string, string> = { overdue: "text-destructive", today: "text-amber-700 dark:text-amber-400", week: "", later: "text-muted-foreground" };
 
 export default async function FollowUpsPage({ searchParams }: { searchParams: Promise<FollowUpParams> }) {
+  const t = await getT();
   const user = await requirePagePermission("followUps:view");
   const params = await searchParams;
   const view = params.view === "calendar" ? "calendar" : "list";
@@ -43,24 +47,23 @@ export default async function FollowUpsPage({ searchParams }: { searchParams: Pr
   return (
     <>
       <PageHeader
-        title="Follow-ups"
-        description="Passport, QID, visa and license deadlines, payment reminders and client call-backs."
+        title={t("Follow-ups")}
+        description={t("Passport, QID, visa and license deadlines, payment reminders and client call-backs.")}
         actions={
           canEdit && (
             <FollowUpDialog users={users} defaultValues={{ title: "", type: "GENERAL", deadline: toDateInput(new Date()), customerId: "", assignedToId: user.id, notes: "" }}>
               <Button>
-                <Plus /> New follow-up
-              </Button>
+                <Plus /> {t("New follow-up")}</Button>
             </FollowUpDialog>
           )
         }
       />
 
       <div className="mb-4 flex flex-col gap-2 lg:flex-row lg:flex-wrap lg:items-center">
-        <div className="bg-muted inline-flex w-fit rounded-lg p-[3px]" role="group" aria-label="View">
+        <div className="bg-muted inline-flex w-fit rounded-lg p-[3px]" role="group" aria-label={t("View")}>
           {[
-            { v: "list", label: "List", Icon: List },
-            { v: "calendar", label: "Calendar", Icon: CalendarDays },
+            { v: "list", label: t("List"), Icon: List },
+            { v: "calendar", label: t("Calendar"), Icon: CalendarDays },
           ].map(({ v, label, Icon }) => (
             <Link
               key={v}
@@ -75,15 +78,15 @@ export default async function FollowUpsPage({ searchParams }: { searchParams: Pr
             </Link>
           ))}
         </div>
-        <FilterSelect param="type" label="Type" allLabel="All types" options={Object.entries(FOLLOW_UP_TYPE_LABEL).map(([value, label]) => ({ value, label }))} />
+        <FilterSelect param="type" label={t("Type")} allLabel={t("All types")} options={Object.entries(FOLLOW_UP_TYPE_LABEL).map(([value, label]) => ({ value, label }))} />
         <FilterSelect
           param="assignee"
-          label="Assigned to"
-          allLabel="Anyone"
-          options={[{ value: user.id, label: "Assigned to me" }, { value: "none", label: "Unassigned" }, ...users.filter((u) => u.id !== user.id).map((u) => ({ value: u.id, label: u.name }))]}
+          label={t("Assigned to")}
+          allLabel={t("Anyone")}
+          options={[{ value: user.id, label: t("Assigned to me") }, { value: "none", label: t("Unassigned") }, ...users.filter((u) => u.id !== user.id).map((u) => ({ value: u.id, label: u.name }))]}
         />
         {view === "list" && (
-          <FilterSelect param="status" label="Status" allLabel="Open" options={[{ value: "done", label: "Done (recent)" }]} />
+          <FilterSelect param="status" label={t("Status")} allLabel={t("Open")} options={[{ value: "done", label: t("Done (recent)") }]} />
         )}
       </div>
 
@@ -93,16 +96,17 @@ export default async function FollowUpsPage({ searchParams }: { searchParams: Pr
 }
 
 async function GroupedList({ params, canEdit, users }: { params: FollowUpParams; canEdit: boolean; users: { id: string; name: string }[] }) {
+  const t = await getT();
   const { groups, done } = await listFollowUps(params);
   if (params.status === "done") {
     return (
       <section className="bg-card rounded-xl border px-5 py-2">
-        {done.length === 0 ? <Empty>Nothing completed yet.</Empty> : <ul className="divide-y">{done.map((f) => <Row key={f.id} f={f} canEdit={canEdit} users={users} done />)}</ul>}
+        {done.length === 0 ? <Empty>{t("Nothing completed yet.")}</Empty> : <ul className="divide-y">{done.map((f) => <Row key={f.id} f={f} canEdit={canEdit} users={users} done />)}</ul>}
       </section>
     );
   }
   const total = groups.reduce((s, g) => s + g.items.length, 0);
-  if (total === 0) return <Empty>No open follow-ups.</Empty>;
+  if (total === 0) return <Empty>{t("No open follow-ups.")}</Empty>;
 
   return (
     <div className="space-y-4">
@@ -110,7 +114,7 @@ async function GroupedList({ params, canEdit, users }: { params: FollowUpParams;
         g.items.length === 0 ? null : (
           <section key={g.key} className="bg-card rounded-xl border">
             <header className="flex items-center justify-between border-b px-5 py-3">
-              <h2 className={cn("font-medium", GROUP_STYLE[g.key])}>{g.label}</h2>
+              <h2 className={cn("font-medium", GROUP_STYLE[g.key])}>{t(g.label)}</h2>
               <span className="text-muted-foreground text-xs tabular-nums">{g.items.length}</span>
             </header>
             <ul className="divide-y px-5">
@@ -125,16 +129,17 @@ async function GroupedList({ params, canEdit, users }: { params: FollowUpParams;
   );
 }
 
-function Row({ f, canEdit, users, done = false }: { f: FollowUpItem; canEdit: boolean; users: { id: string; name: string }[]; done?: boolean }) {
+async function Row({ f, canEdit, users, done = false }: { f: FollowUpItem; canEdit: boolean; users: { id: string; name: string }[]; done?: boolean }) {
+  const t = await getT();
   return (
     <li className="flex flex-col gap-2 py-3 sm:flex-row sm:items-center sm:gap-4">
-      <div className="text-muted-foreground w-20 shrink-0 text-xs tabular-nums">{formatLocal(f.deadline, "EEE d MMM")}</div>
+      <div className="text-muted-foreground w-20 shrink-0 text-xs tabular-nums">{formatLocal(f.deadline, "EEE d MMM", t.lang)}</div>
       <div className="min-w-0 flex-1">
         <div className="flex flex-wrap items-center gap-2">
           <span className={cn("text-sm font-medium", done && "text-muted-foreground line-through")}>{f.title}</span>
-          <ToneBadge tone={TYPE_TONE[f.type]}>{FOLLOW_UP_TYPE_LABEL[f.type]}</ToneBadge>
-          {f.status === "SNOOZED" && <ToneBadge tone="gray">Snoozed</ToneBadge>}
-          {f.autoKey && <span className="text-muted-foreground text-[11px]">auto</span>}
+          <ToneBadge tone={TYPE_TONE[f.type]}>{t(FOLLOW_UP_TYPE_LABEL[f.type])}</ToneBadge>
+          {f.status === "SNOOZED" && <ToneBadge tone="gray">{t("Snoozed")}</ToneBadge>}
+          {f.autoKey && <span className="text-muted-foreground text-[11px]">{t("auto")}</span>}
         </div>
         <div className="text-muted-foreground mt-0.5 truncate text-xs">
           {f.customer ? (
@@ -142,10 +147,10 @@ function Row({ f, canEdit, users, done = false }: { f: FollowUpItem; canEdit: bo
               {f.customer.name}
             </Link>
           ) : (
-            "No customer"
+            t("No customer")
           )}
           {f.notes && ` · ${f.notes}`}
-          {` · ${f.assignedTo?.name ?? "Unassigned"}`}
+          {` · ${f.assignedTo?.name ?? t("Unassigned")}`}
         </div>
       </div>
       {canEdit && (
@@ -157,7 +162,7 @@ function Row({ f, canEdit, users, done = false }: { f: FollowUpItem; canEdit: bo
             defaultCustomer={f.customer ?? undefined}
             defaultValues={{ title: f.title, type: f.type, deadline: toDateInput(f.deadline), customerId: f.customer?.id ?? "", assignedToId: f.assignedTo?.id ?? "", notes: f.notes ?? "" }}
           >
-            <Button size="icon-sm" variant="ghost" aria-label={`Edit ${f.title}`}>
+            <Button size="icon-sm" variant="ghost" aria-label={t("Edit {title}", { title: f.title })}>
               <Pencil />
             </Button>
           </FollowUpDialog>
@@ -168,31 +173,32 @@ function Row({ f, canEdit, users, done = false }: { f: FollowUpItem; canEdit: bo
 }
 
 async function Calendar({ params, href }: { params: FollowUpParams; href: (p: Record<string, string | undefined>) => string }) {
-  const cal = await followUpCalendar(params);
+  const t = await getT();
+  const cal = await followUpCalendar(params, t.lang);
   return (
     <section className="bg-card rounded-xl border">
       <header className="flex items-center justify-between border-b px-4 py-3">
         <Button variant="ghost" size="icon-sm" asChild>
-          <Link href={href({ month: cal.prev })} aria-label="Previous month">
-            <ChevronLeft />
+          <Link href={href({ month: cal.prev })} aria-label={t("Previous month")}>
+            <ChevronLeft className="rtl:-scale-x-100" />
           </Link>
         </Button>
         <h2 className="font-medium">{cal.label}</h2>
         <Button variant="ghost" size="icon-sm" asChild>
-          <Link href={href({ month: cal.next })} aria-label="Next month">
-            <ChevronRight />
+          <Link href={href({ month: cal.next })} aria-label={t("Next month")}>
+            <ChevronRight className="rtl:-scale-x-100" />
           </Link>
         </Button>
       </header>
       <div className="overflow-x-auto">
         <div className="grid min-w-[760px] grid-cols-7">
-          {["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"].map((d) => (
+          {[t("Mon"), t("Tue"), t("Wed"), t("Thu"), t("Fri"), t("Sat"), t("Sun")].map((d) => (
             <div key={d} className="text-muted-foreground border-b px-2 py-1.5 text-xs font-medium">
               {d}
             </div>
           ))}
           {cal.days.map((d) => (
-            <div key={d.key} className={cn("min-h-28 border-r border-b p-1.5 [&:nth-child(7n)]:border-r-0", !d.inMonth && "bg-muted/30")}>
+            <div key={d.key} className={cn("min-h-28 border-e border-b p-1.5 [&:nth-child(7n)]:border-e-0", !d.inMonth && "bg-muted/30")}>
               <div
                 className={cn(
                   "mb-1 grid size-6 place-items-center rounded-full text-xs tabular-nums",
@@ -205,7 +211,7 @@ async function Calendar({ params, href }: { params: FollowUpParams; href: (p: Re
                 {d.items.slice(0, 3).map((f) => (
                   <li
                     key={f.id}
-                    title={`${f.title} — ${FOLLOW_UP_TYPE_LABEL[f.type]}`}
+                    title={`${f.title} — ${t(FOLLOW_UP_TYPE_LABEL[f.type])}`}
                     className={cn(
                       "flex items-center gap-1 rounded px-1.5 py-0.5 text-[11px]",
                       f.status === "DONE" ? "text-muted-foreground line-through" : d.key < cal.today ? "bg-destructive/10" : "bg-primary/10",
@@ -219,7 +225,7 @@ async function Calendar({ params, href }: { params: FollowUpParams; href: (p: Re
                     </span>
                   </li>
                 ))}
-                {d.items.length > 3 && <li className="text-muted-foreground px-1.5 text-[11px]">+{d.items.length - 3} more</li>}
+                {d.items.length > 3 && <li className="text-muted-foreground px-1.5 text-[11px]">{t("+{value} more", { value: d.items.length - 3 })}</li>}
               </ul>
             </div>
           ))}

@@ -1,3 +1,4 @@
+import { getT } from "@/lib/i18n/server";
 import Link from "next/link";
 import { ClipboardList, Columns3, Plus, Table2 } from "lucide-react";
 import { PageHeader } from "@/components/shared/page-header";
@@ -16,9 +17,12 @@ import { cn } from "@/lib/utils";
 import { WORK_ORDER_FLOW } from "@/lib/work-orders";
 import { WO_PAGE_SIZE, boardWorkOrders, listWorkOrders, workOrderFormOptions, type WorkOrderListParams } from "@/server/queries/work-orders";
 
-export const metadata = { title: "Work Orders" };
+export async function generateMetadata() {
+  return { title: (await getT())("Work Orders") };
+}
 
 export default async function WorkOrdersPage({ searchParams }: { searchParams: Promise<WorkOrderListParams> }) {
+  const t = await getT();
   const user = await requirePagePermission("workOrders:view");
   const params = await searchParams;
   const view = params.view === "table" ? "table" : "board";
@@ -36,24 +40,23 @@ export default async function WorkOrdersPage({ searchParams }: { searchParams: P
   return (
     <>
       <PageHeader
-        title="Work Orders"
-        description="Every job from counter to delivery. Drag cards between stages on the board."
+        title={t("Work Orders")}
+        description={t("Every job from counter to delivery. Drag cards between stages on the board.")}
         actions={
           canEdit && (
             <WorkOrderSheet options={options}>
               <Button>
-                <Plus /> New work order
-              </Button>
+                <Plus /> {t("New work order")}</Button>
             </WorkOrderSheet>
           )
         }
       />
 
       <div className="mb-4 flex flex-col gap-2 lg:flex-row lg:flex-wrap lg:items-center">
-        <div className="bg-muted inline-flex w-fit rounded-lg p-[3px]" role="group" aria-label="View">
+        <div className="bg-muted inline-flex w-fit rounded-lg p-[3px]" role="group" aria-label={t("View")}>
           {[
-            { v: "board", label: "Board", Icon: Columns3 },
-            { v: "table", label: "Table", Icon: Table2 },
+            { v: "board", label: t("Board"), Icon: Columns3 },
+            { v: "table", label: t("Table"), Icon: Table2 },
           ].map(({ v, label, Icon }) => (
             <Link
               key={v}
@@ -68,33 +71,33 @@ export default async function WorkOrdersPage({ searchParams }: { searchParams: P
             </Link>
           ))}
         </div>
-        <SearchInput placeholder="Order no, customer, notes…" />
+        <SearchInput placeholder={t("Order no, customer, notes…")} />
         {view === "table" && (
           <FilterSelect
             param="status"
-            label="Status"
-            allLabel="All statuses"
-            options={[...WORK_ORDER_FLOW.map((s) => ({ value: s, label: WORK_ORDER_STATUS_LABEL[s] })), { value: "REVISION", label: "Open revisions" }]}
+            label={t("Status")}
+            allLabel={t("All statuses")}
+            options={[...WORK_ORDER_FLOW.map((s) => ({ value: s, label: t(WORK_ORDER_STATUS_LABEL[s]) })), { value: "REVISION", label: t("Open revisions") }]}
           />
         )}
         <FilterSelect
           param="priority"
-          label="Priority"
-          allLabel="Any priority"
+          label={t("Priority")}
+          allLabel={t("Any priority")}
           options={[
-            { value: "URGENT", label: "Urgent" },
-            { value: "HIGH", label: "High" },
-            { value: "NORMAL", label: "Normal" },
+            { value: "URGENT", label: t("Urgent") },
+            { value: "HIGH", label: t("High") },
+            { value: "NORMAL", label: t("Normal") },
           ]}
         />
         <FilterSelect
           param="assignee"
-          label="Assignee"
-          allLabel="Anyone"
-          options={[...(canEdit ? [{ value: user.id, label: "Assigned to me" }] : []), { value: "none", label: "Unassigned" }, ...options.users.filter((u) => u.id !== user.id).map((u) => ({ value: u.id, label: u.name }))]}
+          label={t("Assignee")}
+          allLabel={t("Anyone")}
+          options={[...(canEdit ? [{ value: user.id, label: t("Assigned to me") }] : []), { value: "none", label: t("Unassigned") }, ...options.users.filter((u) => u.id !== user.id).map((u) => ({ value: u.id, label: u.name }))]}
         />
-        <DateParam param="from" label="Received from" />
-        <DateParam param="to" label="to" />
+        <DateParam param="from" label={t("Received from")} />
+        <DateParam param="to" label={t("to")} />
       </div>
 
       {view === "board" ? (
@@ -107,6 +110,7 @@ export default async function WorkOrdersPage({ searchParams }: { searchParams: P
 }
 
 async function WorkOrderTable({ params, now }: { params: WorkOrderListParams; now: Date }) {
+  const t = await getT();
   const { rows, total, page } = await listWorkOrders(params);
   return (
     <>
@@ -114,36 +118,35 @@ async function WorkOrderTable({ params, now }: { params: WorkOrderListParams; no
         {rows.length === 0 ? (
           <div className="text-muted-foreground flex flex-col items-center gap-2 px-6 py-16 text-center text-sm">
             <ClipboardList className="size-6" />
-            No work orders match these filters.
-          </div>
+            {t("No work orders match these filters.")}</div>
         ) : (
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead className="pl-4">Order</TableHead>
-                <TableHead>Customer</TableHead>
-                <TableHead>Service</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Deadline</TableHead>
-                <TableHead>Assigned</TableHead>
-                <TableHead className="pr-4 text-right">Amount</TableHead>
+                <TableHead className="ps-4">{t("Order")}</TableHead>
+                <TableHead>{t("Customer")}</TableHead>
+                <TableHead>{t("Service")}</TableHead>
+                <TableHead>{t("Status")}</TableHead>
+                <TableHead>{t("Deadline")}</TableHead>
+                <TableHead>{t("Assigned")}</TableHead>
+                <TableHead className="pe-4 text-end">{t("Amount")}</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {rows.map((w) => (
                 <TableRow key={w.id} className="relative">
-                  <TableCell className="pl-4">
+                  <TableCell className="ps-4">
                     <Link href={`/work-orders/${w.id}`} className="font-mono text-[13px] font-medium after:absolute after:inset-0 hover:underline">
                       {w.orderNo}
                     </Link>
-                    <div className="text-muted-foreground text-xs">{formatDate(w.createdAt)}</div>
+                    <div className="text-muted-foreground text-xs">{formatDate(w.createdAt, t.lang)}</div>
                   </TableCell>
                   <TableCell className="max-w-48 truncate">{w.customer.name}</TableCell>
                   <TableCell className="max-w-56">
                     <div className="truncate">{w.service.title}</div>
                     {w.translation && (
                       <div className="text-muted-foreground text-xs">
-                        {w.translation.sourceLang} → {w.translation.targetLang}
+                        {t("{from} → {to}", { from: t(w.translation.sourceLang), to: t(w.translation.targetLang) })}
                       </div>
                     )}
                   </TableCell>
@@ -156,8 +159,8 @@ async function WorkOrderTable({ params, now }: { params: WorkOrderListParams; no
                   <TableCell>
                     <DeadlineText deadline={w.deadline} done={w.status === "DELIVERED"} now={now} />
                   </TableCell>
-                  <TableCell className="text-sm">{w.assignedTo?.name ?? <span className="text-muted-foreground">Unassigned</span>}</TableCell>
-                  <TableCell className="pr-4 text-right tabular-nums">{formatMoney(w.totalAmount)}</TableCell>
+                  <TableCell className="text-sm">{w.assignedTo?.name ?? <span className="text-muted-foreground">{t("Unassigned")}</span>}</TableCell>
+                  <TableCell className="pe-4 text-end tabular-nums">{formatMoney(w.totalAmount)}</TableCell>
                 </TableRow>
               ))}
             </TableBody>

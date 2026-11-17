@@ -1,5 +1,7 @@
 "use client";
 
+
+import { useT } from "@/components/i18n";
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
@@ -32,6 +34,7 @@ export function TaskDialog({
   defaultWorkOrder?: WorkOrderOption;
   children: React.ReactNode;
 }) {
+  const t = useT();
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [pending, startTransition] = useTransition();
@@ -44,9 +47,9 @@ export function TaskDialog({
       const res = await saveTask(taskId ?? null, form.getValues());
       if (!res.ok) {
         for (const [field, message] of Object.entries(res.fieldErrors ?? {})) form.setError(field as keyof TaskFormValues, { message });
-        return void toast.error(res.error);
+        return void toast.error(t(res.error));
       }
-      toast.success(taskId ? "Task updated" : "Task created");
+      toast.success(taskId ? t("Task updated") : t("Task created"));
       setOpen(false);
       router.refresh();
     });
@@ -66,8 +69,8 @@ export function TaskDialog({
       <DialogTrigger asChild>{children}</DialogTrigger>
       <DialogContent className="sm:max-w-lg">
         <DialogHeader>
-          <DialogTitle>{taskId ? "Edit task" : "New task"}</DialogTitle>
-          <DialogDescription>Link it to a work order so the assignee sees the client&apos;s notes and revision history.</DialogDescription>
+          <DialogTitle>{taskId ? t("Edit task") : t("New task")}</DialogTitle>
+          <DialogDescription>{t("Link it to a work order so the assignee sees the client's notes and revision history.")}</DialogDescription>
         </DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4" noValidate>
@@ -76,9 +79,9 @@ export function TaskDialog({
               name="title"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Task</FormLabel>
+                  <FormLabel>{t("Task")}</FormLabel>
                   <FormControl>
-                    <Input placeholder="e.g. Proofread marriage certificate translation" {...field} />
+                    <Input placeholder={t("e.g. Proofread marriage certificate translation")} {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -89,7 +92,7 @@ export function TaskDialog({
               name="description"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Description</FormLabel>
+                  <FormLabel>{t("Description")}</FormLabel>
                   <FormControl>
                     <Textarea rows={3} {...field} value={field.value ?? ""} />
                   </FormControl>
@@ -103,7 +106,7 @@ export function TaskDialog({
                 name="priority"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Priority</FormLabel>
+                    <FormLabel>{t("Priority")}</FormLabel>
                     <Select value={field.value} onValueChange={field.onChange}>
                       <FormControl>
                         <SelectTrigger className="w-full">
@@ -111,9 +114,9 @@ export function TaskDialog({
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        <SelectItem value="NORMAL">Normal</SelectItem>
-                        <SelectItem value="HIGH">High</SelectItem>
-                        <SelectItem value="URGENT">Urgent</SelectItem>
+                        <SelectItem value="NORMAL">{t("Normal")}</SelectItem>
+                        <SelectItem value="HIGH">{t("High")}</SelectItem>
+                        <SelectItem value="URGENT">{t("Urgent")}</SelectItem>
                       </SelectContent>
                     </Select>
                   </FormItem>
@@ -124,7 +127,7 @@ export function TaskDialog({
                 name="deadline"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Deadline</FormLabel>
+                    <FormLabel>{t("Deadline")}</FormLabel>
                     <FormControl>
                       <Input type="datetime-local" {...field} />
                     </FormControl>
@@ -138,7 +141,7 @@ export function TaskDialog({
               name="assignedToId"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Assignee</FormLabel>
+                  <FormLabel>{t("Assignee")}</FormLabel>
                   <Select value={field.value || "none"} onValueChange={(v) => field.onChange(v === "none" ? "" : v)}>
                     <FormControl>
                       <SelectTrigger className="w-full">
@@ -146,7 +149,7 @@ export function TaskDialog({
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      <SelectItem value="none">Unassigned</SelectItem>
+                      <SelectItem value="none">{t("Unassigned")}</SelectItem>
                       {users.map((u) => (
                         <SelectItem key={u.id} value={u.id}>
                           {u.name}
@@ -163,7 +166,7 @@ export function TaskDialog({
               name="workOrderId"
               render={() => (
                 <FormItem>
-                  <FormLabel>Work order</FormLabel>
+                  <FormLabel>{t("Work order")}</FormLabel>
                   <WorkOrderPicker
                     value={workOrder}
                     onChange={(w) => {
@@ -177,11 +180,10 @@ export function TaskDialog({
             />
             <DialogFooter>
               <Button type="button" variant="outline" onClick={() => setOpen(false)}>
-                Cancel
-              </Button>
+                {t("Cancel")}</Button>
               <Button type="submit" disabled={pending}>
                 {pending && <Loader2 className="animate-spin" />}
-                {taskId ? "Save" : "Create task"}
+                {taskId ? t("Save") : t("Create task")}
               </Button>
             </DialogFooter>
           </form>

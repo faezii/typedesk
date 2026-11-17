@@ -1,6 +1,9 @@
+import { getT } from "@/lib/i18n/server";
 import AppNotFound from "./(app)/not-found";
 
-export const metadata = { title: "Not found" };
+export async function generateMetadata() {
+  return { title: (await getT())("Not found") };
+}
 
 /** Unmatched URLs — rendered without the app shell. */
 export default function NotFound() {

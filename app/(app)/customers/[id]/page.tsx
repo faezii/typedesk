@@ -1,3 +1,4 @@
+import { getT } from "@/lib/i18n/server";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowLeft, Building2, Mail, Pencil, Phone, Upload, User } from "lucide-react";
@@ -29,10 +30,11 @@ const FOLLOW_UP_TONE: Record<FollowUpStatus, Tone> = { PENDING: "amber", DONE: "
 
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }) {
   const data = await getCustomer((await params).id);
-  return { title: data?.customer.name ?? "Customer" };
+  return { title: data?.customer.name ?? (await getT())("Customer") };
 }
 
 export default async function CustomerPage({ params }: { params: Promise<{ id: string }> }) {
+  const t = await getT();
   const user = await requirePagePermission("customers:view");
   const data = await getCustomer((await params).id);
   if (!data) notFound();
@@ -42,8 +44,7 @@ export default async function CustomerPage({ params }: { params: Promise<{ id: s
   return (
     <>
       <Link href="/customers" className="text-muted-foreground hover:text-foreground mb-4 inline-flex items-center gap-1 text-sm">
-        <ArrowLeft className="size-4" /> Customers
-      </Link>
+        <ArrowLeft className="rtl:-scale-x-100 size-4" /> {t("Customers")}</Link>
 
       {/* Header */}
       <section className="bg-card mb-4 rounded-xl border p-5">
@@ -55,12 +56,12 @@ export default async function CustomerPage({ params }: { params: Promise<{ id: s
             <div className="min-w-0">
               <div className="flex flex-wrap items-center gap-2">
                 <h1 className="text-xl font-semibold tracking-tight">{c.name}</h1>
-                <ToneBadge tone="gray">{CUSTOMER_TYPE_LABEL[c.type]}</ToneBadge>
+                <ToneBadge tone="gray">{t(CUSTOMER_TYPE_LABEL[c.type])}</ToneBadge>
               </div>
               {c.companyName && <div className="text-muted-foreground text-sm">{c.companyName}</div>}
               <div className="text-muted-foreground mt-2 flex flex-wrap gap-x-4 gap-y-1 text-sm">
                 <a href={`tel:${c.phone.replace(/\s/g, "")}`} className="hover:text-foreground inline-flex items-center gap-1.5">
-                  <Phone className="size-3.5" /> {c.phone}
+                  <Phone className="size-3.5" /> <span dir="ltr">{c.phone}</span>
                 </a>
                 {c.email && (
                   <a href={`mailto:${c.email}`} className="hover:text-foreground inline-flex items-center gap-1.5">
@@ -68,7 +69,7 @@ export default async function CustomerPage({ params }: { params: Promise<{ id: s
                   </a>
                 )}
                 {c.nationality && <span>{c.nationality}</span>}
-                {c.taxNo && <span>CR / tax no. {c.taxNo}</span>}
+                {c.taxNo && <span>{t("CR / tax no. {taxNo}", { taxNo: c.taxNo })}</span>}
               </div>
             </div>
           </div>
@@ -91,23 +92,22 @@ export default async function CustomerPage({ params }: { params: Promise<{ id: s
               }}
             >
               <Button variant="outline">
-                <Pencil /> Edit
-              </Button>
+                <Pencil /> {t("Edit")}</Button>
             </CustomerFormSheet>
           )}
         </div>
 
         <dl className="mt-5 grid gap-3 border-t pt-4 text-sm sm:grid-cols-2 lg:grid-cols-4">
-          <IdItem label="QID" number={c.nationalId} expiry={c.nationalIdExpiry} />
-          <IdItem label="Passport" number={c.passportNo} expiry={c.passportExpiry} />
+          <IdItem label={t("QID")} number={c.nationalId} expiry={c.nationalIdExpiry} />
+          <IdItem label={t("Passport")} number={c.passportNo} expiry={c.passportExpiry} />
           {finance && (
             <>
               <div>
-                <dt className="text-muted-foreground text-xs">Total billed</dt>
+                <dt className="text-muted-foreground text-xs">{t("Total billed")}</dt>
                 <dd className="mt-1 font-medium tabular-nums">{formatMoney(totals.billed)}</dd>
               </div>
               <div>
-                <dt className="text-muted-foreground text-xs">Outstanding balance</dt>
+                <dt className="text-muted-foreground text-xs">{t("Outstanding balance")}</dt>
                 <dd className={`mt-1 font-medium tabular-nums ${totals.outstanding.gt(0) ? "text-destructive" : ""}`}>
                   {formatMoney(totals.outstanding)}
                 </dd>
@@ -120,19 +120,19 @@ export default async function CustomerPage({ params }: { params: Promise<{ id: s
       <Tabs defaultValue="overview">
         <div className="overflow-x-auto overflow-y-hidden">
           <TabsList>
-            <TabsTrigger value="overview">Overview</TabsTrigger>
-            <TabsTrigger value="orders">Work orders ({workOrders.length})</TabsTrigger>
-            {finance && <TabsTrigger value="invoices">Invoices ({invoices.length})</TabsTrigger>}
-            {finance && <TabsTrigger value="payments">Payments</TabsTrigger>}
-            <TabsTrigger value="documents">Documents ({documents.total})</TabsTrigger>
-            <TabsTrigger value="followups">Follow-ups ({followUps.length})</TabsTrigger>
+            <TabsTrigger value="overview">{t("Overview")}</TabsTrigger>
+            <TabsTrigger value="orders">{t("Work orders ({count})", { count: workOrders.length })}</TabsTrigger>
+            {finance && <TabsTrigger value="invoices">{t("Invoices ({count})", { count: invoices.length })}</TabsTrigger>}
+            {finance && <TabsTrigger value="payments">{t("Payments")}</TabsTrigger>}
+            <TabsTrigger value="documents">{t("Documents ({total})", { total: documents.total })}</TabsTrigger>
+            <TabsTrigger value="followups">{t("Follow-ups ({count})", { count: followUps.length })}</TabsTrigger>
           </TabsList>
         </div>
 
         <TabsContent value="overview" className="mt-4 grid gap-4 lg:grid-cols-3">
-          <Card title="Recent work orders" className="lg:col-span-2">
+          <Card title={t("Recent work orders")} className="lg:col-span-2">
             {workOrders.length === 0 ? (
-              <Empty>No work orders yet.</Empty>
+              <Empty>{t("No work orders yet.")}</Empty>
             ) : (
               <ul className="divide-y">
                 {workOrders.slice(0, 5).map((w) => (
@@ -144,31 +144,31 @@ export default async function CustomerPage({ params }: { params: Promise<{ id: s
                       <div className="text-muted-foreground truncate text-xs">{w.service.title}</div>
                     </div>
                     <WorkOrderStatusBadge status={w.status} revision={w.hasOpenRevision} />
-                    <span className="text-muted-foreground w-24 text-right text-xs">{formatDate(w.createdAt)}</span>
+                    <span className="text-muted-foreground w-24 text-end text-xs">{formatDate(w.createdAt, t.lang)}</span>
                   </li>
                 ))}
               </ul>
             )}
           </Card>
-          <Card title="Notes">
-            {c.notes ? <p className="text-sm whitespace-pre-wrap">{c.notes}</p> : <Empty>No notes.</Empty>}
-            <div className="text-muted-foreground mt-4 border-t pt-3 text-xs">Customer since {formatDate(c.createdAt)}</div>
+          <Card title={t("Notes")}>
+            {c.notes ? <p className="text-sm whitespace-pre-wrap">{c.notes}</p> : <Empty>{t("No notes.")}</Empty>}
+            <div className="text-muted-foreground mt-4 border-t pt-3 text-xs">{t("Customer since {date}", { date: formatDate(c.createdAt, t.lang) })}</div>
           </Card>
         </TabsContent>
 
         <TabsContent value="orders" className="mt-4">
           <Card>
             {workOrders.length === 0 ? (
-              <Empty>No work orders yet.</Empty>
+              <Empty>{t("No work orders yet.")}</Empty>
             ) : (
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Order</TableHead>
-                    <TableHead>Service</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Deadline</TableHead>
-                    <TableHead className="text-right">Amount</TableHead>
+                    <TableHead>{t("Order")}</TableHead>
+                    <TableHead>{t("Service")}</TableHead>
+                    <TableHead>{t("Status")}</TableHead>
+                    <TableHead>{t("Deadline")}</TableHead>
+                    <TableHead className="text-end">{t("Amount")}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -183,8 +183,8 @@ export default async function CustomerPage({ params }: { params: Promise<{ id: s
                       <TableCell>
                         <WorkOrderStatusBadge status={w.status} revision={w.hasOpenRevision} />
                       </TableCell>
-                      <TableCell className="text-sm">{formatDate(w.deadline)}</TableCell>
-                      <TableCell className="text-right tabular-nums">{formatMoney(w.totalAmount)}</TableCell>
+                      <TableCell className="text-sm">{formatDate(w.deadline, t.lang)}</TableCell>
+                      <TableCell className="text-end tabular-nums">{formatMoney(w.totalAmount)}</TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
@@ -197,17 +197,17 @@ export default async function CustomerPage({ params }: { params: Promise<{ id: s
           <TabsContent value="invoices" className="mt-4">
             <Card>
               {invoices.length === 0 ? (
-                <Empty>No invoices yet.</Empty>
+                <Empty>{t("No invoices yet.")}</Empty>
               ) : (
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead>Invoice</TableHead>
-                      <TableHead>Issued</TableHead>
-                      <TableHead>Due</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead className="text-right">Total</TableHead>
-                      <TableHead className="text-right">Balance</TableHead>
+                      <TableHead>{t("Invoice")}</TableHead>
+                      <TableHead>{t("Issued")}</TableHead>
+                      <TableHead>{t("Due")}</TableHead>
+                      <TableHead>{t("Status")}</TableHead>
+                      <TableHead className="text-end">{t("Total")}</TableHead>
+                      <TableHead className="text-end">{t("Balance")}</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -218,13 +218,13 @@ export default async function CustomerPage({ params }: { params: Promise<{ id: s
                             {i.invoiceNo}
                           </Link>
                         </TableCell>
-                        <TableCell className="text-sm">{formatDate(i.issueDate)}</TableCell>
-                        <TableCell className="text-sm">{formatDate(i.dueDate)}</TableCell>
+                        <TableCell className="text-sm">{formatDate(i.issueDate, t.lang)}</TableCell>
+                        <TableCell className="text-sm">{formatDate(i.dueDate, t.lang)}</TableCell>
                         <TableCell>
-                          <ToneBadge tone={INVOICE_TONE[i.status]}>{INVOICE_STATUS_LABEL[i.status]}</ToneBadge>
+                          <ToneBadge tone={INVOICE_TONE[i.status]}>{t(INVOICE_STATUS_LABEL[i.status])}</ToneBadge>
                         </TableCell>
-                        <TableCell className="text-right tabular-nums">{formatMoney(i.totalAmount)}</TableCell>
-                        <TableCell className="text-right tabular-nums">
+                        <TableCell className="text-end tabular-nums">{formatMoney(i.totalAmount)}</TableCell>
+                        <TableCell className="text-end tabular-nums">
                           {i.status === "CANCELLED" ? "—" : formatMoney(i.totalAmount.minus(i.amountPaid))}
                         </TableCell>
                       </TableRow>
@@ -238,39 +238,39 @@ export default async function CustomerPage({ params }: { params: Promise<{ id: s
 
         {finance && (
           <TabsContent value="payments" className="mt-4">
-            <Card title="Customer ledger" description="Invoices (debit) and payments (credit) in date order, with running balance.">
+            <Card title={t("Customer ledger")} description={t("Invoices (debit) and payments (credit) in date order, with running balance.")}>
               {ledger.length === 0 ? (
-                <Empty>No transactions yet.</Empty>
+                <Empty>{t("No transactions yet.")}</Empty>
               ) : (
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead>Date</TableHead>
-                      <TableHead>Description</TableHead>
-                      <TableHead className="text-right">Debit</TableHead>
-                      <TableHead className="text-right">Credit</TableHead>
-                      <TableHead className="text-right">Balance</TableHead>
+                      <TableHead>{t("Date")}</TableHead>
+                      <TableHead>{t("Description")}</TableHead>
+                      <TableHead className="text-end">{t("Debit")}</TableHead>
+                      <TableHead className="text-end">{t("Credit")}</TableHead>
+                      <TableHead className="text-end">{t("Balance")}</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {ledger.map((e) => (
                       <TableRow key={`${e.kind}-${e.id}`}>
-                        <TableCell className="text-sm whitespace-nowrap">{formatDate(e.date)}</TableCell>
+                        <TableCell className="text-sm whitespace-nowrap">{formatDate(e.date, t.lang)}</TableCell>
                         <TableCell className="text-sm">
                           {e.kind === "invoice" ? (
                             <>
-                              Invoice <span className="font-mono text-xs">{e.ref}</span>
+                              {t("Invoice")}{" "}<span className="font-mono text-xs">{e.ref}</span>
                             </>
                           ) : (
                             <>
-                              Payment · {PAYMENT_METHOD_LABEL[e.method]} for <span className="font-mono text-xs">{e.ref}</span>
+                              {t("Payment · {method} for", { method: t(PAYMENT_METHOD_LABEL[e.method]) })} <span className="font-mono text-xs">{e.ref}</span>
                               {e.reference && <span className="text-muted-foreground"> · {e.reference}</span>}
                             </>
                           )}
                         </TableCell>
-                        <TableCell className="text-right tabular-nums">{e.debit ? formatMoney(e.debit) : ""}</TableCell>
-                        <TableCell className="text-right tabular-nums">{e.credit ? formatMoney(e.credit) : ""}</TableCell>
-                        <TableCell className="text-right font-medium tabular-nums">{formatMoney(e.balance)}</TableCell>
+                        <TableCell className="text-end tabular-nums">{e.debit ? formatMoney(e.debit) : ""}</TableCell>
+                        <TableCell className="text-end tabular-nums">{e.credit ? formatMoney(e.credit) : ""}</TableCell>
+                        <TableCell className="text-end font-medium tabular-nums">{formatMoney(e.balance)}</TableCell>
                       </TableRow>
                     ))}
                   </TableBody>
@@ -286,12 +286,11 @@ export default async function CustomerPage({ params }: { params: Promise<{ id: s
               can(user.role, "documents:edit") && (
                 <UploadDialog defaultCustomer={{ id: c.id, name: c.name }}>
                   <Button size="sm">
-                    <Upload /> Upload
-                  </Button>
+                    <Upload /> {t("Upload")}</Button>
                 </UploadDialog>
               )
             }
-            title="Documents"
+            title={t("Documents")}
           >
             <div className="-mx-5 -mb-5">
               <DocumentTable rows={documents.rows} canDelete={can(user.role, "documents:edit")} showCustomer={false} />
@@ -302,7 +301,7 @@ export default async function CustomerPage({ params }: { params: Promise<{ id: s
         <TabsContent value="followups" className="mt-4">
           <Card>
             {followUps.length === 0 ? (
-              <Empty>No follow-ups.</Empty>
+              <Empty>{t("No follow-ups.")}</Empty>
             ) : (
               <ul className="divide-y">
                 {followUps.map((f) => (
@@ -310,12 +309,12 @@ export default async function CustomerPage({ params }: { params: Promise<{ id: s
                     <div className="min-w-0 flex-1">
                       <div className="text-sm font-medium">{f.title}</div>
                       <div className="text-muted-foreground text-xs">
-                        {FOLLOW_UP_TYPE_LABEL[f.type]}
+                        {t(FOLLOW_UP_TYPE_LABEL[f.type])}
                         {f.notes && ` · ${f.notes}`}
                       </div>
                     </div>
-                    <ToneBadge tone={FOLLOW_UP_TONE[f.status]}>{FOLLOW_UP_STATUS_LABEL[f.status]}</ToneBadge>
-                    <span className="text-muted-foreground w-24 text-right text-xs">{formatDate(f.deadline)}</span>
+                    <ToneBadge tone={FOLLOW_UP_TONE[f.status]}>{t(FOLLOW_UP_STATUS_LABEL[f.status])}</ToneBadge>
+                    <span className="text-muted-foreground w-24 text-end text-xs">{formatDate(f.deadline, t.lang)}</span>
                   </li>
                 ))}
               </ul>
@@ -327,16 +326,17 @@ export default async function CustomerPage({ params }: { params: Promise<{ id: s
   );
 }
 
-function IdItem({ label, number, expiry }: { label: string; number: string | null; expiry: Date | null }) {
+async function IdItem({ label, number, expiry }: { label: string; number: string | null; expiry: Date | null }) {
+  const t = await getT();
   return (
     <div>
       <dt className="text-muted-foreground text-xs">{label}</dt>
       <dd className="mt-1 flex flex-wrap items-center gap-2">
-        {number ? <span className="font-mono text-xs">{number}</span> : <span className="text-muted-foreground">Not recorded</span>}
+        {number ? <span className="font-mono text-xs">{number}</span> : <span className="text-muted-foreground">{t("Not recorded")}</span>}
         {expiry && (
           <>
             <ExpiryBadge date={expiry} />
-            <span className="text-muted-foreground text-xs">{formatDate(expiry)}</span>
+            <span className="text-muted-foreground text-xs">{formatDate(expiry, t.lang)}</span>
           </>
         )}
       </dd>

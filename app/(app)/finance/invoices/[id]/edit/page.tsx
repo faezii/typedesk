@@ -1,3 +1,4 @@
+import { getT } from "@/lib/i18n/server";
 import { notFound, redirect } from "next/navigation";
 import { DocumentBuilder } from "@/components/finance/document-builder";
 import { PageHeader } from "@/components/shared/page-header";
@@ -5,9 +6,12 @@ import { requirePagePermission } from "@/lib/auth/session";
 import { toDateInput } from "@/lib/dates";
 import { getInvoice, serviceOptions } from "@/server/queries/invoices";
 
-export const metadata = { title: "Edit invoice" };
+export async function generateMetadata() {
+  return { title: (await getT())("Edit invoice") };
+}
 
 export default async function EditInvoicePage({ params }: { params: Promise<{ id: string }> }) {
+  const t = await getT();
   await requirePagePermission("finance:edit");
   const inv = await getInvoice((await params).id);
   if (!inv) notFound();
@@ -17,7 +21,7 @@ export default async function EditInvoicePage({ params }: { params: Promise<{ id
 
   return (
     <>
-      <PageHeader title={`Edit ${inv.invoiceNo}`} description="Only invoices without payments can be edited." />
+      <PageHeader title={t("Edit {invoiceNo}", { invoiceNo: inv.invoiceNo })} description={t("Only invoices without payments can be edited.")} />
       <DocumentBuilder
         kind="invoice"
         docId={inv.id}

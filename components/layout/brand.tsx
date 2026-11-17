@@ -1,3 +1,6 @@
+"use client";
+
+import { useT } from "@/components/i18n";
 import { cn } from "@/lib/utils";
 
 export function BrandMark({ className }: { className?: string }) {
@@ -19,13 +22,14 @@ export function BrandMark({ className }: { className?: string }) {
 }
 
 export function Brand({ collapsed = false }: { collapsed?: boolean }) {
+  const t = useT();
   return (
     <div className="flex items-center gap-2.5 overflow-hidden">
       <BrandMark />
       {!collapsed && (
         <div className="min-w-0 leading-tight">
-          <div className="truncate text-[15px] font-semibold tracking-tight text-white">TypeDesk</div>
-          <div className="text-sidebar-foreground/60 truncate text-[11px]">Translation &amp; Typing Center</div>
+          <div className="truncate text-[15px] font-semibold tracking-tight text-white">{t("TypeDesk")}</div>
+          <div className="text-sidebar-foreground/60 truncate text-[11px]">{t("Translation & Typing Center")}</div>
         </div>
       )}
     </div>

@@ -1,4 +1,5 @@
 import "server-only";
+import type { Lang } from "@/lib/i18n/translate";
 import { Prisma, type WorkOrderStatus } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { can } from "@/lib/auth/permissions";
@@ -76,7 +77,7 @@ async function sumPayments(from: Date, to: Date) {
 export type RevenuePoint = { month: string; label: string; invoiced: number; collected: number };
 
 /** Last 6 months (incl. current), grouped by Doha calendar month. Numbers are for charting only. */
-export async function getRevenueSeries(): Promise<RevenuePoint[]> {
+export async function getRevenueSeries(lang?: Lang): Promise<RevenuePoint[]> {
   const from = monthsAgoLocal(5);
   // Timestamps are stored as UTC without zone; convert before truncating to the Doha month.
   const [collected, invoiced] = await Promise.all([
@@ -100,7 +101,7 @@ export async function getRevenueSeries(): Promise<RevenuePoint[]> {
   return Array.from({ length: 6 }, (_, i) => {
     const d = monthsAgoLocal(5 - i);
     const month = formatLocal(d, "yyyy-MM");
-    return { month, label: formatLocal(d, "MMM"), invoiced: inv.get(month) ?? 0, collected: c.get(month) ?? 0 };
+    return { month, label: formatLocal(d, "MMM", lang), invoiced: inv.get(month) ?? 0, collected: c.get(month) ?? 0 };
   });
 }
 

@@ -1,5 +1,7 @@
 "use client";
 
+
+import { useT } from "@/components/i18n";
 import { useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { Download, Eye, Trash2 } from "lucide-react";
@@ -11,6 +13,7 @@ import { deleteDocument } from "@/server/actions/documents";
 type Doc = { id: string; name: string; fileUrl: string; mimeType: string };
 
 export function DocumentActions({ doc, canDelete }: { doc: Doc; canDelete: boolean }) {
+  const t = useT();
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   const previewable = doc.mimeType.startsWith("image/") || doc.mimeType === "application/pdf";
@@ -20,14 +23,14 @@ export function DocumentActions({ doc, canDelete }: { doc: Doc; canDelete: boole
       {previewable && (
         <Dialog>
           <DialogTrigger asChild>
-            <Button variant="ghost" size="icon-sm" aria-label={`Preview ${doc.name}`}>
+            <Button variant="ghost" size="icon-sm" aria-label={t("Preview {name}", { name: doc.name })}>
               <Eye />
             </Button>
           </DialogTrigger>
           <DialogContent className="flex h-[85vh] flex-col sm:max-w-4xl">
             <DialogHeader>
-              <DialogTitle className="truncate pr-8">{doc.name}</DialogTitle>
-              <DialogDescription className="sr-only">Document preview</DialogDescription>
+              <DialogTitle className="truncate pe-8">{doc.name}</DialogTitle>
+              <DialogDescription className="sr-only">{t("Document preview")}</DialogDescription>
             </DialogHeader>
             <div className="bg-muted min-h-0 flex-1 overflow-auto rounded-lg">
               {doc.mimeType === "application/pdf" ? (
@@ -41,7 +44,7 @@ export function DocumentActions({ doc, canDelete }: { doc: Doc; canDelete: boole
         </Dialog>
       )}
       <Button variant="ghost" size="icon-sm" asChild>
-        <a href={`${doc.fileUrl}?download`} aria-label={`Download ${doc.name}`}>
+        <a href={`${doc.fileUrl}?download`} aria-label={t("Download {name}", { name: doc.name })}>
           <Download />
         </a>
       </Button>
@@ -49,14 +52,14 @@ export function DocumentActions({ doc, canDelete }: { doc: Doc; canDelete: boole
         <Button
           variant="ghost"
           size="icon-sm"
-          aria-label={`Delete ${doc.name}`}
+          aria-label={t("Delete {name}", { name: doc.name })}
           disabled={pending}
           onClick={() => {
-            if (!confirm(`Delete "${doc.name}"? It will no longer be available to download.`)) return;
+            if (!confirm(t("Delete \"{name}\"? It will no longer be available to download.", { name: doc.name }))) return;
             startTransition(async () => {
               const res = await deleteDocument(doc.id);
-              if (!res.ok) return void toast.error(res.error);
-              toast.success("Document deleted");
+              if (!res.ok) return void toast.error(t(res.error));
+              toast.success(t("Document deleted"));
               router.refresh();
             });
           }}

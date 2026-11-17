@@ -1,5 +1,7 @@
 "use client";
 
+
+import { useT } from "@/components/i18n";
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
@@ -41,6 +43,7 @@ export function EmployeeDialog({
   canGrantAdmin: boolean;
   children: React.ReactNode;
 }) {
+  const t = useT();
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [pending, startTransition] = useTransition();
@@ -53,13 +56,13 @@ export function EmployeeDialog({
       const res = employeeId ? await updateEmployee(employeeId, values) : await createEmployee(values);
       if (!res.ok) {
         for (const [field, message] of Object.entries(res.fieldErrors ?? {})) form.setError(field as keyof EmployeeFormValues, { message });
-        return void toast.error(res.error);
+        return void toast.error(t(res.error));
       }
       router.refresh();
       if (res.data && "tempPassword" in res.data) {
         setTempPassword(res.data.tempPassword);
       } else {
-        toast.success("Employee updated");
+        toast.success(t("Employee updated"));
         setOpen(false);
       }
     });
@@ -83,9 +86,9 @@ export function EmployeeDialog({
         ) : (
           <>
             <DialogHeader>
-              <DialogTitle>{employeeId ? "Edit employee" : "New employee"}</DialogTitle>
+              <DialogTitle>{employeeId ? t("Edit employee") : t("New employee")}</DialogTitle>
               <DialogDescription>
-                {employeeId ? "Role changes apply on the person's next page load." : "A temporary password is generated; they choose their own after signing in."}
+                {employeeId ? t("Role changes apply on the person's next page load.") : t("A temporary password is generated; they choose their own after signing in.")}
               </DialogDescription>
             </DialogHeader>
             <Form {...form}>
@@ -98,7 +101,7 @@ export function EmployeeDialog({
                       name={name}
                       render={({ field }) => (
                         <FormItem className={name === "name" ? "sm:col-span-2" : undefined}>
-                          <FormLabel>{name === "name" ? "Full name" : name === "email" ? "Work email" : "Mobile"}</FormLabel>
+                          <FormLabel>{name === "name" ? t("Full name") : name === "email" ? t("Work email") : t("Mobile")}</FormLabel>
                           <FormControl>
                             <Input
                               type={name === "email" ? "email" : "text"}
@@ -118,7 +121,7 @@ export function EmployeeDialog({
                     name="department"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Department</FormLabel>
+                        <FormLabel>{t("Department")}</FormLabel>
                         <Select value={field.value} onValueChange={field.onChange}>
                           <FormControl>
                             <SelectTrigger className="w-full">
@@ -128,7 +131,7 @@ export function EmployeeDialog({
                           <SelectContent>
                             {DEPARTMENTS.map((d) => (
                               <SelectItem key={d.value} value={d.value}>
-                                {d.label}
+                                {t(d.label)}
                               </SelectItem>
                             ))}
                           </SelectContent>
@@ -141,7 +144,7 @@ export function EmployeeDialog({
                     name="role"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Role</FormLabel>
+                        <FormLabel>{t("Role")}</FormLabel>
                         <Select value={field.value} onValueChange={field.onChange}>
                           <FormControl>
                             <SelectTrigger className="w-full">
@@ -151,7 +154,7 @@ export function EmployeeDialog({
                           <SelectContent>
                             {ROLE_OPTIONS.filter((r) => canGrantAdmin || r.value !== "ADMIN" || field.value === "ADMIN").map((r) => (
                               <SelectItem key={r.value} value={r.value} disabled={r.value === "ADMIN" && !canGrantAdmin}>
-                                {r.label} — <span className="text-muted-foreground">{r.hint}</span>
+                                {t(r.label)} — <span className="text-muted-foreground">{t(r.hint)}</span>
                               </SelectItem>
                             ))}
                           </SelectContent>
@@ -163,11 +166,10 @@ export function EmployeeDialog({
                 </div>
                 <DialogFooter>
                   <Button type="button" variant="outline" onClick={() => setOpen(false)}>
-                    Cancel
-                  </Button>
+                    {t("Cancel")}</Button>
                   <Button type="submit" disabled={pending}>
                     {pending && <Loader2 className="animate-spin" />}
-                    {employeeId ? "Save" : "Create account"}
+                    {employeeId ? t("Save") : t("Create account")}
                   </Button>
                 </DialogFooter>
               </form>
@@ -181,24 +183,24 @@ export function EmployeeDialog({
 
 /** Shown exactly once — the password isn't stored in plain text anywhere. */
 function TempPasswordView({ name, password, onDone }: { name: string; password: string; onDone: () => void }) {
+  const t = useT();
   return (
     <>
       <DialogHeader>
-        <DialogTitle>Temporary password for {name}</DialogTitle>
-        <DialogDescription>Share it privately. It won&apos;t be shown again — they&apos;ll be asked to choose their own after signing in.</DialogDescription>
+        <DialogTitle>{t("Temporary password for {name}", { name })}</DialogTitle>
+        <DialogDescription>{t("Share it privately. It won't be shown again — they'll be asked to choose their own after signing in.")}</DialogDescription>
       </DialogHeader>
       <div className="bg-muted flex items-center justify-between gap-3 rounded-lg border px-4 py-3">
         <code className="font-mono text-lg tracking-wider select-all">{password}</code>
         <Button
           variant="outline"
           size="sm"
-          onClick={() => navigator.clipboard.writeText(password).then(() => toast.success("Copied"), () => toast.error("Copy failed — select and copy manually"))}
+          onClick={() => navigator.clipboard.writeText(password).then(() => toast.success(t("Copied")), () => toast.error(t("Copy failed — select and copy manually")))}
         >
-          <Copy /> Copy
-        </Button>
+          <Copy /> {t("Copy")}</Button>
       </div>
       <DialogFooter>
-        <Button onClick={onDone}>Done</Button>
+        <Button onClick={onDone}>{t("Done")}</Button>
       </DialogFooter>
     </>
   );
@@ -220,6 +222,7 @@ export function EmployeeRowActions({
   /** No work on record, so the account can be removed for good. */
   deletable: boolean;
 }) {
+  const t = useT();
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   const [password, setPassword] = useState<string | null>(null);
@@ -232,13 +235,13 @@ export function EmployeeRowActions({
           variant="ghost"
           size="icon-sm"
           disabled={pending}
-          aria-label={`Reset password for ${name}`}
-          title="Reset password"
+          aria-label={t("Reset password for {name}", { name })}
+          title={t("Reset password")}
           onClick={() => {
-            if (!confirm(`Reset ${name}'s password? Their current password stops working immediately.`)) return;
+            if (!confirm(t("Reset {name}'s password? Their current password stops working immediately.", { name }))) return;
             startTransition(async () => {
               const res = await resetEmployeePassword(id);
-              if (!res.ok) return void toast.error(res.error);
+              if (!res.ok) return void toast.error(t(res.error));
               setPassword(res.data.tempPassword);
               router.refresh();
             });
@@ -253,15 +256,15 @@ export function EmployeeRowActions({
           variant="ghost"
           size="icon-sm"
           disabled={pending}
-          aria-label={active ? `Deactivate ${name}` : `Reactivate ${name}`}
-          title={active ? "Deactivate" : "Reactivate"}
+          aria-label={active ? t("Deactivate {name}", { name }) : t("Reactivate {name}", { name })}
+          title={active ? t("Deactivate") : t("Reactivate")}
           className={active ? "text-muted-foreground hover:text-destructive" : "text-primary"}
           onClick={() => {
-            if (active && !confirm(`Deactivate ${name}? They will be signed out and can't sign in until reactivated.`)) return;
+            if (active && !confirm(t("Deactivate {name}? They will be signed out and can't sign in until reactivated.", { name }))) return;
             startTransition(async () => {
               const res = await setEmployeeActive(id, !active);
-              if (!res.ok) toast.error(res.error);
-              else toast.success(active ? `${name} deactivated` : `${name} reactivated`);
+              if (!res.ok) toast.error(t(res.error));
+              else toast.success(active ? t("{name} deactivated", { name }) : t("{name} reactivated", { name }));
               router.refresh();
             });
           }}
@@ -274,15 +277,15 @@ export function EmployeeRowActions({
           variant="ghost"
           size="icon-sm"
           disabled={pending}
-          aria-label={`Delete ${name}`}
-          title="Delete account"
+          aria-label={t("Delete {name}", { name })}
+          title={t("Delete account")}
           className="text-muted-foreground hover:text-destructive"
           onClick={() => {
-            if (!confirm(`Delete ${name}'s account for good? This can't be undone.`)) return;
+            if (!confirm(t("Delete {name}'s account for good? This can't be undone.", { name }))) return;
             startTransition(async () => {
               const res = await deleteEmployee(id);
-              if (!res.ok) toast.error(res.error);
-              else toast.success(`${name} deleted`);
+              if (!res.ok) toast.error(t(res.error));
+              else toast.success(t("{name} deleted", { name }));
               router.refresh();
             });
           }}

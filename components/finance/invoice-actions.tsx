@@ -1,5 +1,7 @@
 "use client";
 
+
+import { useT } from "@/components/i18n";
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { Ban, FileOutput, Loader2, Trash2, Wallet } from "lucide-react";
@@ -14,6 +16,7 @@ import { cancelInvoice, convertQuotation, deletePayment, recordPayment, setQuota
 import type { PaymentMethod } from "@prisma/client";
 
 export function RecordPaymentDialog({ invoiceId, invoiceNo, balance, today }: { invoiceId: string; invoiceNo: string; balance: string; today: string }) {
+  const t = useT();
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [pending, startTransition] = useTransition();
@@ -29,9 +32,9 @@ export function RecordPaymentDialog({ invoiceId, invoiceNo, balance, today }: { 
       const res = await recordPayment({ invoiceId, amount, method, reference, date });
       if (!res.ok) {
         setError(res.fieldErrors?.amount ?? res.error);
-        return void toast.error(res.error);
+        return void toast.error(t(res.error));
       }
-      toast.success(`Payment of QAR ${amount} recorded`);
+      toast.success(t("Payment of QAR {amount} recorded", { amount }));
       setOpen(false);
       router.refresh();
     });
@@ -52,28 +55,27 @@ export function RecordPaymentDialog({ invoiceId, invoiceNo, balance, today }: { 
     >
       <DialogTrigger asChild>
         <Button>
-          <Wallet /> Record payment
-        </Button>
+          <Wallet /> {t("Record payment")}</Button>
       </DialogTrigger>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Record payment — {invoiceNo}</DialogTitle>
-          <DialogDescription>Balance due: QAR {balance}</DialogDescription>
+          <DialogTitle>{t("Record payment — {invoiceNo}", { invoiceNo })}</DialogTitle>
+          <DialogDescription>{t("Balance due: QAR {balance}", { balance })}</DialogDescription>
         </DialogHeader>
         <form onSubmit={submit} className="space-y-4" noValidate>
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-2">
-              <Label htmlFor="pay-amount">Amount (QAR)</Label>
+              <Label htmlFor="pay-amount">{t("Amount (QAR)")}</Label>
               <Input id="pay-amount" inputMode="decimal" value={amount} onChange={(e) => setAmount(e.target.value)} aria-invalid={!!error || undefined} aria-describedby={error ? "pay-error" : undefined} />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="pay-date">Date</Label>
+              <Label htmlFor="pay-date">{t("Date")}</Label>
               <Input id="pay-date" type="date" value={date} onChange={(e) => setDate(e.target.value)} />
             </div>
             <div className="space-y-2">
-              <Label>Method</Label>
+              <Label>{t("Method")}</Label>
               <Select value={method} onValueChange={(v) => setMethod(v as PaymentMethod)}>
-                <SelectTrigger className="w-full" aria-label="Payment method">
+                <SelectTrigger className="w-full" aria-label={t("Payment method")}>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -86,8 +88,8 @@ export function RecordPaymentDialog({ invoiceId, invoiceNo, balance, today }: { 
               </Select>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="pay-ref">Reference</Label>
-              <Input id="pay-ref" placeholder={method === "CASH" ? "Optional" : "POS / transfer ref"} value={reference} onChange={(e) => setReference(e.target.value)} />
+              <Label htmlFor="pay-ref">{t("Reference")}</Label>
+              <Input id="pay-ref" placeholder={method === "CASH" ? t("Optional") : t("POS / transfer ref")} value={reference} onChange={(e) => setReference(e.target.value)} />
             </div>
           </div>
           {error && (
@@ -97,12 +99,10 @@ export function RecordPaymentDialog({ invoiceId, invoiceNo, balance, today }: { 
           )}
           <DialogFooter>
             <Button type="button" variant="outline" onClick={() => setOpen(false)}>
-              Cancel
-            </Button>
+              {t("Cancel")}</Button>
             <Button type="submit" disabled={pending}>
               {pending && <Loader2 className="animate-spin" />}
-              Record payment
-            </Button>
+              {t("Record payment")}</Button>
           </DialogFooter>
         </form>
       </DialogContent>
@@ -111,6 +111,7 @@ export function RecordPaymentDialog({ invoiceId, invoiceNo, balance, today }: { 
 }
 
 export function CancelInvoiceButton({ id, invoiceNo }: { id: string; invoiceNo: string }) {
+  const t = useT();
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   return (
@@ -119,21 +120,21 @@ export function CancelInvoiceButton({ id, invoiceNo }: { id: string; invoiceNo: 
       disabled={pending}
       className="text-destructive"
       onClick={() =>
-        confirm(`Cancel ${invoiceNo}? It stays on record as cancelled and its work orders can be invoiced again.`) &&
+        confirm(t("Cancel {invoiceNo}? It stays on record as cancelled and its work orders can be invoiced again.", { invoiceNo })) &&
         startTransition(async () => {
           const res = await cancelInvoice(id);
-          if (!res.ok) toast.error(res.error);
-          else toast.success(`${invoiceNo} cancelled`);
+          if (!res.ok) toast.error(t(res.error));
+          else toast.success(t("{invoiceNo} cancelled", { invoiceNo }));
           router.refresh();
         })
       }
     >
-      {pending ? <Loader2 className="animate-spin" /> : <Ban />} Cancel invoice
-    </Button>
+      {pending ? <Loader2 className="animate-spin" /> : <Ban />} {t("Cancel invoice")}</Button>
   );
 }
 
 export function RemovePaymentButton({ id, label }: { id: string; label: string }) {
+  const t = useT();
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   return (
@@ -141,14 +142,14 @@ export function RemovePaymentButton({ id, label }: { id: string; label: string }
       size="icon-sm"
       variant="ghost"
       disabled={pending}
-      aria-label={`Remove payment ${label}`}
+      aria-label={t("Remove payment {label}", { label })}
       className="text-muted-foreground hover:text-destructive"
       onClick={() =>
-        confirm(`Remove the payment of ${label}? Use this only for a payment recorded by mistake. The balance goes back up and the details stay in the activity log.`) &&
+        confirm(t("Remove the payment of {label}? Use this only for a payment recorded by mistake. The balance goes back up and the details stay in the activity log.", { label })) &&
         startTransition(async () => {
           const res = await deletePayment(id);
-          if (!res.ok) toast.error(res.error);
-          else toast.success("Payment removed");
+          if (!res.ok) toast.error(t(res.error));
+          else toast.success(t("Payment removed"));
           router.refresh();
         })
       }
@@ -159,6 +160,7 @@ export function RemovePaymentButton({ id, label }: { id: string; label: string }
 }
 
 export function QuotationStatusSelect({ id, status }: { id: string; status: string }) {
+  const t = useT();
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   return (
@@ -168,25 +170,26 @@ export function QuotationStatusSelect({ id, status }: { id: string; status: stri
       onValueChange={(v) =>
         startTransition(async () => {
           const res = await setQuotationStatus(id, v as "DRAFT" | "SENT" | "ACCEPTED" | "REJECTED");
-          if (!res.ok) toast.error(res.error);
+          if (!res.ok) toast.error(t(res.error));
           router.refresh();
         })
       }
     >
-      <SelectTrigger className="w-36" aria-label="Quotation status">
+      <SelectTrigger className="w-36" aria-label={t("Quotation status")}>
         <SelectValue />
       </SelectTrigger>
       <SelectContent>
-        <SelectItem value="DRAFT">Draft</SelectItem>
-        <SelectItem value="SENT">Sent</SelectItem>
-        <SelectItem value="ACCEPTED">Accepted</SelectItem>
-        <SelectItem value="REJECTED">Rejected</SelectItem>
+        <SelectItem value="DRAFT">{t("Draft")}</SelectItem>
+        <SelectItem value="SENT">{t("Sent")}</SelectItem>
+        <SelectItem value="ACCEPTED">{t("Accepted")}</SelectItem>
+        <SelectItem value="REJECTED">{t("Rejected")}</SelectItem>
       </SelectContent>
     </Select>
   );
 }
 
 export function ConvertQuotationButton({ id }: { id: string }) {
+  const t = useT();
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   return (
@@ -195,13 +198,12 @@ export function ConvertQuotationButton({ id }: { id: string }) {
       onClick={() =>
         startTransition(async () => {
           const res = await convertQuotation(id);
-          if (!res.ok) return void toast.error(res.error);
-          toast.success("Invoice created from quotation");
+          if (!res.ok) return void toast.error(t(res.error));
+          toast.success(t("Invoice created from quotation"));
           router.push(`/finance/invoices/${res.data.invoiceId}`);
         })
       }
     >
-      {pending ? <Loader2 className="animate-spin" /> : <FileOutput />} Convert to invoice
-    </Button>
+      {pending ? <Loader2 className="animate-spin" /> : <FileOutput />} {t("Convert to invoice")}</Button>
   );
 }

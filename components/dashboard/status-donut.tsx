@@ -1,5 +1,7 @@
 "use client";
 
+
+import { useT } from "@/components/i18n";
 import { Cell, Pie, PieChart, ResponsiveContainer, Tooltip } from "recharts";
 import type { StatusSlice } from "@/server/queries/dashboard";
 
@@ -11,10 +13,11 @@ const COLORS: Record<StatusSlice["key"], string> = {
 };
 
 export function StatusDonut({ data }: { data: StatusSlice[] }) {
+  const t = useT();
   const total = data.reduce((s, d) => s + d.value, 0);
 
   if (total === 0) {
-    return <div className="text-muted-foreground grid h-56 place-items-center text-sm">No work orders in this period.</div>;
+    return <div className="text-muted-foreground grid h-56 place-items-center text-sm">{t("No work orders in this period.")}</div>;
   }
 
   return (
@@ -43,8 +46,8 @@ export function StatusDonut({ data }: { data: StatusSlice[] }) {
                 content={({ active, payload }) =>
                   active && payload?.[0] ? (
                     <div className="bg-popover text-popover-foreground rounded-lg border px-3 py-2 text-xs shadow-md">
-                      <span className="font-medium">{payload[0].name}</span>
-                      <span className="text-muted-foreground"> · {payload[0].value} orders</span>
+                      <span className="font-medium">{t(String(payload[0].name))}</span>
+                      <span className="text-muted-foreground">{t("· {value} orders", { value: String(payload[0].value ?? "") })}</span>
                     </div>
                   ) : null
                 }
@@ -54,7 +57,7 @@ export function StatusDonut({ data }: { data: StatusSlice[] }) {
           <div className="pointer-events-none absolute inset-0 grid place-items-center text-center">
             <div>
               <div className="text-2xl font-semibold tabular-nums">{total}</div>
-              <div className="text-muted-foreground text-xs">orders</div>
+              <div className="text-muted-foreground text-xs">{t("orders")}</div>
             </div>
           </div>
         </div>
@@ -62,9 +65,9 @@ export function StatusDonut({ data }: { data: StatusSlice[] }) {
           {data.map((d) => (
             <li key={d.key} className="flex items-center gap-2.5">
               <span className="size-2.5 shrink-0 rounded-[3px]" style={{ background: COLORS[d.key] }} aria-hidden />
-              <span className="text-muted-foreground">{d.label}</span>
-              <span className="ml-auto font-medium tabular-nums">{d.value}</span>
-              <span className="text-muted-foreground w-10 text-right text-xs tabular-nums">{Math.round((d.value / total) * 100)}%</span>
+              <span className="text-muted-foreground">{t(d.label)}</span>
+              <span className="ms-auto font-medium tabular-nums">{d.value}</span>
+              <span className="text-muted-foreground w-10 text-end text-xs tabular-nums">{Math.round((d.value / total) * 100)}%</span>
             </li>
           ))}
         </ul>

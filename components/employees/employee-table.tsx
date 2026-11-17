@@ -1,3 +1,4 @@
+import { getT } from "@/lib/i18n/server";
 import { Pencil } from "lucide-react";
 import type { Department, Role } from "@prisma/client";
 import { EmployeeDialog, EmployeeRowActions } from "@/components/employees/employee-controls";
@@ -19,7 +20,8 @@ const DEPT: Record<Department, { label: string; tone: Tone }> = {
 const ROLE_LABEL: Record<Role, string> = { ADMIN: "Admin", MANAGER: "Manager", FINANCE: "Finance", STAFF: "Staff" };
 
 /** Staff list with workload counters and edit / reset / deactivate / delete controls (Employees page and Settings). */
-export function EmployeeTable({ employees, user }: { employees: Awaited<ReturnType<typeof listEmployees>>; user: { id: string; role: Role } }) {
+export async function EmployeeTable({ employees, user }: { employees: Awaited<ReturnType<typeof listEmployees>>; user: { id: string; role: Role } }) {
+  const t = await getT();
   const canEdit = can(user.role, "employees:edit");
   const canGrantAdmin = can(user.role, "employees:manageAdmins");
 
@@ -28,16 +30,16 @@ export function EmployeeTable({ employees, user }: { employees: Awaited<ReturnTy
       <Table>
         <TableHeader>
           <TableRow>
-            <TableHead className="pl-4">Employee</TableHead>
-            <TableHead>Department</TableHead>
-            <TableHead>Role</TableHead>
-            <TableHead className="text-right">Open tasks</TableHead>
-            <TableHead className="text-right">Active orders</TableHead>
-            <TableHead className="text-right">Delivered (mo)</TableHead>
-            <TableHead className="text-right">Tasks done (mo)</TableHead>
-            <TableHead>Last sign-in</TableHead>
-            <TableHead className="pr-4 text-right">
-              <span className="sr-only">Actions</span>
+            <TableHead className="ps-4">{t("Employee")}</TableHead>
+            <TableHead>{t("Department")}</TableHead>
+            <TableHead>{t("Role")}</TableHead>
+            <TableHead className="text-end">{t("Open tasks")}</TableHead>
+            <TableHead className="text-end">{t("Active orders")}</TableHead>
+            <TableHead className="text-end">{t("Delivered (mo)")}</TableHead>
+            <TableHead className="text-end">{t("Tasks done (mo)")}</TableHead>
+            <TableHead>{t("Last sign-in")}</TableHead>
+            <TableHead className="pe-4 text-end">
+              <span className="sr-only">{t("Actions")}</span>
             </TableHead>
           </TableRow>
         </TableHeader>
@@ -47,7 +49,7 @@ export function EmployeeTable({ employees, user }: { employees: Awaited<ReturnTy
             const editable = canEdit && (canGrantAdmin || e.role !== "ADMIN");
             return (
               <TableRow key={e.id} className={cn(!e.isActive && "opacity-60")}>
-                <TableCell className="pl-4">
+                <TableCell className="ps-4">
                   <div className="flex items-center gap-3">
                     <Avatar className="size-8">
                       <AvatarFallback className="bg-primary/10 text-primary text-xs font-semibold">{initials(e.name)}</AvatarFallback>
@@ -55,29 +57,34 @@ export function EmployeeTable({ employees, user }: { employees: Awaited<ReturnTy
                     <div className="min-w-0">
                       <div className="font-medium">
                         {e.name}
-                        {e.id === user.id && <span className="text-muted-foreground font-normal"> (you)</span>}
+                        {e.id === user.id && <span className="text-muted-foreground font-normal"> {t("(you)")}</span>}
                       </div>
                       <div className="text-muted-foreground truncate text-xs">
                         {e.email}
-                        {e.phone && ` · ${e.phone}`}
+                        {e.phone && (
+                          <>
+                            {" · "}
+                            <span dir="ltr">{e.phone}</span>
+                          </>
+                        )}
                       </div>
                     </div>
                   </div>
                 </TableCell>
                 <TableCell>
-                  <ToneBadge tone={DEPT[e.department].tone}>{DEPT[e.department].label}</ToneBadge>
+                  <ToneBadge tone={DEPT[e.department].tone}>{t(DEPT[e.department].label)}</ToneBadge>
                 </TableCell>
                 <TableCell className="text-sm">
-                  {ROLE_LABEL[e.role]}
-                  {!e.isActive && <div className="text-destructive text-xs">Deactivated</div>}
-                  {e.isActive && e.mustChangePassword && <div className="text-xs text-amber-700 dark:text-amber-400">Temp password</div>}
+                  {t(ROLE_LABEL[e.role])}
+                  {!e.isActive && <div className="text-destructive text-xs">{t("Deactivated")}</div>}
+                  {e.isActive && e.mustChangePassword && <div className="text-xs text-amber-700 dark:text-amber-400">{t("Temp password")}</div>}
                 </TableCell>
-                <TableCell className="text-right tabular-nums">{e.openTasks}</TableCell>
-                <TableCell className="text-right tabular-nums">{e.activeOrders}</TableCell>
-                <TableCell className="text-right tabular-nums">{e.deliveredThisMonth}</TableCell>
-                <TableCell className="text-right tabular-nums">{e.tasksDoneThisMonth}</TableCell>
-                <TableCell className="text-muted-foreground text-xs">{e.lastLoginAt ? formatDateTime(e.lastLoginAt) : "Never"}</TableCell>
-                <TableCell className="pr-4">
+                <TableCell className="text-end tabular-nums">{e.openTasks}</TableCell>
+                <TableCell className="text-end tabular-nums">{e.activeOrders}</TableCell>
+                <TableCell className="text-end tabular-nums">{e.deliveredThisMonth}</TableCell>
+                <TableCell className="text-end tabular-nums">{e.tasksDoneThisMonth}</TableCell>
+                <TableCell className="text-muted-foreground text-xs">{e.lastLoginAt ? formatDateTime(e.lastLoginAt, t.lang) : t("Never")}</TableCell>
+                <TableCell className="pe-4">
                   <div className="flex justify-end gap-1">
                     {editable && (
                       <EmployeeDialog
@@ -85,7 +92,7 @@ export function EmployeeTable({ employees, user }: { employees: Awaited<ReturnTy
                         canGrantAdmin={canGrantAdmin}
                         defaultValues={{ name: e.name, email: e.email, phone: e.phone ?? "", role: e.role, department: e.department }}
                       >
-                        <Button variant="ghost" size="icon-sm" aria-label={`Edit ${e.name}`} title="Edit">
+                        <Button variant="ghost" size="icon-sm" aria-label={t("Edit {name}", { name: e.name })} title={t("Edit")}>
                           <Pencil />
                         </Button>
                       </EmployeeDialog>

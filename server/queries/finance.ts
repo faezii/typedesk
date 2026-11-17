@@ -1,4 +1,5 @@
 import "server-only";
+import type { Lang } from "@/lib/i18n/translate";
 import { Prisma, type ExpenseCategory, type PaymentMethod } from "@prisma/client";
 import { addMonths, startOfQuarter, startOfYear } from "date-fns";
 import { TIMEZONE, zone, endOfTodayLocal, formatLocal, monthsAgoLocal, parseDateInput, startOfMonthLocal, startOfTodayLocal } from "@/lib/dates";
@@ -50,7 +51,7 @@ export async function listPayments(p: PaymentParams) {
 }
 
 /** One day's collections (Doha day) broken down by method and by staff member. */
-export async function dailyCollection(day?: string) {
+export async function dailyCollection(day?: string, lang?: Lang) {
   const start = parseDateInput(day) ?? startOfTodayLocal();
   const where: Prisma.PaymentWhereInput = { invoice: { deletedAt: null }, date: { gte: start, lte: endOfTodayLocal(start) } };
   const [byMethod, byStaff, total] = await Promise.all([
@@ -70,7 +71,7 @@ export async function dailyCollection(day?: string) {
   }
   return {
     day: formatLocal(start, "yyyy-MM-dd"),
-    label: formatLocal(start, "EEEE d MMMM yyyy"),
+    label: formatLocal(start, "EEEE d MMMM yyyy", lang),
     total: total._sum.amount ?? zero,
     count: total._count,
     byMethod: Object.fromEntries(byMethod.map((m) => [m.method, { amount: m._sum.amount ?? zero, count: m._count }])) as Partial<Record<PaymentMethod, { amount: Prisma.Decimal; count: number }>>,
@@ -113,7 +114,7 @@ export async function listExpenses(p: ExpenseParams) {
 }
 
 /** Last 6 Doha months of expense totals (net of VAT) — chart data. */
-export async function expenseTrend() {
+export async function expenseTrend(lang?: Lang) {
   const from = monthsAgoLocal(5);
   const rows = await prisma.$queryRaw<{ m: string; total: number }[]>(Prisma.sql`
     SELECT to_char(date_trunc('month', ("date" AT TIME ZONE 'UTC') AT TIME ZONE ${TIMEZONE}), 'YYYY-MM') AS m, SUM(amount)::float8 AS total
@@ -121,7 +122,7 @@ export async function expenseTrend() {
   const byMonth = new Map(rows.map((r) => [r.m, r.total]));
   return Array.from({ length: 6 }, (_, i) => {
     const d = monthsAgoLocal(5 - i);
-    return { month: formatLocal(d, "yyyy-MM"), label: formatLocal(d, "MMM"), value: byMonth.get(formatLocal(d, "yyyy-MM")) ?? 0 };
+    return { month: formatLocal(d, "yyyy-MM"), label: formatLocal(d, "MMM", lang), value: byMonth.get(formatLocal(d, "yyyy-MM")) ?? 0 };
   });
 }
 
@@ -195,14 +196,14 @@ export async function profitAndLoss(p: PnlParams) {
 }
 
 /** 12 Doha months of income / expenses / net (numbers for charting only). */
-export async function pnlTrend(basis: Basis) {
+export async function pnlTrend(basis: Basis, lang?: Lang) {
   const months = Array.from({ length: 12 }, (_, i) => monthsAgoLocal(11 - i));
   return Promise.all(
     months.map(async (start) => {
       const end = plain(new Date(addMonths(start, 1, { in: zone }).getTime() - 1));
       const [{ income }, exp] = await Promise.all([incomeBetween(start, end, basis), prisma.expense.aggregate({ where: { date: { gte: start, lte: end } }, _sum: { amount: true } })]);
       const expenses = exp._sum.amount ?? zero;
-      return { label: formatLocal(start, "MMM yy"), income: income.toNumber(), expenses: expenses.toNumber(), net: income.minus(expenses).toNumber() };
+      return { label: formatLocal(start, "MMM yy", lang), income: income.toNumber(), expenses: expenses.toNumber(), net: income.minus(expenses).toNumber() };
     }),
   );
 }

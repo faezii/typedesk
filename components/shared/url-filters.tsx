@@ -1,5 +1,6 @@
 "use client";
 
+import { useT } from "@/components/i18n";
 import { useEffect, useState, useTransition } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { Loader2, Search } from "lucide-react";
@@ -36,16 +37,16 @@ export function SearchInput({ placeholder, param = "q" }: { placeholder: string;
 
   return (
     <div className="relative w-full sm:max-w-xs">
-      <Search className="text-muted-foreground pointer-events-none absolute top-1/2 left-2.5 size-4 -translate-y-1/2" />
+      <Search className="text-muted-foreground pointer-events-none absolute top-1/2 start-2.5 size-4 -translate-y-1/2" />
       <Input
         type="search"
         value={value}
         onChange={(e) => setValue(e.target.value)}
         placeholder={placeholder}
         aria-label={placeholder}
-        className="h-9 pr-8 pl-8"
+        className="h-9 pe-8 ps-8"
       />
-      {pending && <Loader2 className="text-muted-foreground absolute top-1/2 right-2.5 size-4 -translate-y-1/2 animate-spin" />}
+      {pending && <Loader2 className="text-muted-foreground absolute top-1/2 end-2.5 size-4 -translate-y-1/2 animate-spin" />}
     </div>
   );
 }
@@ -82,6 +83,7 @@ export function FilterSelect({
   options: { value: string; label: string }[];
 }) {
   const { params, set } = useSetParam();
+  const t = useT(); // option labels are translated here, so pages pass plain English (or names, which pass through)
   return (
     <Select value={params.get(param) ?? defaultValue} onValueChange={(v) => set(param, v === defaultValue ? null : v)}>
       <SelectTrigger className="h-9 w-full sm:w-48" aria-label={label}>
@@ -91,7 +93,7 @@ export function FilterSelect({
         {allLabel && <SelectItem value="all">{allLabel}</SelectItem>}
         {options.map((o) => (
           <SelectItem key={o.value} value={o.value}>
-            {o.label}
+            {t(o.label)}
           </SelectItem>
         ))}
       </SelectContent>

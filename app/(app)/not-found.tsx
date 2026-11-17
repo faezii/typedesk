@@ -1,24 +1,27 @@
+import { getT } from "@/lib/i18n/server";
 import Link from "next/link";
 import { FileQuestion } from "lucide-react";
 import { StatusPage } from "@/components/shared/status-page";
 import { Button } from "@/components/ui/button";
 
-export const metadata = { title: "Not found" };
+export async function generateMetadata() {
+  return { title: (await getT())("Not found") };
+}
 
 /** notFound() inside the app (deleted customer, wrong invoice id, …) — rendered inside the sidebar shell. */
-export default function NotFound({ className }: { className?: string }) {
+export default async function NotFound({ className }: { className?: string }) {
+  const t = await getT();
   return (
     <StatusPage
       icon={FileQuestion}
-      title="We couldn't find that"
+      title={t("We couldn't find that")}
       className={className}
       actions={
         <Button asChild>
-          <Link href="/">Back to dashboard</Link>
+          <Link href="/">{t("Back to dashboard")}</Link>
         </Button>
       }
     >
-      The page or record doesn&apos;t exist, or it has been deleted. Check the link and try again.
-    </StatusPage>
+      {t("The page or record doesn't exist, or it has been deleted. Check the link and try again.")}</StatusPage>
   );
 }

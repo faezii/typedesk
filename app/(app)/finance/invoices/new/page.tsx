@@ -1,3 +1,4 @@
+import { getT } from "@/lib/i18n/server";
 import { addDays } from "date-fns";
 import { DocumentBuilder } from "@/components/finance/document-builder";
 import { PageHeader } from "@/components/shared/page-header";
@@ -7,10 +8,13 @@ import { prisma } from "@/lib/prisma";
 import { DEFAULT_PAYMENT_DAYS, getSettings } from "@/lib/settings";
 import { serviceOptions, uninvoicedWorkOrders } from "@/server/queries/invoices";
 
-export const metadata = { title: "New document" };
+export async function generateMetadata() {
+  return { title: (await getT())("New document") };
+}
 
 /** /finance/invoices/new[?kind=quotation][&customerId=…][&workOrderId=…] */
 export default async function NewDocumentPage({ searchParams }: { searchParams: Promise<{ kind?: string; customerId?: string; workOrderId?: string }> }) {
+  const t = await getT();
   await requirePagePermission("finance:edit");
   const { kind: k, customerId, workOrderId } = await searchParams;
   const kind = k === "quotation" ? "quotation" : "invoice";
@@ -27,7 +31,7 @@ export default async function NewDocumentPage({ searchParams }: { searchParams: 
 
   return (
     <>
-      <PageHeader title={kind === "invoice" ? "New invoice" : "New quotation"} description="Totals, VAT and the document number are assigned when you save." />
+      <PageHeader title={kind === "invoice" ? t("New invoice") : t("New quotation")} description={t("Totals, VAT and the document number are assigned when you save.")} />
       <DocumentBuilder
         kind={kind}
         services={services}

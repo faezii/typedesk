@@ -1,5 +1,7 @@
 "use client";
 
+
+import { useT } from "@/components/i18n";
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { useForm, useWatch } from "react-hook-form";
@@ -23,6 +25,7 @@ import { saveAssignment, saveVendor } from "@/server/actions/outsourcing";
 const EMPTY_VENDOR: VendorFormValues = { name: "", type: "FREELANCER", phone: "", email: "", languages: [], notes: "" };
 
 export function VendorDialog({ vendorId, defaultValues, children }: { vendorId?: string; defaultValues?: VendorFormValues; children: React.ReactNode }) {
+  const t = useT();
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [pending, startTransition] = useTransition();
@@ -34,9 +37,9 @@ export function VendorDialog({ vendorId, defaultValues, children }: { vendorId?:
       const res = await saveVendor(vendorId ?? null, form.getValues());
       if (!res.ok) {
         for (const [f, m] of Object.entries(res.fieldErrors ?? {})) form.setError(f as keyof VendorFormValues, { message: m });
-        return void toast.error(res.error);
+        return void toast.error(t(res.error));
       }
-      toast.success(vendorId ? "Vendor updated" : "Vendor added");
+      toast.success(vendorId ? t("Vendor updated") : t("Vendor added"));
       setOpen(false);
       router.refresh();
     });
@@ -47,8 +50,8 @@ export function VendorDialog({ vendorId, defaultValues, children }: { vendorId?:
       <DialogTrigger asChild>{children}</DialogTrigger>
       <DialogContent className="sm:max-w-lg">
         <DialogHeader>
-          <DialogTitle>{vendorId ? "Edit vendor" : "New vendor"}</DialogTitle>
-          <DialogDescription>Freelance translators and agencies you outsource work to.</DialogDescription>
+          <DialogTitle>{vendorId ? t("Edit vendor") : t("New vendor")}</DialogTitle>
+          <DialogDescription>{t("Freelance translators and agencies you outsource work to.")}</DialogDescription>
         </DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4" noValidate>
@@ -58,7 +61,7 @@ export function VendorDialog({ vendorId, defaultValues, children }: { vendorId?:
                 name="name"
                 render={({ field }) => (
                   <FormItem className="sm:col-span-2">
-                    <FormLabel>Name</FormLabel>
+                    <FormLabel>{t("Name")}</FormLabel>
                     <FormControl>
                       <Input {...field} />
                     </FormControl>
@@ -71,7 +74,7 @@ export function VendorDialog({ vendorId, defaultValues, children }: { vendorId?:
                 name="type"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Type</FormLabel>
+                    <FormLabel>{t("Type")}</FormLabel>
                     <Select value={field.value} onValueChange={field.onChange}>
                       <FormControl>
                         <SelectTrigger className="w-full">
@@ -79,8 +82,8 @@ export function VendorDialog({ vendorId, defaultValues, children }: { vendorId?:
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        <SelectItem value="FREELANCER">Freelancer</SelectItem>
-                        <SelectItem value="AGENCY">Agency</SelectItem>
+                        <SelectItem value="FREELANCER">{t("Freelancer")}</SelectItem>
+                        <SelectItem value="AGENCY">{t("Agency")}</SelectItem>
                       </SelectContent>
                     </Select>
                   </FormItem>
@@ -93,9 +96,9 @@ export function VendorDialog({ vendorId, defaultValues, children }: { vendorId?:
                   name={name}
                   render={({ field }) => (
                     <FormItem className={name === "email" ? "sm:col-span-2" : undefined}>
-                      <FormLabel>{name === "phone" ? "Phone" : "Email"}</FormLabel>
+                      <FormLabel>{name === "phone" ? t("Phone") : t("Email")}</FormLabel>
                       <FormControl>
-                        <Input type={name === "email" ? "email" : "tel"} placeholder="Optional" {...field} value={field.value ?? ""} />
+                        <Input type={name === "email" ? "email" : "tel"} placeholder={t("Optional")} {...field} value={field.value ?? ""} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -104,7 +107,7 @@ export function VendorDialog({ vendorId, defaultValues, children }: { vendorId?:
               ))}
             </div>
             <fieldset>
-              <legend className="mb-2 text-sm font-medium">Languages</legend>
+              <legend className="mb-2 text-sm font-medium">{t("Languages")}</legend>
               <div className="grid grid-cols-2 gap-x-4 gap-y-2 sm:grid-cols-3">
                 {LANGUAGES.map((l) => (
                   <label key={l} className="flex items-center gap-2 text-sm">
@@ -122,9 +125,9 @@ export function VendorDialog({ vendorId, defaultValues, children }: { vendorId?:
               name="notes"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Notes</FormLabel>
+                  <FormLabel>{t("Notes")}</FormLabel>
                   <FormControl>
-                    <Textarea rows={2} placeholder="Rates, specialities, bank details reference…" {...field} value={field.value ?? ""} />
+                    <Textarea rows={2} placeholder={t("Rates, specialities, bank details reference…")} {...field} value={field.value ?? ""} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -132,11 +135,10 @@ export function VendorDialog({ vendorId, defaultValues, children }: { vendorId?:
             />
             <DialogFooter>
               <Button type="button" variant="outline" onClick={() => setOpen(false)}>
-                Cancel
-              </Button>
+                {t("Cancel")}</Button>
               <Button type="submit" disabled={pending}>
                 {pending && <Loader2 className="animate-spin" />}
-                {vendorId ? "Save" : "Add vendor"}
+                {vendorId ? t("Save") : t("Add vendor")}
               </Button>
             </DialogFooter>
           </form>
@@ -159,6 +161,7 @@ export function AssignmentDialog({
   defaultWorkOrder?: WorkOrderOption;
   children: React.ReactNode;
 }) {
+  const t = useT();
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [pending, startTransition] = useTransition();
@@ -172,9 +175,9 @@ export function AssignmentDialog({
       const res = await saveAssignment(jobId ?? null, form.getValues());
       if (!res.ok) {
         for (const [f, m] of Object.entries(res.fieldErrors ?? {})) form.setError(f as keyof AssignmentFormValues, { message: m });
-        return void toast.error(res.error);
+        return void toast.error(t(res.error));
       }
-      toast.success(jobId ? "Job updated" : "Work outsourced");
+      toast.success(jobId ? t("Job updated") : t("Work outsourced"));
       setOpen(false);
       router.refresh();
     });
@@ -194,8 +197,8 @@ export function AssignmentDialog({
       <DialogTrigger asChild>{children}</DialogTrigger>
       <DialogContent className="sm:max-w-lg">
         <DialogHeader>
-          <DialogTitle>{jobId ? "Edit outsourced job" : "Outsource work"}</DialogTitle>
-          <DialogDescription>Record what was sent to a freelancer or agency and the agreed cost (QAR).</DialogDescription>
+          <DialogTitle>{jobId ? t("Edit outsourced job") : t("Outsource work")}</DialogTitle>
+          <DialogDescription>{t("Record what was sent to a freelancer or agency and the agreed cost (QAR).")}</DialogDescription>
         </DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4" noValidate>
@@ -204,7 +207,7 @@ export function AssignmentDialog({
               name="workOrderId"
               render={() => (
                 <FormItem>
-                  <FormLabel>Work order</FormLabel>
+                  <FormLabel>{t("Work order")}</FormLabel>
                   <WorkOrderPicker
                     value={workOrder}
                     onChange={(w) => {
@@ -221,12 +224,12 @@ export function AssignmentDialog({
               name="vendorId"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Vendor</FormLabel>
+                  <FormLabel>{t("Vendor")}</FormLabel>
                   <Select value={field.value} onValueChange={field.onChange}>
                     <FormControl>
                       <SelectTrigger className="w-full min-w-0">
-                        <span className="min-w-0 flex-1 truncate text-left">
-                          <SelectValue placeholder="Choose a vendor…" />
+                        <span className="min-w-0 flex-1 truncate text-start">
+                          <SelectValue placeholder={t("Choose a vendor…")} />
                         </span>
                       </SelectTrigger>
                     </FormControl>
@@ -248,9 +251,9 @@ export function AssignmentDialog({
               name="description"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>What was sent</FormLabel>
+                  <FormLabel>{t("What was sent")}</FormLabel>
                   <FormControl>
-                    <Textarea rows={2} placeholder="e.g. Russian → English translation of 6-page contract" {...field} />
+                    <Textarea rows={2} placeholder={t("e.g. Russian → English translation of 6-page contract")} {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -262,7 +265,7 @@ export function AssignmentDialog({
                 name="agreementCost"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Agreed cost (QAR)</FormLabel>
+                    <FormLabel>{t("Agreed cost (QAR)")}</FormLabel>
                     <FormControl>
                       <Input inputMode="decimal" {...field} />
                     </FormControl>
@@ -277,7 +280,7 @@ export function AssignmentDialog({
                   name={name}
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>{name === "sentAt" ? "Sent on" : "Due back"}</FormLabel>
+                      <FormLabel>{name === "sentAt" ? t("Sent on") : t("Due back")}</FormLabel>
                       <FormControl>
                         <Input type="date" {...field} />
                       </FormControl>
@@ -289,11 +292,10 @@ export function AssignmentDialog({
             </div>
             <DialogFooter>
               <Button type="button" variant="outline" onClick={() => setOpen(false)}>
-                Cancel
-              </Button>
+                {t("Cancel")}</Button>
               <Button type="submit" disabled={pending}>
                 {pending && <Loader2 className="animate-spin" />}
-                {jobId ? "Save" : "Outsource"}
+                {jobId ? t("Save") : t("Outsource")}
               </Button>
             </DialogFooter>
           </form>

@@ -1,5 +1,7 @@
 "use client";
 
+
+import { useT } from "@/components/i18n";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import type { Role } from "@prisma/client";
@@ -16,18 +18,19 @@ export function SidebarNav({
   collapsed?: boolean;
   onNavigate?: () => void;
 }) {
+  const t = useT();
   const pathname = usePathname();
   const groups = navForRole(role);
 
   return (
-    <nav aria-label="Main" className="flex flex-col gap-5 px-3 py-4">
+    <nav aria-label={t("Main")} className="flex flex-col gap-5 px-3 py-4">
       {groups.map((group) => (
         <div key={group.label} className="flex flex-col gap-0.5">
           {collapsed ? (
             <div className="bg-sidebar-border mx-2 mb-1.5 h-px first:hidden" aria-hidden />
           ) : (
             <div className="text-sidebar-foreground/45 px-3 pb-1.5 text-[11px] font-medium tracking-wider uppercase">
-              {group.label}
+              {t(group.label)}
             </div>
           )}
           {group.items.map((item) => {
@@ -48,7 +51,7 @@ export function SidebarNav({
                 )}
               >
                 {active && (
-                  <span className="bg-sidebar-primary absolute top-1.5 bottom-1.5 left-0 w-[3px] rounded-r-full" aria-hidden />
+                  <span className="bg-sidebar-primary absolute top-1.5 bottom-1.5 start-0 w-[3px] rounded-e-full" aria-hidden />
                 )}
                 <item.icon
                   className={cn(
@@ -56,13 +59,13 @@ export function SidebarNav({
                     active ? "text-sidebar-primary" : "text-sidebar-foreground/60 group-hover/nav:text-sidebar-accent-foreground",
                   )}
                 />
-                {!collapsed && <span className="truncate">{item.title}</span>}
+                {!collapsed && <span className="truncate">{t(item.title)}</span>}
               </Link>
             );
             return collapsed ? (
               <Tooltip key={item.href}>
                 <TooltipTrigger asChild>{link}</TooltipTrigger>
-                <TooltipContent side="right">{item.title}</TooltipContent>
+                <TooltipContent side="right">{t(item.title)}</TooltipContent>
               </Tooltip>
             ) : (
               link

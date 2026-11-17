@@ -1,3 +1,4 @@
+import { getT } from "@/lib/i18n/server";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowLeft, FilePlus2, Handshake, Pencil, Plus, Upload } from "lucide-react";
@@ -26,10 +27,11 @@ const TASK_LABEL = { TODO: "To do", IN_PROGRESS: "In progress", DONE: "Done" } a
 
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }) {
   const wo = await getWorkOrder((await params).id);
-  return { title: wo?.orderNo ?? "Work order" };
+  return { title: wo?.orderNo ?? (await getT())("Work order") };
 }
 
 export default async function WorkOrderPage({ params }: { params: Promise<{ id: string }> }) {
+  const t = await getT();
   const user = await requirePagePermission("workOrders:view");
   const wo = await getWorkOrder((await params).id);
   if (!wo) notFound();
@@ -50,8 +52,7 @@ export default async function WorkOrderPage({ params }: { params: Promise<{ id: 
   return (
     <>
       <Link href="/work-orders" className="text-muted-foreground hover:text-foreground mb-4 inline-flex items-center gap-1 text-sm">
-        <ArrowLeft className="size-4" /> Work orders
-      </Link>
+        <ArrowLeft className="rtl:-scale-x-100 size-4" /> {t("Work orders")}</Link>
 
       <section className="bg-card mb-4 rounded-xl border p-5">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
@@ -95,47 +96,43 @@ export default async function WorkOrderPage({ params }: { params: Promise<{ id: 
                 }}
               >
                 <Button variant="outline">
-                  <Pencil /> Edit
-                </Button>
+                  <Pencil /> {t("Edit")}</Button>
               </WorkOrderSheet>
             )}
             {finance && wo.status === "DELIVERED" && wo.invoices.length === 0 && (
               <Button asChild>
                 <Link href={`/finance/invoices/new?workOrderId=${wo.id}`}>
-                  <FilePlus2 /> Create invoice
-                </Link>
+                  <FilePlus2 /> {t("Create invoice")}</Link>
               </Button>
             )}
           </div>
         </div>
 
         <dl className="mt-5 grid gap-4 border-t pt-4 text-sm sm:grid-cols-2 lg:grid-cols-4">
-          <Item label="Amount (excl. VAT)">
+          <Item label={t("Amount (excl. VAT)")}>
             <span className="font-medium tabular-nums">{formatMoney(wo.totalAmount)}</span>
             <div className="text-muted-foreground text-xs">
-              {wo.quantity.toString()} {SERVICE_UNIT_LABEL[wo.service.unit]}
+              {wo.quantity.toString()} {t(SERVICE_UNIT_LABEL[wo.service.unit])}
               {wo.quantity.eq(1) ? "" : "s"} × {formatMoney(wo.unitPrice)}
             </div>
           </Item>
-          <Item label="Deadline">
-            {wo.deadline ? <div>{formatDateTime(wo.deadline)}</div> : null}
+          <Item label={t("Deadline")}>
+            {wo.deadline ? <div>{formatDateTime(wo.deadline, t.lang)}</div> : null}
             <DeadlineText deadline={wo.deadline} done={wo.status === "DELIVERED"} now={now} />
           </Item>
-          <Item label="Assigned to">{wo.assignedTo?.name ?? <span className="text-muted-foreground">Unassigned</span>}</Item>
-          <Item label={wo.deliveredAt ? "Delivered" : "Received"}>{formatDateTime(wo.deliveredAt ?? wo.createdAt)}</Item>
+          <Item label={t("Assigned to")}>{wo.assignedTo?.name ?? <span className="text-muted-foreground">{t("Unassigned")}</span>}</Item>
+          <Item label={wo.deliveredAt ? t("Delivered") : t("Received")}>{formatDateTime(wo.deliveredAt ?? wo.createdAt, t.lang)}</Item>
           {wo.translation && (
             <>
-              <Item label="Languages">
-                {wo.translation.sourceLang} → {wo.translation.targetLang}
+              <Item label={t("Languages")}>
+                {t("{from} → {to}", { from: t(wo.translation.sourceLang), to: t(wo.translation.targetLang) })}
               </Item>
-              <Item label="Size">
-                {wo.translation.pageCount} pages · {wo.translation.wordCount.toLocaleString("en-QA")} words
-              </Item>
-              <Item label="Certification">{wo.translation.isCertified ? "Certified (MOJ)" : "Not certified"}</Item>
+              <Item label={t("Size")}>{t("{pageCount} pages · {value} words", { pageCount: wo.translation.pageCount, value: wo.translation.wordCount.toLocaleString("en-QA") })}</Item>
+              <Item label={t("Certification")}>{wo.translation.isCertified ? t("Certified (MOJ)") : t("Not certified")}</Item>
             </>
           )}
           {wo.notes && (
-            <Item label="Notes" className="sm:col-span-2 lg:col-span-4">
+            <Item label={t("Notes")} className="sm:col-span-2 lg:col-span-4">
               <p className="whitespace-pre-wrap">{wo.notes}</p>
             </Item>
           )}
@@ -145,24 +142,21 @@ export default async function WorkOrderPage({ params }: { params: Promise<{ id: 
       <div className="grid gap-4 xl:grid-cols-3">
         <div className="space-y-4 xl:col-span-2">
           {wo.revisions.length > 0 && (
-            <Card title="Revisions">
+            <Card title={t("Revisions")}>
               <ul className="space-y-3">
                 {wo.revisions.map((r) => (
                   <li key={r.id} className="rounded-lg border p-3 text-sm">
                     <div className="flex items-center justify-between gap-2">
-                      <ToneBadge tone={r.resolvedAt ? "green" : "red"}>{r.resolvedAt ? "Resolved" : "Open"}</ToneBadge>
+                      <ToneBadge tone={r.resolvedAt ? "green" : "red"}>{r.resolvedAt ? t("Resolved") : t("Open")}</ToneBadge>
                       <span className="text-muted-foreground text-xs">
-                        {formatDateTime(r.requestedAt)}
+                        {formatDateTime(r.requestedAt, t.lang)}
                         {r.requestedBy && ` · ${r.requestedBy.name}`}
                       </span>
                     </div>
                     <p className="mt-2">{r.reason}</p>
                     {r.resolvedAt && (
-                      <p className="text-muted-foreground mt-1 text-xs">
-                        Resolved {formatDateTime(r.resolvedAt)}
-                        {r.resolvedBy && ` by ${r.resolvedBy.name}`}
-                        {r.resolution && ` — ${r.resolution}`}
-                      </p>
+                      <p className="text-muted-foreground mt-1 text-xs">{r.resolvedBy ? t("Resolved {date} by {name}", { date: formatDateTime(r.resolvedAt, t.lang), name: r.resolvedBy.name }) : t("Resolved {date}", { date: formatDateTime(r.resolvedAt, t.lang) })}
+                        {r.resolution && ` — ${r.resolution}`}</p>
                     )}
                   </li>
                 ))}
@@ -171,24 +165,23 @@ export default async function WorkOrderPage({ params }: { params: Promise<{ id: 
           )}
 
           <Card
-            title="Documents"
+            title={t("Documents")}
             action={
               can(user.role, "documents:edit") && (
                 <UploadDialog defaultCustomer={{ id: wo.customer.id, name: wo.customer.name }} defaultWorkOrderId={wo.id}>
                   <Button size="sm" variant="outline">
-                    <Upload /> Upload
-                  </Button>
+                    <Upload /> {t("Upload")}</Button>
                 </UploadDialog>
               )
             }
           >
             <div className="-mx-5 -mb-5">
-              <DocumentTable rows={wo.documents.rows} canDelete={can(user.role, "documents:edit")} showCustomer={false} emptyText="No documents for this order." />
+              <DocumentTable rows={wo.documents.rows} canDelete={can(user.role, "documents:edit")} showCustomer={false} emptyText={t("No documents for this order.")} />
             </div>
           </Card>
 
           <Card
-            title="Tasks"
+            title={t("Tasks")}
             action={
               can(user.role, "tasks:edit") &&
               taskUsers && (
@@ -198,26 +191,25 @@ export default async function WorkOrderPage({ params }: { params: Promise<{ id: 
                   defaultValues={{ title: "", description: "", priority: wo.priority, deadline: toDateTimeInput(wo.deadline), assignedToId: wo.assignedToId ?? "", workOrderId: wo.id }}
                 >
                   <Button size="sm" variant="outline">
-                    <Plus /> Add task
-                  </Button>
+                    <Plus /> {t("Add task")}</Button>
                 </TaskDialog>
               )
             }
           >
             {wo.tasks.length === 0 ? (
-              <Empty>No tasks linked to this order.</Empty>
+              <Empty>{t("No tasks linked to this order.")}</Empty>
             ) : (
               <ul className="divide-y">
-                {wo.tasks.map((t) => (
-                  <li key={t.id} className="flex items-center gap-3 py-2.5 text-sm">
+                {wo.tasks.map((task) => (
+                  <li key={task.id} className="flex items-center gap-3 py-2.5 text-sm">
                     <div className="min-w-0 flex-1">
-                      <Link href={`/tasks?assignee=everyone&task=${t.id}`} className="block truncate hover:underline">
-                        {t.title}
+                      <Link href={`/tasks?assignee=everyone&task=${task.id}`} className="block truncate hover:underline">
+                        {task.title}
                       </Link>
-                      <div className="text-muted-foreground text-xs">{t.assignedTo?.name ?? "Unassigned"}</div>
+                      <div className="text-muted-foreground text-xs">{task.assignedTo?.name ?? t("Unassigned")}</div>
                     </div>
-                    <PriorityBadge priority={t.priority} />
-                    <ToneBadge tone={TASK_TONE[t.status]}>{TASK_LABEL[t.status]}</ToneBadge>
+                    <PriorityBadge priority={task.priority} />
+                    <ToneBadge tone={TASK_TONE[task.status]}>{t(TASK_LABEL[task.status])}</ToneBadge>
                   </li>
                 ))}
               </ul>
@@ -226,18 +218,17 @@ export default async function WorkOrderPage({ params }: { params: Promise<{ id: 
 
           {can(user.role, "outsourced:view") && (wo.outsourced.length > 0 || vendors) && (
             <Card
-              title="Outsourced"
+              title={t("Outsourced")}
               action={
                 vendors && (
                   <AssignmentDialog vendors={vendors} defaultWorkOrder={{ id: wo.id, orderNo: wo.orderNo, subtitle: wo.customer.name }}>
                     <Button size="sm" variant="outline">
-                      <Handshake /> Outsource
-                    </Button>
+                      <Handshake /> {t("Outsource")}</Button>
                   </AssignmentDialog>
                 )
               }
             >
-              {wo.outsourced.length === 0 && <Empty>Not outsourced.</Empty>}
+              {wo.outsourced.length === 0 && <Empty>{t("Not outsourced.")}</Empty>}
               <ul className="divide-y">
                 {wo.outsourced.map((o) => (
                   <li key={o.id} className="flex items-center gap-3 py-2.5 text-sm">
@@ -245,8 +236,8 @@ export default async function WorkOrderPage({ params }: { params: Promise<{ id: 
                       <div className="truncate font-medium">{o.vendor.name}</div>
                       <div className="text-muted-foreground truncate text-xs">{o.description}</div>
                     </div>
-                    <ToneBadge tone={o.qaStatus === "APPROVED" ? "green" : o.qaStatus === "REJECTED" ? "red" : "amber"}>QA {o.qaStatus.toLowerCase()}</ToneBadge>
-                    {finance && <span className="w-24 text-right tabular-nums">{formatMoney(o.agreementCost)}</span>}
+                    <ToneBadge tone={o.qaStatus === "APPROVED" ? "green" : o.qaStatus === "REJECTED" ? "red" : "amber"}>{t(`QA ${o.qaStatus.toLowerCase()}`)}</ToneBadge>
+                    {finance && <span className="w-24 text-end tabular-nums">{formatMoney(o.agreementCost)}</span>}
                   </li>
                 ))}
               </ul>
@@ -256,9 +247,9 @@ export default async function WorkOrderPage({ params }: { params: Promise<{ id: 
 
         <div className="space-y-4">
           {finance && (
-            <Card title="Invoicing">
+            <Card title={t("Invoicing")}>
               {wo.invoices.length === 0 ? (
-                <Empty>{wo.status === "DELIVERED" ? "Delivered but not invoiced yet." : "Not invoiced yet."}</Empty>
+                <Empty>{wo.status === "DELIVERED" ? t("Delivered but not invoiced yet.") : t("Not invoiced yet.")}</Empty>
               ) : (
                 <ul className="divide-y">
                   {wo.invoices.map((i) => (
@@ -267,9 +258,9 @@ export default async function WorkOrderPage({ params }: { params: Promise<{ id: 
                         <Link href={`/finance/invoices/${i.id}`} className="font-mono text-[13px] font-medium hover:underline">
                           {i.invoiceNo}
                         </Link>
-                        <div className="text-muted-foreground text-xs">{formatDate(i.issueDate)}</div>
+                        <div className="text-muted-foreground text-xs">{formatDate(i.issueDate, t.lang)}</div>
                       </div>
-                      <ToneBadge tone={INVOICE_TONE[i.status]}>{INVOICE_STATUS_LABEL[i.status]}</ToneBadge>
+                      <ToneBadge tone={INVOICE_TONE[i.status]}>{t(INVOICE_STATUS_LABEL[i.status])}</ToneBadge>
                       <span className="tabular-nums">{formatMoney(i.totalAmount)}</span>
                     </li>
                   ))}
@@ -278,20 +269,20 @@ export default async function WorkOrderPage({ params }: { params: Promise<{ id: 
             </Card>
           )}
 
-          <Card title="Timeline">
+          <Card title={t("Timeline")}>
             {wo.activity.length === 0 ? (
-              <Empty>No activity yet.</Empty>
+              <Empty>{t("No activity yet.")}</Empty>
             ) : (
-              <ol className="relative space-y-4 border-l pl-4">
+              <ol className="relative space-y-4 border-s ps-4">
                 {wo.activity.map((a) => (
                   <li key={a.id} className="relative text-sm">
                     <span
-                      className={`absolute top-1.5 -left-[21px] size-2.5 rounded-full border-2 border-card ${a.action.startsWith("revision") ? "bg-red-500" : a.action === "status_changed" ? "bg-primary" : "bg-muted-foreground/50"}`}
+                      className={`absolute top-1.5 -start-[21px] size-2.5 rounded-full border-2 border-card ${a.action.startsWith("revision") ? "bg-red-500" : a.action === "status_changed" ? "bg-primary" : "bg-muted-foreground/50"}`}
                       aria-hidden
                     />
                     <div>{a.message}</div>
                     <div className="text-muted-foreground text-xs">
-                      {formatDateTime(a.createdAt)}
+                      {formatDateTime(a.createdAt, t.lang)}
                       {a.user && ` · ${a.user.name}`}
                     </div>
                   </li>

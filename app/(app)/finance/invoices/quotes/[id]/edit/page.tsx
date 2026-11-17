@@ -1,3 +1,4 @@
+import { getT } from "@/lib/i18n/server";
 import { notFound, redirect } from "next/navigation";
 import { DocumentBuilder } from "@/components/finance/document-builder";
 import { PageHeader } from "@/components/shared/page-header";
@@ -5,9 +6,12 @@ import { requirePagePermission } from "@/lib/auth/session";
 import { toDateInput } from "@/lib/dates";
 import { getQuotation, serviceOptions } from "@/server/queries/invoices";
 
-export const metadata = { title: "Edit quotation" };
+export async function generateMetadata() {
+  return { title: (await getT())("Edit quotation") };
+}
 
 export default async function EditQuotationPage({ params }: { params: Promise<{ id: string }> }) {
+  const t = await getT();
   await requirePagePermission("finance:edit");
   const q = await getQuotation((await params).id);
   if (!q) notFound();
@@ -16,7 +20,7 @@ export default async function EditQuotationPage({ params }: { params: Promise<{ 
 
   return (
     <>
-      <PageHeader title={`Edit ${q.quoteNo}`} />
+      <PageHeader title={t("Edit {quoteNo}", { quoteNo: q.quoteNo })} />
       <DocumentBuilder
         kind="quotation"
         docId={q.id}

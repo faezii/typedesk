@@ -1,16 +1,19 @@
 import type { ServiceCategory, ServiceUnit, WorkOrderStatus } from "@prisma/client";
 import { formatLocal, startOfTodayLocal } from "./dates";
+import { translator, type Lang } from "./i18n/translate";
 
 export type DeadlineTone = "overdue" | "today" | "soon" | "later";
 
 /** Human deadline label in Doha calendar days, e.g. "Overdue 3d", "Today 5:00 PM", "Tomorrow", "In 4 days". */
-export function deadlineInfo(deadline: Date, now = new Date()): { label: string; tone: DeadlineTone } {
+export function deadlineInfo(deadline: Date, now = new Date(), lang: Lang = "en"): { label: string; tone: DeadlineTone } {
+  const t = translator(lang);
   const days = Math.round((startOfTodayLocal(deadline).getTime() - startOfTodayLocal(now).getTime()) / 86_400_000);
-  if (deadline < now) return { label: days < 0 ? `Overdue ${-days}d` : `Overdue · ${formatLocal(deadline, "h:mm a")}`, tone: "overdue" };
-  if (days === 0) return { label: `Today ${formatLocal(deadline, "h:mm a")}`, tone: "today" };
-  if (days === 1) return { label: "Tomorrow", tone: "soon" };
-  if (days <= 7) return { label: `In ${days} days`, tone: "soon" };
-  return { label: formatLocal(deadline, "d MMM"), tone: "later" };
+  const time = formatLocal(deadline, "h:mm a", lang);
+  if (deadline < now) return { label: days < 0 ? t("Overdue {n}d", { n: -days }) : t("Overdue · {time}", { time }), tone: "overdue" };
+  if (days === 0) return { label: t("Today {time}", { time }), tone: "today" };
+  if (days === 1) return { label: t("Tomorrow"), tone: "soon" };
+  if (days <= 7) return { label: t("In {n} days", { n: days }), tone: "soon" };
+  return { label: formatLocal(deadline, "d MMM", lang), tone: "later" };
 }
 
 export const WORK_ORDER_FLOW: WorkOrderStatus[] = ["RECEIVED", "IN_PROGRESS", "QUALITY_CHECK", "READY", "DELIVERED"];

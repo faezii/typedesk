@@ -1,5 +1,6 @@
 import type { Prisma } from "@prisma/client";
 import { formatLocal } from "./dates";
+import type { Lang } from "./i18n/translate";
 
 type Money = Prisma.Decimal | number | string | null | undefined;
 
@@ -20,5 +21,5 @@ export const initials = (name: string) =>
     .map((p) => p[0]!.toUpperCase())
     .join("");
 
-export const formatDate =(d: Date | null | undefined) => (d ? formatLocal(d, "d MMM yyyy") : "—");
-export const formatDateTime = (d: Date | null | undefined) => (d ? formatLocal(d, "d MMM yyyy, h:mm a") : "—");
+export const formatDate = (d: Date | null | undefined, lang?: Lang) => (d ? formatLocal(d, "d MMM yyyy", lang) : "—");
+export const formatDateTime = (d: Date | null | undefined, lang?: Lang) => (d ? formatLocal(d, "d MMM yyyy, h:mm a", lang) : "—");

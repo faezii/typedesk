@@ -1,5 +1,7 @@
 "use client";
 
+
+import { useT } from "@/components/i18n";
 import { useState, useTransition } from "react";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
@@ -18,6 +20,7 @@ export const TASK_COLUMNS: { status: TaskStatus; label: string }[] = [
 ];
 
 export function TaskBoard({ tasks: initial, canEdit, now }: { tasks: TaskCard[]; canEdit: boolean; now: string }) {
+  const t = useT();
   const router = useRouter();
   const pathname = usePathname();
   const params = useSearchParams();
@@ -40,31 +43,31 @@ export function TaskBoard({ tasks: initial, canEdit, now }: { tasks: TaskCard[];
 
   function onDragEnd({ active, over }: DragEndEvent) {
     setActiveId(null);
-    const task = tasks.find((t) => t.id === active.id);
+    const task = tasks.find((item) => item.id === active.id);
     const to = over?.id as TaskStatus | undefined;
     if (!task || !to || task.status === to) return;
     const from = task.status;
-    setTasks((ts) => ts.map((t) => (t.id === task.id ? { ...t, status: to } : t)));
+    setTasks((ts) => ts.map((item) => (item.id === task.id ? { ...item, status: to } : item)));
     startTransition(async () => {
       const res = await moveTask(task.id, to);
       if (!res.ok) {
-        setTasks((ts) => ts.map((t) => (t.id === task.id ? { ...t, status: from } : t)));
-        toast.error(res.error);
+        setTasks((ts) => ts.map((item) => (item.id === task.id ? { ...item, status: from } : item)));
+        toast.error(t(res.error));
       }
       router.refresh();
     });
   }
 
-  const active = tasks.find((t) => t.id === activeId);
+  const active = tasks.find((item) => item.id === activeId);
   return (
     <DndContext sensors={sensors} onDragStart={(e) => setActiveId(String(e.active.id))} onDragCancel={() => setActiveId(null)} onDragEnd={onDragEnd}>
       <div className="grid gap-3 md:grid-cols-3">
         {TASK_COLUMNS.map(({ status, label }) => {
-          const column = tasks.filter((t) => t.status === status);
+          const column = tasks.filter((item) => item.status === status);
           return (
             <Column key={status} status={status} label={label} count={column.length}>
-              {column.map((t) => (
-                <Draggable key={t.id} task={t} disabled={!canEdit} now={nowDate} href={detailHref(t.id)} />
+              {column.map((item) => (
+                <Draggable key={item.id} task={item} disabled={!canEdit} now={nowDate} href={detailHref(item.id)} />
               ))}
             </Column>
           );
@@ -76,35 +79,37 @@ export function TaskBoard({ tasks: initial, canEdit, now }: { tasks: TaskCard[];
 }
 
 function Column({ status, label, count, children }: { status: TaskStatus; label: string; count: number; children: React.ReactNode }) {
+  const t = useT();
   const { setNodeRef, isOver } = useDroppable({ id: status });
   return (
     <section
       ref={setNodeRef}
-      aria-label={`${label}, ${count} tasks`}
+      aria-label={t("{label}, {count} tasks", { label: t(label), count })}
       className={cn("bg-muted/40 flex min-h-[50vh] flex-col rounded-xl border p-2 transition-colors", isOver && "border-primary bg-primary/5")}
     >
       <header className="flex items-center justify-between px-1.5 pt-1 pb-2">
-        <h2 className="text-sm font-medium">{label}</h2>
+        <h2 className="text-sm font-medium">{t(label)}</h2>
         <span className="text-muted-foreground bg-background rounded-full border px-2 text-xs tabular-nums">{count}</span>
       </header>
       <div className="flex flex-1 flex-col gap-2">
         {children}
-        {count === 0 && <p className="text-muted-foreground px-2 py-6 text-center text-xs">No tasks</p>}
+        {count === 0 && <p className="text-muted-foreground px-2 py-6 text-center text-xs">{t("No tasks")}</p>}
       </div>
-      {status === "DONE" && <p className="text-muted-foreground px-2 pt-2 text-[11px]">Completed in the last 14 days. Older tasks are in the table view.</p>}
+      {status === "DONE" && <p className="text-muted-foreground px-2 pt-2 text-[11px]">{t("Completed in the last 14 days. Older tasks are in the table view.")}</p>}
     </section>
   );
 }
 
 function Draggable({ task, disabled, now, href }: { task: TaskCard; disabled: boolean; now: Date; href: string }) {
+  const t = useT();
   const { attributes, listeners, setNodeRef, isDragging } = useDraggable({ id: task.id, disabled });
   return (
     <div
       ref={setNodeRef}
       {...listeners}
       {...attributes}
-      aria-roledescription="Draggable task"
-      aria-label={`${task.title}. Press space to pick up and move with arrow keys.`}
+      aria-roledescription={t("Draggable task")}
+      aria-label={t("{title}. Press space to pick up and move with arrow keys.", { title: task.title })}
       className={cn("rounded-lg outline-none focus-visible:ring-3 focus-visible:ring-ring/50", !disabled && "cursor-grab active:cursor-grabbing", isDragging && "opacity-40")}
     >
       <CardBody task={task} now={now} href={href} />
@@ -113,6 +118,7 @@ function Draggable({ task, disabled, now, href }: { task: TaskCard; disabled: bo
 }
 
 function CardBody({ task, now, href, dragging = false }: { task: TaskCard; now: Date; href: string; dragging?: boolean }) {
+  const t = useT();
   return (
     <article className={cn("bg-card space-y-2 rounded-lg border p-3 text-sm shadow-xs", dragging && "rotate-1 shadow-lg")}>
       <div className="flex items-start justify-between gap-2">
@@ -128,7 +134,7 @@ function CardBody({ task, now, href, dragging = false }: { task: TaskCard; now: 
       )}
       <div className="flex items-center justify-between gap-2">
         <DeadlineText deadline={task.deadline} done={task.status === "DONE"} now={now} />
-        <span className="text-muted-foreground truncate text-xs">{task.assignedTo?.name.split(" ")[0] ?? "Unassigned"}</span>
+        <span className="text-muted-foreground truncate text-xs">{task.assignedTo?.name.split(" ")[0] ?? t("Unassigned")}</span>
       </div>
     </article>
   );

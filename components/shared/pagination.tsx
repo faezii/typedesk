@@ -1,9 +1,10 @@
+import { getT } from "@/lib/i18n/server";
 import Link from "next/link";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 /** Server-rendered prev/next that keeps the current filters. */
-export function Pagination({
+export async function Pagination({
   page,
   pageSize,
   total,
@@ -14,6 +15,7 @@ export function Pagination({
   total: number;
   params: Record<string, string | undefined>;
 }) {
+  const t = await getT();
   const pages = Math.max(1, Math.ceil(total / pageSize));
   const href = (p: number) => {
     const sp = new URLSearchParams(Object.entries(params).filter((e): e is [string, string] => !!e[1] && e[0] !== "page"));
@@ -24,29 +26,25 @@ export function Pagination({
 
   return (
     <div className="text-muted-foreground flex items-center justify-between gap-3 text-sm">
-      <span className="tabular-nums">
-        {from}–{Math.min(page * pageSize, total)} of {total}
-      </span>
+      <span className="tabular-nums">{t("{from}–{value} of {total}", { from, value: Math.min(page * pageSize, total), total })}</span>
       <div className="flex gap-1">
         <Button variant="outline" size="sm" asChild={page > 1} disabled={page <= 1}>
           {page > 1 ? (
-            <Link href={href(page - 1)} aria-label="Previous page">
-              <ChevronLeft /> Prev
-            </Link>
+            <Link href={href(page - 1)} aria-label={t("Previous page")}>
+              <ChevronLeft className="rtl:-scale-x-100" /> {t("Prev")}</Link>
           ) : (
             <span>
-              <ChevronLeft /> Prev
-            </span>
+              <ChevronLeft className="rtl:-scale-x-100" /> {t("Prev")}</span>
           )}
         </Button>
         <Button variant="outline" size="sm" asChild={page < pages} disabled={page >= pages}>
           {page < pages ? (
-            <Link href={href(page + 1)} aria-label="Next page">
-              Next <ChevronRight />
+            <Link href={href(page + 1)} aria-label={t("Next page")}>
+              {t("Next")}{" "}<ChevronRight className="rtl:-scale-x-100" />
             </Link>
           ) : (
             <span>
-              Next <ChevronRight />
+              {t("Next")}{" "}<ChevronRight className="rtl:-scale-x-100" />
             </span>
           )}
         </Button>

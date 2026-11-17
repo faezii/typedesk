@@ -1,3 +1,4 @@
+import { getT } from "@/lib/i18n/server";
 import Link from "next/link";
 import { Columns3, ListTodo, Plus, Table2 } from "lucide-react";
 import { PageHeader } from "@/components/shared/page-header";
@@ -16,12 +17,15 @@ import { cn } from "@/lib/utils";
 import { activeUserOptions } from "@/server/queries/employees";
 import { TASK_PAGE_SIZE, boardTasks, effectiveAssignee, getTaskDetail, listTasks, type TaskListParams } from "@/server/queries/tasks";
 
-export const metadata = { title: "Tasks" };
+export async function generateMetadata() {
+  return { title: (await getT())("Tasks") };
+}
 
 const STATUS_TONE = { TODO: "gray", IN_PROGRESS: "blue", DONE: "green" } as const;
 const STATUS_LABEL = { TODO: "To do", IN_PROGRESS: "In progress", DONE: "Done" } as const;
 
 export default async function TasksPage({ searchParams }: { searchParams: Promise<TaskListParams> }) {
+  const t = await getT();
   const user = await requirePagePermission("tasks:view");
   const params = await searchParams;
   const view = params.view === "table" ? "table" : "board";
@@ -39,24 +43,23 @@ export default async function TasksPage({ searchParams }: { searchParams: Promis
   return (
     <>
       <PageHeader
-        title="Tasks"
-        description={assignee === user.id ? "Your tasks. Switch the assignee filter to see the whole team." : "Staff tasks and allocations."}
+        title={t("Tasks")}
+        description={assignee === user.id ? t("Your tasks. Switch the assignee filter to see the whole team.") : t("Staff tasks and allocations.")}
         actions={
           canEdit && (
             <TaskDialog users={users} defaultValues={{ title: "", description: "", priority: "NORMAL", deadline: "", assignedToId: user.id, workOrderId: "" }}>
               <Button>
-                <Plus /> New task
-              </Button>
+                <Plus /> {t("New task")}</Button>
             </TaskDialog>
           )
         }
       />
 
       <div className="mb-4 flex flex-col gap-2 lg:flex-row lg:flex-wrap lg:items-center">
-        <div className="bg-muted inline-flex w-fit rounded-lg p-[3px]" role="group" aria-label="View">
+        <div className="bg-muted inline-flex w-fit rounded-lg p-[3px]" role="group" aria-label={t("View")}>
           {[
-            { v: "board", label: "Board", Icon: Columns3 },
-            { v: "table", label: "Table", Icon: Table2 },
+            { v: "board", label: t("Board"), Icon: Columns3 },
+            { v: "table", label: t("Table"), Icon: Table2 },
           ].map(({ v, label, Icon }) => (
             <Link
               key={v}
@@ -71,38 +74,38 @@ export default async function TasksPage({ searchParams }: { searchParams: Promis
             </Link>
           ))}
         </div>
-        <SearchInput placeholder="Task, WO number, customer…" />
+        <SearchInput placeholder={t("Task, WO number, customer…")} />
         <AssigneeFilter users={users} userId={user.id} defaultValue={can(user.role, "tasks:viewAll") ? "everyone" : user.id} />
         <FilterSelect
           param="priority"
-          label="Priority"
-          allLabel="Any priority"
+          label={t("Priority")}
+          allLabel={t("Any priority")}
           options={[
-            { value: "URGENT", label: "Urgent" },
-            { value: "HIGH", label: "High" },
-            { value: "NORMAL", label: "Normal" },
+            { value: "URGENT", label: t("Urgent") },
+            { value: "HIGH", label: t("High") },
+            { value: "NORMAL", label: t("Normal") },
           ]}
         />
         <FilterSelect
           param="due"
-          label="Due"
-          allLabel="Any due date"
+          label={t("Due")}
+          allLabel={t("Any due date")}
           options={[
-            { value: "overdue", label: "Overdue" },
-            { value: "today", label: "Due today" },
-            { value: "week", label: "Due within 7 days" },
-            { value: "none", label: "No deadline" },
+            { value: "overdue", label: t("Overdue") },
+            { value: "today", label: t("Due today") },
+            { value: "week", label: t("Due within 7 days") },
+            { value: "none", label: t("No deadline") },
           ]}
         />
         {view === "table" && (
           <FilterSelect
             param="status"
-            label="Status"
-            allLabel="All statuses"
+            label={t("Status")}
+            allLabel={t("All statuses")}
             options={[
-              { value: "TODO", label: "To do" },
-              { value: "IN_PROGRESS", label: "In progress" },
-              { value: "DONE", label: "Done" },
+              { value: "TODO", label: t("To do") },
+              { value: "IN_PROGRESS", label: t("In progress") },
+              { value: "DONE", label: t("Done") },
             ]}
           />
         )}
@@ -120,16 +123,17 @@ export default async function TasksPage({ searchParams }: { searchParams: Promis
 }
 
 /** STAFF default to "Assigned to me", everyone else to "Everyone", so both are explicit options. */
-function AssigneeFilter({ users, userId, defaultValue }: { users: { id: string; name: string }[]; userId: string; defaultValue: string }) {
+async function AssigneeFilter({ users, userId, defaultValue }: { users: { id: string; name: string }[]; userId: string; defaultValue: string }) {
+  const t = await getT();
   return (
     <FilterSelect
       param="assignee"
-      label="Assignee"
+      label={t("Assignee")}
       defaultValue={defaultValue}
       options={[
-        { value: "everyone", label: "Everyone" },
-        { value: userId, label: "Assigned to me" },
-        { value: "none", label: "Unassigned" },
+        { value: "everyone", label: t("Everyone") },
+        { value: userId, label: t("Assigned to me") },
+        { value: "none", label: t("Unassigned") },
         ...users.filter((u) => u.id !== userId).map((u) => ({ value: u.id, label: u.name })),
       ]}
     />
@@ -137,6 +141,7 @@ function AssigneeFilter({ users, userId, defaultValue }: { users: { id: string; 
 }
 
 async function TaskTable({ params, user, now }: { params: TaskListParams; user: { id: string; role: Parameters<typeof listTasks>[1]["role"] }; now: Date }) {
+  const t = await getT();
   const { rows, total, page } = await listTasks(params, user);
   const href = (id: string) => `?${new URLSearchParams({ ...Object.fromEntries(Object.entries(params).filter((e): e is [string, string] => !!e[1])), task: id })}`;
   return (
@@ -145,32 +150,31 @@ async function TaskTable({ params, user, now }: { params: TaskListParams; user: 
         {rows.length === 0 ? (
           <div className="text-muted-foreground flex flex-col items-center gap-2 px-6 py-16 text-center text-sm">
             <ListTodo className="size-6" />
-            No tasks match these filters.
-          </div>
+            {t("No tasks match these filters.")}</div>
         ) : (
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead className="pl-4">Task</TableHead>
-                <TableHead>Work order</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Deadline</TableHead>
-                <TableHead className="pr-4">Assignee</TableHead>
+                <TableHead className="ps-4">{t("Task")}</TableHead>
+                <TableHead>{t("Work order")}</TableHead>
+                <TableHead>{t("Status")}</TableHead>
+                <TableHead>{t("Deadline")}</TableHead>
+                <TableHead className="pe-4">{t("Assignee")}</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {rows.map((t) => (
-                <TableRow key={t.id} className="relative">
-                  <TableCell className="max-w-96 pl-4">
-                    <Link href={href(t.id)} scroll={false} className="font-medium after:absolute after:inset-0 hover:underline">
-                      {t.title}
+              {rows.map((task) => (
+                <TableRow key={task.id} className="relative">
+                  <TableCell className="max-w-96 ps-4">
+                    <Link href={href(task.id)} scroll={false} className="font-medium after:absolute after:inset-0 hover:underline">
+                      {task.title}
                     </Link>
                   </TableCell>
                   <TableCell className="text-xs">
-                    {t.workOrder ? (
+                    {task.workOrder ? (
                       <>
-                        <span className="font-mono">{t.workOrder.orderNo}</span>
-                        <div className="text-muted-foreground">{t.workOrder.customer.name}</div>
+                        <span className="font-mono">{task.workOrder.orderNo}</span>
+                        <div className="text-muted-foreground">{task.workOrder.customer.name}</div>
                       </>
                     ) : (
                       <span className="text-muted-foreground">—</span>
@@ -178,14 +182,14 @@ async function TaskTable({ params, user, now }: { params: TaskListParams; user: 
                   </TableCell>
                   <TableCell>
                     <div className="flex flex-wrap gap-1">
-                      <ToneBadge tone={STATUS_TONE[t.status]}>{STATUS_LABEL[t.status]}</ToneBadge>
-                      <PriorityBadge priority={t.priority} />
+                      <ToneBadge tone={STATUS_TONE[task.status]}>{t(STATUS_LABEL[task.status])}</ToneBadge>
+                      <PriorityBadge priority={task.priority} />
                     </div>
                   </TableCell>
                   <TableCell>
-                    <DeadlineText deadline={t.deadline} done={t.status === "DONE"} now={now} />
+                    <DeadlineText deadline={task.deadline} done={task.status === "DONE"} now={now} />
                   </TableCell>
-                  <TableCell className="pr-4 text-sm">{t.assignedTo?.name ?? <span className="text-muted-foreground">Unassigned</span>}</TableCell>
+                  <TableCell className="pe-4 text-sm">{task.assignedTo?.name ?? <span className="text-muted-foreground">{t("Unassigned")}</span>}</TableCell>
                 </TableRow>
               ))}
             </TableBody>

@@ -1,3 +1,4 @@
+import { getT } from "@/lib/i18n/server";
 import Link from "next/link";
 import { FileImage, FileText, FolderOpen } from "lucide-react";
 import { ExpiryBadge } from "@/components/shared/expiry-badge";
@@ -10,7 +11,7 @@ import { DocumentActions } from "./document-actions";
 
 const formatSize = (b: number) => (b < 1024 * 1024 ? `${Math.max(1, Math.round(b / 1024))} KB` : `${(b / 1024 / 1024).toFixed(1)} MB`);
 
-export function DocumentTable({
+export async function DocumentTable({
   rows,
   canDelete,
   showCustomer = true,
@@ -21,11 +22,12 @@ export function DocumentTable({
   showCustomer?: boolean;
   emptyText?: string;
 }) {
+  const t = await getT();
   if (rows.length === 0) {
     return (
       <div className="text-muted-foreground flex flex-col items-center gap-2 px-6 py-14 text-center text-sm">
         <FolderOpen className="size-6" />
-        {emptyText}
+        {t(emptyText)}
       </div>
     );
   }
@@ -34,14 +36,14 @@ export function DocumentTable({
     <Table>
       <TableHeader>
         <TableRow>
-          <TableHead className="pl-4">Document</TableHead>
-          <TableHead>Category</TableHead>
-          {showCustomer && <TableHead>Customer</TableHead>}
-          <TableHead>Work order</TableHead>
-          <TableHead>Expiry</TableHead>
-          <TableHead>Uploaded</TableHead>
-          <TableHead className="pr-4 text-right">
-            <span className="sr-only">Actions</span>
+          <TableHead className="ps-4">{t("Document")}</TableHead>
+          <TableHead>{t("Category")}</TableHead>
+          {showCustomer && <TableHead>{t("Customer")}</TableHead>}
+          <TableHead>{t("Work order")}</TableHead>
+          <TableHead>{t("Expiry")}</TableHead>
+          <TableHead>{t("Uploaded")}</TableHead>
+          <TableHead className="pe-4 text-end">
+            <span className="sr-only">{t("Actions")}</span>
           </TableHead>
         </TableRow>
       </TableHeader>
@@ -50,7 +52,7 @@ export function DocumentTable({
           const Icon = d.mimeType.startsWith("image/") ? FileImage : FileText;
           return (
             <TableRow key={d.id}>
-              <TableCell className="max-w-72 pl-4">
+              <TableCell className="max-w-72 ps-4">
                 <div className="flex items-center gap-2.5">
                   <Icon className="text-muted-foreground size-4 shrink-0" />
                   <div className="min-w-0">
@@ -63,7 +65,7 @@ export function DocumentTable({
                 </div>
               </TableCell>
               <TableCell>
-                <ToneBadge tone="gray">{DOCUMENT_CATEGORY_LABEL[d.category]}</ToneBadge>
+                <ToneBadge tone="gray">{t(DOCUMENT_CATEGORY_LABEL[d.category])}</ToneBadge>
               </TableCell>
               {showCustomer && (
                 <TableCell className="text-sm">
@@ -89,10 +91,10 @@ export function DocumentTable({
                 {EXPIRING_CATEGORIES.includes(d.category) ? <ExpiryBadge date={d.expiryDate} showDate /> : <span className="text-muted-foreground text-xs">—</span>}
               </TableCell>
               <TableCell className="text-xs">
-                <div>{formatDate(d.createdAt)}</div>
+                <div>{formatDate(d.createdAt, t.lang)}</div>
                 <div className="text-muted-foreground">{d.uploadedBy.name}</div>
               </TableCell>
-              <TableCell className="pr-4">
+              <TableCell className="pe-4">
                 <DocumentActions doc={d} canDelete={canDelete} />
               </TableCell>
             </TableRow>

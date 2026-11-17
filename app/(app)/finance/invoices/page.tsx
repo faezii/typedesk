@@ -1,3 +1,4 @@
+import { getT } from "@/lib/i18n/server";
 import Link from "next/link";
 import { FileText, Plus } from "lucide-react";
 import { InvoiceStatusBadge, QuoteStatusBadge } from "@/components/finance/status-badges";
@@ -13,9 +14,12 @@ import { formatMoney, formatDate } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { INVOICE_PAGE_SIZE, listInvoices, listQuotations, type InvoiceListParams } from "@/server/queries/invoices";
 
-export const metadata = { title: "Invoices & Quotes" };
+export async function generateMetadata() {
+  return { title: (await getT())("Invoices & Quotes") };
+}
 
 export default async function InvoicesPage({ searchParams }: { searchParams: Promise<InvoiceListParams> }) {
+  const t = await getT();
   const user = await requirePagePermission("finance:view");
   const params = await searchParams;
   const tab = params.tab === "quotes" ? "quotes" : "invoices";
@@ -24,13 +28,13 @@ export default async function InvoicesPage({ searchParams }: { searchParams: Pro
   return (
     <>
       <PageHeader
-        title="Invoices & Quotes"
-        description="Invoices and quotations in QAR."
+        title={t("Invoices & Quotes")}
+        description={t("Invoices and quotations in QAR.")}
         actions={
           canEdit && (
             <Button asChild>
               <Link href={`/finance/invoices/new${tab === "quotes" ? "?kind=quotation" : ""}`}>
-                <Plus /> {tab === "quotes" ? "New quotation" : "New invoice"}
+                <Plus /> {tab === "quotes" ? t("New quotation") : t("New invoice")}
               </Link>
             </Button>
           )
@@ -38,10 +42,10 @@ export default async function InvoicesPage({ searchParams }: { searchParams: Pro
       />
 
       <div className="mb-4 flex flex-col gap-2 lg:flex-row lg:flex-wrap lg:items-center">
-        <div className="bg-muted inline-flex w-fit rounded-lg p-[3px]" role="tablist" aria-label="Documents">
+        <div className="bg-muted inline-flex w-fit rounded-lg p-[3px]" role="tablist" aria-label={t("Documents")}>
           {[
-            { t: "invoices", label: "Invoices", href: "?" },
-            { t: "quotes", label: "Quotations", href: "?tab=quotes" },
+            { t: "invoices", label: t("Invoices"), href: "?" },
+            { t: "quotes", label: t("Quotations"), href: "?tab=quotes" },
           ].map(({ t, label, href }) => (
             <Link
               key={t}
@@ -54,32 +58,32 @@ export default async function InvoicesPage({ searchParams }: { searchParams: Pro
             </Link>
           ))}
         </div>
-        <SearchInput placeholder={tab === "quotes" ? "QT number or customer" : "INV number or customer"} />
+        <SearchInput placeholder={tab === "quotes" ? t("QT number or customer") : t("INV number or customer")} />
         <FilterSelect
           key={tab}
           param="status"
-          label="Status"
-          allLabel="All statuses"
+          label={t("Status")}
+          allLabel={t("All statuses")}
           options={
             tab === "quotes"
               ? [
-                  { value: "DRAFT", label: "Draft" },
-                  { value: "SENT", label: "Sent" },
-                  { value: "ACCEPTED", label: "Accepted" },
-                  { value: "REJECTED", label: "Rejected" },
-                  { value: "CONVERTED", label: "Invoiced" },
+                  { value: "DRAFT", label: t("Draft") },
+                  { value: "SENT", label: t("Sent") },
+                  { value: "ACCEPTED", label: t("Accepted") },
+                  { value: "REJECTED", label: t("Rejected") },
+                  { value: "CONVERTED", label: t("Invoiced") },
                 ]
               : [
-                  { value: "OUTSTANDING", label: "Outstanding (unpaid + partial)" },
-                  { value: "UNPAID", label: "Unpaid" },
-                  { value: "PARTIAL", label: "Partial" },
-                  { value: "PAID", label: "Paid" },
-                  { value: "CANCELLED", label: "Cancelled" },
+                  { value: "OUTSTANDING", label: t("Outstanding (unpaid + partial)") },
+                  { value: "UNPAID", label: t("Unpaid") },
+                  { value: "PARTIAL", label: t("Partial") },
+                  { value: "PAID", label: t("Paid") },
+                  { value: "CANCELLED", label: t("Cancelled") },
                 ]
           }
         />
-        <DateParam param="from" label="From" />
-        <DateParam param="to" label="to" />
+        <DateParam param="from" label={t("From")} />
+        <DateParam param="to" label={t("to")} />
       </div>
 
       {tab === "quotes" ? <Quotes params={params} /> : <Invoices params={params} />}
@@ -88,6 +92,7 @@ export default async function InvoicesPage({ searchParams }: { searchParams: Pro
 }
 
 async function Invoices({ params }: { params: InvoiceListParams }) {
+  const t = await getT();
   const { rows, total, page, sums } = await listInvoices(params);
   const today = startOfTodayLocal();
   const invoiced = sums.totalAmount;
@@ -96,25 +101,25 @@ async function Invoices({ params }: { params: InvoiceListParams }) {
     <>
       {invoiced && (
         <p className="text-muted-foreground mb-3 text-sm">
-          Matching invoices: <span className="text-foreground font-medium tabular-nums">{formatMoney(invoiced)}</span> invoiced ·{" "}
-          <span className="text-foreground font-medium tabular-nums">{formatMoney(collected)}</span> collected ·{" "}
-          <span className="text-foreground font-medium tabular-nums">{formatMoney(invoiced.minus(collected ?? 0))}</span> outstanding
+          {t("Matching invoices:")} <span className="text-foreground font-medium tabular-nums">{formatMoney(invoiced)}</span> {t("invoiced")} ·{" "}
+          <span className="text-foreground font-medium tabular-nums">{formatMoney(collected)}</span> {t("collected")} ·{" "}
+          <span className="text-foreground font-medium tabular-nums">{formatMoney(invoiced.minus(collected ?? 0))}</span> {t("outstanding")}
         </p>
       )}
       <div className="bg-card rounded-xl border">
         {rows.length === 0 ? (
-          <Empty>No invoices match these filters.</Empty>
+          <Empty>{t("No invoices match these filters.")}</Empty>
         ) : (
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead className="pl-4">Invoice</TableHead>
-                <TableHead>Customer</TableHead>
-                <TableHead>Issued</TableHead>
-                <TableHead>Due</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead className="text-right">Total</TableHead>
-                <TableHead className="pr-4 text-right">Balance</TableHead>
+                <TableHead className="ps-4">{t("Invoice")}</TableHead>
+                <TableHead>{t("Customer")}</TableHead>
+                <TableHead>{t("Issued")}</TableHead>
+                <TableHead>{t("Due")}</TableHead>
+                <TableHead>{t("Status")}</TableHead>
+                <TableHead className="text-end">{t("Total")}</TableHead>
+                <TableHead className="pe-4 text-end">{t("Balance")}</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -123,19 +128,19 @@ async function Invoices({ params }: { params: InvoiceListParams }) {
                 const overdue = i.dueDate && i.dueDate < today && (i.status === "UNPAID" || i.status === "PARTIAL");
                 return (
                   <TableRow key={i.id} className="relative">
-                    <TableCell className="pl-4">
+                    <TableCell className="ps-4">
                       <Link href={`/finance/invoices/${i.id}`} className="font-mono text-[13px] font-medium after:absolute after:inset-0 hover:underline">
                         {i.invoiceNo}
                       </Link>
                     </TableCell>
                     <TableCell className="max-w-48 truncate">{i.customer.name}</TableCell>
-                    <TableCell className="text-sm">{formatDate(i.issueDate)}</TableCell>
-                    <TableCell className={cn("text-sm", overdue && "text-destructive font-medium")}>{formatDate(i.dueDate)}</TableCell>
+                    <TableCell className="text-sm">{formatDate(i.issueDate, t.lang)}</TableCell>
+                    <TableCell className={cn("text-sm", overdue && "text-destructive font-medium")}>{formatDate(i.dueDate, t.lang)}</TableCell>
                     <TableCell>
                       <InvoiceStatusBadge status={i.status} />
                     </TableCell>
-                    <TableCell className="text-right tabular-nums">{formatMoney(i.totalAmount)}</TableCell>
-                    <TableCell className="pr-4 text-right tabular-nums">{i.status === "CANCELLED" || balance.isZero() ? "—" : formatMoney(balance)}</TableCell>
+                    <TableCell className="text-end tabular-nums">{formatMoney(i.totalAmount)}</TableCell>
+                    <TableCell className="pe-4 text-end tabular-nums">{i.status === "CANCELLED" || balance.isZero() ? "—" : formatMoney(balance)}</TableCell>
                   </TableRow>
                 );
               })}
@@ -151,39 +156,40 @@ async function Invoices({ params }: { params: InvoiceListParams }) {
 }
 
 async function Quotes({ params }: { params: InvoiceListParams }) {
+  const t = await getT();
   const { rows, total, page } = await listQuotations(params);
   return (
     <>
       <div className="bg-card rounded-xl border">
         {rows.length === 0 ? (
-          <Empty>No quotations match these filters.</Empty>
+          <Empty>{t("No quotations match these filters.")}</Empty>
         ) : (
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead className="pl-4">Quotation</TableHead>
-                <TableHead>Customer</TableHead>
-                <TableHead>Date</TableHead>
-                <TableHead>Valid until</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead className="pr-4 text-right">Total</TableHead>
+                <TableHead className="ps-4">{t("Quotation")}</TableHead>
+                <TableHead>{t("Customer")}</TableHead>
+                <TableHead>{t("Date")}</TableHead>
+                <TableHead>{t("Valid until")}</TableHead>
+                <TableHead>{t("Status")}</TableHead>
+                <TableHead className="pe-4 text-end">{t("Total")}</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {rows.map((q) => (
                 <TableRow key={q.id} className="relative">
-                  <TableCell className="pl-4">
+                  <TableCell className="ps-4">
                     <Link href={`/finance/invoices/quotes/${q.id}`} className="font-mono text-[13px] font-medium after:absolute after:inset-0 hover:underline">
                       {q.quoteNo}
                     </Link>
                   </TableCell>
                   <TableCell className="max-w-48 truncate">{q.customer.name}</TableCell>
-                  <TableCell className="text-sm">{formatDate(q.issueDate)}</TableCell>
-                  <TableCell className="text-sm">{formatDate(q.validUntil)}</TableCell>
+                  <TableCell className="text-sm">{formatDate(q.issueDate, t.lang)}</TableCell>
+                  <TableCell className="text-sm">{formatDate(q.validUntil, t.lang)}</TableCell>
                   <TableCell>
                     <QuoteStatusBadge status={q.status} />
                   </TableCell>
-                  <TableCell className="pr-4 text-right tabular-nums">{formatMoney(q.totalAmount)}</TableCell>
+                  <TableCell className="pe-4 text-end tabular-nums">{formatMoney(q.totalAmount)}</TableCell>
                 </TableRow>
               ))}
             </TableBody>

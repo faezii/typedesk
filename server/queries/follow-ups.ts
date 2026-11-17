@@ -4,6 +4,7 @@ import { addDays, addMonths, endOfMonth, endOfWeek, startOfMonth, startOfWeek } 
 import { TZDate } from "@date-fns/tz";
 import { TIMEZONE, zone, formatLocal } from "@/lib/dates";
 import { FOLLOW_UP_GROUPS, followUpGroup, type FollowUpGroup } from "@/lib/follow-ups";
+import type { Lang } from "@/lib/i18n/translate";
 import { FOLLOW_UP_TYPE_LABEL } from "@/lib/labels";
 import { prisma } from "@/lib/prisma";
 
@@ -49,7 +50,7 @@ export async function listFollowUps(p: FollowUpParams) {
 }
 
 /** Month grid (Monday-first, Doha days) with every follow-up placed on its day. */
-export async function followUpCalendar(p: FollowUpParams) {
+export async function followUpCalendar(p: FollowUpParams, lang?: Lang) {
   const m = /^(\d{4})-(\d{2})$/.exec(p.month ?? "");
   const anchor = m ? new TZDate(+m[1], +m[2] - 1, 1, TIMEZONE) : new TZDate(Date.now(), TIMEZONE);
   const monthStart = startOfMonth(anchor, { in: zone });
@@ -74,7 +75,7 @@ export async function followUpCalendar(p: FollowUpParams) {
   }
   return {
     days,
-    label: formatLocal(monthStart, "MMMM yyyy"),
+    label: formatLocal(monthStart, "MMMM yyyy", lang),
     prev: formatLocal(addMonths(monthStart, -1, { in: zone }), "yyyy-MM"),
     next: formatLocal(addMonths(monthStart, 1, { in: zone }), "yyyy-MM"),
     today: formatLocal(new Date(), "yyyy-MM-dd"),

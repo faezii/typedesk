@@ -1,9 +1,10 @@
+import { getT } from "@/lib/i18n/server";
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 
-export function Panel({
+export async function Panel({
   title,
   description,
   href,
@@ -16,6 +17,7 @@ export function Panel({
   className?: string;
   children: React.ReactNode;
 }) {
+  const t = await getT();
   return (
     <section className={cn("bg-card flex min-w-0 flex-col rounded-xl border", className)}>
       <header className="flex items-start justify-between gap-3 px-5 pt-4 pb-3">
@@ -25,7 +27,7 @@ export function Panel({
         </div>
         {href && (
           <Link href={href} className="text-primary inline-flex shrink-0 items-center gap-1 text-xs font-medium hover:underline">
-            View all <ArrowRight className="size-3" />
+            {t("View all")}{" "}<ArrowRight className="rtl:-scale-x-100 size-3" />
           </Link>
         )}
       </header>

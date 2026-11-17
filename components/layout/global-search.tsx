@@ -1,5 +1,7 @@
 "use client";
 
+
+import { useT } from "@/components/i18n";
 import { useEffect, useMemo, useRef, useState, useSyncExternalStore, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { ClipboardList, FileText, Loader2, Search, User } from "lucide-react";
@@ -30,6 +32,7 @@ function useIsMac() {
 }
 
 export function GlobalSearch({ role }: { role: Role }) {
+  const t = useT();
   const router = useRouter();
   const isMac = useIsMac();
   const [open, setOpen] = useState(false);
@@ -96,9 +99,9 @@ export function GlobalSearch({ role }: { role: Role }) {
         )}
       >
         <Search className="size-4 shrink-0" />
-        <span className="truncate">Search customers, orders, invoices…</span>
-        <kbd className="bg-background text-muted-foreground ml-auto hidden rounded border px-1.5 font-mono text-[11px] sm:inline-block">
-          {isMac ? "⌘" : "Ctrl"} K
+        <span className="truncate">{t("Search customers, orders, invoices…")}</span>
+        <kbd className="bg-background text-muted-foreground ms-auto hidden rounded border px-1.5 font-mono text-[11px] sm:inline-block">
+          {isMac ? "⌘" : t("Ctrl")} K
         </kbd>
       </button>
 
@@ -108,26 +111,25 @@ export function GlobalSearch({ role }: { role: Role }) {
           setOpen(o);
           if (!o) setQuery("");
         }}
-        title="Search"
-        description="Search customers, work orders and invoices"
+        title={t("Search")}
+        description={t("Search customers, work orders and invoices")}
         className="sm:max-w-xl"
       >
         <Command shouldFilter={false}>
           <CommandInput
             value={query}
             onValueChange={setQuery}
-            placeholder="Name, phone, QID, WO-2026-…, INV-2026-…"
+            placeholder={t("Name, phone, QID, WO-2026-…, INV-2026-…")}
           />
           <CommandList className="max-h-[min(420px,60vh)]">
             {loading && (
               <div className="text-muted-foreground flex items-center gap-2 px-3 py-2 text-xs">
-                <Loader2 className="size-3.5 animate-spin" /> Searching…
-              </div>
+                <Loader2 className="size-3.5 animate-spin" /> {t("Searching…")}</div>
             )}
-            {!loading && <CommandEmpty>No matches found.</CommandEmpty>}
+            {!loading && <CommandEmpty>{t("No matches found.")}</CommandEmpty>}
 
             {results.customers.length > 0 && (
-              <CommandGroup heading="Customers">
+              <CommandGroup heading={t("Customers")}>
                 {results.customers.map((c) => (
                   <CommandItem key={c.id} value={`customer-${c.id}`} onSelect={() => go(`/customers/${c.id}`)}>
                     <User className="text-muted-foreground" />
@@ -140,7 +142,7 @@ export function GlobalSearch({ role }: { role: Role }) {
               </CommandGroup>
             )}
             {results.workOrders.length > 0 && (
-              <CommandGroup heading="Work orders">
+              <CommandGroup heading={t("Work orders")}>
                 {results.workOrders.map((w) => (
                   <CommandItem key={w.id} value={`wo-${w.id}`} onSelect={() => go(`/work-orders/${w.id}`)}>
                     <ClipboardList className="text-muted-foreground" />
@@ -154,7 +156,7 @@ export function GlobalSearch({ role }: { role: Role }) {
               </CommandGroup>
             )}
             {results.invoices.length > 0 && (
-              <CommandGroup heading="Invoices">
+              <CommandGroup heading={t("Invoices")}>
                 {results.invoices.map((i) => (
                   <CommandItem key={i.id} value={`inv-${i.id}`} onSelect={() => go(`/finance/invoices/${i.id}`)}>
                     <FileText className="text-muted-foreground" />
@@ -168,11 +170,11 @@ export function GlobalSearch({ role }: { role: Role }) {
               </CommandGroup>
             )}
             {pages.length > 0 && (!hasRecords || query.trim().length < 2) && (
-              <CommandGroup heading="Go to">
+              <CommandGroup heading={t("Go to")}>
                 {pages.map((p) => (
                   <CommandItem key={p.href} value={`page-${p.href}`} onSelect={() => go(p.href)}>
                     <p.icon className="text-muted-foreground" />
-                    {p.title}
+                    {t(p.title)}
                   </CommandItem>
                 ))}
               </CommandGroup>

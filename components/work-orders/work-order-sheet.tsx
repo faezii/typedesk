@@ -1,5 +1,7 @@
 "use client";
 
+
+import { useT } from "@/components/i18n";
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { useForm, useWatch } from "react-hook-form";
@@ -47,6 +49,7 @@ export function WorkOrderSheet({
   defaultCustomer?: CustomerOption;
   children: React.ReactNode;
 }) {
+  const t = useT();
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [pending, startTransition] = useTransition();
@@ -75,10 +78,10 @@ export function WorkOrderSheet({
         for (const [field, message] of Object.entries(res.fieldErrors ?? {})) {
           form.setError(field as keyof WorkOrderFormValues, { message });
         }
-        toast.error(res.error);
+        toast.error(t(res.error));
         return;
       }
-      toast.success(workOrderId ? "Work order updated" : "Work order created");
+      toast.success(workOrderId ? t("Work order updated") : t("Work order created"));
       setOpen(false);
       if (workOrderId) router.refresh();
       else router.push(`/work-orders/${res.data.id}`);
@@ -103,8 +106,8 @@ export function WorkOrderSheet({
       <SheetTrigger asChild>{children}</SheetTrigger>
       <SheetContent className="w-full gap-0 sm:max-w-xl">
         <SheetHeader className="border-b">
-          <SheetTitle>{workOrderId ? "Edit work order" : "New work order"}</SheetTitle>
-          <SheetDescription>The total is calculated from quantity × unit rate (excl. VAT).</SheetDescription>
+          <SheetTitle>{workOrderId ? t("Edit work order") : t("New work order")}</SheetTitle>
+          <SheetDescription>{t("The total is calculated from quantity × unit rate (excl. VAT).")}</SheetDescription>
         </SheetHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="flex min-h-0 flex-1 flex-col" noValidate>
@@ -114,7 +117,7 @@ export function WorkOrderSheet({
                 name="customerId"
                 render={({ fieldState }) => (
                   <FormItem>
-                    <FormLabel>Customer</FormLabel>
+                    <FormLabel>{t("Customer")}</FormLabel>
                     <CustomerPicker
                       value={customer}
                       allowClear={false}
@@ -134,7 +137,7 @@ export function WorkOrderSheet({
                 name="serviceId"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Service</FormLabel>
+                    <FormLabel>{t("Service")}</FormLabel>
                     <Select
                       value={field.value}
                       onValueChange={(id) => {
@@ -152,19 +155,17 @@ export function WorkOrderSheet({
                     >
                       <FormControl>
                         <SelectTrigger className="w-full min-w-0">
-                          <span className="min-w-0 flex-1 truncate text-left">
-                            <SelectValue placeholder="Choose a service…" />
+                          <span className="min-w-0 flex-1 truncate text-start">
+                            <SelectValue placeholder={t("Choose a service…")} />
                           </span>
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
                         {byCategory.map(([category, services]) => (
                           <SelectGroup key={category}>
-                            <SelectLabel>{SERVICE_CATEGORY_LABEL[category as ServiceCategory]}</SelectLabel>
+                            <SelectLabel>{t(SERVICE_CATEGORY_LABEL[category as ServiceCategory])}</SelectLabel>
                             {services.map((s) => (
-                              <SelectItem key={s.id} value={s.id}>
-                                {s.title} · QAR {s.defaultPrice}/{SERVICE_UNIT_LABEL[s.unit]}
-                              </SelectItem>
+                              <SelectItem key={s.id} value={s.id}>{t("{title} · QAR {defaultPrice}/{label}", { title: s.title, defaultPrice: s.defaultPrice, label: t(SERVICE_UNIT_LABEL[s.unit]) })}</SelectItem>
                             ))}
                           </SelectGroup>
                         ))}
@@ -177,7 +178,7 @@ export function WorkOrderSheet({
 
               {translating && (
                 <fieldset className="bg-muted/40 space-y-4 rounded-lg border p-4">
-                  <legend className="px-1 text-sm font-medium">Translation details</legend>
+                  <legend className="px-1 text-sm font-medium">{t("Translation details")}</legend>
                   <div className="grid gap-4 sm:grid-cols-2">
                     {(["sourceLang", "targetLang"] as const).map((name) => (
                       <FormField
@@ -186,17 +187,17 @@ export function WorkOrderSheet({
                         name={`translation.${name}`}
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>{name === "sourceLang" ? "From" : "To"}</FormLabel>
+                            <FormLabel>{name === "sourceLang" ? t("From") : t("To")}</FormLabel>
                             <Select value={field.value} onValueChange={field.onChange}>
                               <FormControl>
                                 <SelectTrigger className="w-full">
-                                  <SelectValue placeholder="Language" />
+                                  <SelectValue placeholder={t("Language")} />
                                 </SelectTrigger>
                               </FormControl>
                               <SelectContent>
                                 {LANGUAGES.map((l) => (
                                   <SelectItem key={l} value={l}>
-                                    {l}
+                                    {t(l)}
                                   </SelectItem>
                                 ))}
                               </SelectContent>
@@ -213,7 +214,7 @@ export function WorkOrderSheet({
                         name={`translation.${name}`}
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>{name === "pageCount" ? "Pages" : "Words"}</FormLabel>
+                            <FormLabel>{name === "pageCount" ? t("Pages") : t("Words")}</FormLabel>
                             <FormControl>
                               <Input
                                 inputMode="numeric"
@@ -239,7 +240,7 @@ export function WorkOrderSheet({
                         <FormControl>
                           <Checkbox checked={field.value} onCheckedChange={(v) => field.onChange(v === true)} />
                         </FormControl>
-                        <FormLabel className="font-normal">Certified (MOJ legal translation, stamped)</FormLabel>
+                        <FormLabel className="font-normal">{t("Certified (MOJ legal translation, stamped)")}</FormLabel>
                       </FormItem>
                     )}
                   />
@@ -252,7 +253,7 @@ export function WorkOrderSheet({
                   name="quantity"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Quantity{service ? ` (${SERVICE_UNIT_LABEL[service.unit]}s)` : ""}</FormLabel>
+                      <FormLabel>{service ? t("Quantity ({unit}s)", { unit: t(SERVICE_UNIT_LABEL[service.unit]) }) : t("Quantity")}</FormLabel>
                       <FormControl>
                         <Input inputMode="decimal" {...field} />
                       </FormControl>
@@ -265,7 +266,7 @@ export function WorkOrderSheet({
                   name="unitPrice"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Unit rate (QAR)</FormLabel>
+                      <FormLabel>{t("Unit rate (QAR)")}</FormLabel>
                       <FormControl>
                         <Input inputMode="decimal" {...field} />
                       </FormControl>
@@ -274,10 +275,10 @@ export function WorkOrderSheet({
                   )}
                 />
                 <div className="space-y-2">
-                  <div className="text-sm font-medium">Total (excl. VAT)</div>
+                  <div className="text-sm font-medium">{t("Total (excl. VAT)")}</div>
                   <div className="flex h-8 items-center text-sm font-semibold tabular-nums" aria-live="polite">
                     {Number.isFinite(estimate) && estimate > 0
-                      ? `QAR ${estimate.toLocaleString("en-QA", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+                      ? t("QAR {value}", { value: estimate.toLocaleString("en-QA", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) })
                       : "—"}
                   </div>
                 </div>
@@ -289,7 +290,7 @@ export function WorkOrderSheet({
                   name="priority"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Priority</FormLabel>
+                      <FormLabel>{t("Priority")}</FormLabel>
                       <Select value={field.value} onValueChange={field.onChange}>
                         <FormControl>
                           <SelectTrigger className="w-full">
@@ -297,9 +298,9 @@ export function WorkOrderSheet({
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                          <SelectItem value="NORMAL">Normal</SelectItem>
-                          <SelectItem value="HIGH">High</SelectItem>
-                          <SelectItem value="URGENT">Urgent</SelectItem>
+                          <SelectItem value="NORMAL">{t("Normal")}</SelectItem>
+                          <SelectItem value="HIGH">{t("High")}</SelectItem>
+                          <SelectItem value="URGENT">{t("Urgent")}</SelectItem>
                         </SelectContent>
                       </Select>
                     </FormItem>
@@ -310,7 +311,7 @@ export function WorkOrderSheet({
                   name="deadline"
                   render={({ field }) => (
                     <FormItem className="sm:col-span-2">
-                      <FormLabel>Deadline</FormLabel>
+                      <FormLabel>{t("Deadline")}</FormLabel>
                       <FormControl>
                         <Input type="datetime-local" {...field} />
                       </FormControl>
@@ -325,7 +326,7 @@ export function WorkOrderSheet({
                 name="assignedToId"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Assigned to</FormLabel>
+                    <FormLabel>{t("Assigned to")}</FormLabel>
                     <Select value={field.value || "none"} onValueChange={(v) => field.onChange(v === "none" ? "" : v)}>
                       <FormControl>
                         <SelectTrigger className="w-full">
@@ -333,7 +334,7 @@ export function WorkOrderSheet({
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        <SelectItem value="none">Unassigned</SelectItem>
+                        <SelectItem value="none">{t("Unassigned")}</SelectItem>
                         {options.users.map((u) => (
                           <SelectItem key={u.id} value={u.id}>
                             {u.name}
@@ -351,9 +352,9 @@ export function WorkOrderSheet({
                 name="notes"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Notes</FormLabel>
+                    <FormLabel>{t("Notes")}</FormLabel>
                     <FormControl>
-                      <Textarea rows={3} placeholder="Document name, client instructions…" {...field} value={field.value ?? ""} />
+                      <Textarea rows={3} placeholder={t("Document name, client instructions…")} {...field} value={field.value ?? ""} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -362,11 +363,10 @@ export function WorkOrderSheet({
             </div>
             <SheetFooter className="border-t sm:flex-row sm:justify-end">
               <Button type="button" variant="outline" onClick={() => setOpen(false)}>
-                Cancel
-              </Button>
+                {t("Cancel")}</Button>
               <Button type="submit" disabled={pending}>
                 {pending && <Loader2 className="animate-spin" />}
-                {workOrderId ? "Save changes" : "Create work order"}
+                {workOrderId ? t("Save changes") : t("Create work order")}
               </Button>
             </SheetFooter>
           </form>

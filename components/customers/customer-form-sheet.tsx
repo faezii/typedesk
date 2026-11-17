@@ -1,5 +1,7 @@
 "use client";
 
+
+import { useT } from "@/components/i18n";
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { useForm, useWatch } from "react-hook-form";
@@ -40,6 +42,7 @@ export function CustomerFormSheet({
   defaultValues?: CustomerFormValues;
   children: React.ReactNode;
 }) {
+  const t = useT();
   const [open, setOpen] = useState(false);
   const [pending, startTransition] = useTransition();
   const router = useRouter();
@@ -58,10 +61,10 @@ export function CustomerFormSheet({
         for (const [field, message] of Object.entries(res.fieldErrors ?? {})) {
           form.setError(field as keyof CustomerFormValues, { message });
         }
-        toast.error(res.error);
+        toast.error(t(res.error));
         return;
       }
-      toast.success(customerId ? "Customer updated" : "Customer created");
+      toast.success(customerId ? t("Customer updated") : t("Customer created"));
       setOpen(false);
       if (customerId) router.refresh();
       else {
@@ -82,8 +85,8 @@ export function CustomerFormSheet({
       <SheetTrigger asChild>{children}</SheetTrigger>
       <SheetContent className="w-full gap-0 sm:max-w-lg">
         <SheetHeader className="border-b">
-          <SheetTitle>{customerId ? "Edit customer" : "New customer"}</SheetTitle>
-          <SheetDescription>Phone numbers and QIDs are checked and formatted automatically.</SheetDescription>
+          <SheetTitle>{customerId ? t("Edit customer") : t("New customer")}</SheetTitle>
+          <SheetDescription>{t("Phone numbers and QIDs are checked and formatted automatically.")}</SheetDescription>
         </SheetHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="flex min-h-0 flex-1 flex-col" noValidate>
@@ -94,7 +97,7 @@ export function CustomerFormSheet({
                   name="type"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Type</FormLabel>
+                      <FormLabel>{t("Type")}</FormLabel>
                       <Select value={field.value} onValueChange={field.onChange}>
                         <FormControl>
                           <SelectTrigger className="w-full">
@@ -102,30 +105,30 @@ export function CustomerFormSheet({
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                          <SelectItem value="INDIVIDUAL">Individual</SelectItem>
-                          <SelectItem value="COMPANY">Company</SelectItem>
+                          <SelectItem value="INDIVIDUAL">{t("Individual")}</SelectItem>
+                          <SelectItem value="COMPANY">{t("Company")}</SelectItem>
                         </SelectContent>
                       </Select>
                     </FormItem>
                   )}
                 />
-                <TextField form={form} name="name" label={isCompany ? "Contact name" : "Full name"} autoComplete="off" />
-                {isCompany && <TextField form={form} name="companyName" label="Company name" className="sm:col-span-2" />}
-                <TextField form={form} name="phone" label="Phone" placeholder="+974 5512 3456" inputMode="tel" />
-                <TextField form={form} name="email" label="Email" type="email" placeholder="Optional" />
-                <TextField form={form} name="nationality" label="Nationality" placeholder="Optional" />
-                {isCompany && <TextField form={form} name="taxNo" label="CR / tax no." placeholder="e.g. CR 123456" />}
+                <TextField form={form} name="name" label={isCompany ? t("Contact name") : t("Full name")} autoComplete="off" />
+                {isCompany && <TextField form={form} name="companyName" label={t("Company name")} className="sm:col-span-2" />}
+                <TextField form={form} name="phone" label={t("Phone")} placeholder="+974 5512 3456" inputMode="tel" />
+                <TextField form={form} name="email" label={t("Email")} type="email" placeholder={t("Optional")} />
+                <TextField form={form} name="nationality" label={t("Nationality")} placeholder={t("Optional")} />
+                {isCompany && <TextField form={form} name="taxNo" label={t("CR / tax no.")} placeholder={t("e.g. CR 123456")} />}
               </div>
 
               <fieldset className="space-y-4">
-                <legend className="text-muted-foreground mb-3 text-xs font-medium tracking-wider uppercase">Identity documents</legend>
+                <legend className="text-muted-foreground mb-3 text-xs font-medium tracking-wider uppercase">{t("Identity documents")}</legend>
                 <div className="grid gap-4 sm:grid-cols-2">
-                  <TextField form={form} name="nationalId" label="QID" placeholder="11 digits" inputMode="numeric" />
-                  <TextField form={form} name="nationalIdExpiry" label="QID expiry" type="date" />
-                  <TextField form={form} name="passportNo" label="Passport no." placeholder="Optional" />
-                  <TextField form={form} name="passportExpiry" label="Passport expiry" type="date" />
+                  <TextField form={form} name="nationalId" label={t("QID")} placeholder={t("11 digits")} inputMode="numeric" />
+                  <TextField form={form} name="nationalIdExpiry" label={t("QID expiry")} type="date" />
+                  <TextField form={form} name="passportNo" label={t("Passport no.")} placeholder={t("Optional")} />
+                  <TextField form={form} name="passportExpiry" label={t("Passport expiry")} type="date" />
                 </div>
-                <FormDescription>A follow-up is scheduled automatically 30 days before each expiry date.</FormDescription>
+                <FormDescription>{t("A follow-up is scheduled automatically 30 days before each expiry date.")}</FormDescription>
               </fieldset>
 
               <FormField
@@ -133,9 +136,9 @@ export function CustomerFormSheet({
                 name="notes"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Notes</FormLabel>
+                    <FormLabel>{t("Notes")}</FormLabel>
                     <FormControl>
-                      <Textarea rows={3} placeholder="Preferences, instructions…" {...field} />
+                      <Textarea rows={3} placeholder={t("Preferences, instructions…")} {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -144,11 +147,10 @@ export function CustomerFormSheet({
             </div>
             <SheetFooter className="border-t sm:flex-row sm:justify-end">
               <Button type="button" variant="outline" onClick={() => setOpen(false)}>
-                Cancel
-              </Button>
+                {t("Cancel")}</Button>
               <Button type="submit" disabled={pending}>
                 {pending && <Loader2 className="animate-spin" />}
-                {customerId ? "Save changes" : "Create customer"}
+                {customerId ? t("Save changes") : t("Create customer")}
               </Button>
             </SheetFooter>
           </form>
