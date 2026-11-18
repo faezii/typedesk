@@ -7,7 +7,7 @@ import { s3, s3Get, s3Put } from "./s3";
 // Local disk (UPLOAD_DIR) unless S3_BUCKET is set — use S3/R2 on hosts without a persistent disk (Vercel).
 const ROOT = path.resolve(/*turbopackIgnore: true*/ process.env.UPLOAD_DIR ?? "./uploads");
 
-export const MAX_UPLOAD_BYTES = 10 * 1024 * 1024;
+export const MAX_UPLOAD_BYTES = 4 * 1024 * 1024;
 
 /** Allowed types, identified by their leading bytes — the browser's claimed MIME type is not trusted. */
 const TYPES = [
@@ -24,7 +24,7 @@ export class UploadError extends Error {}
 
 export async function saveUpload(file: File, accept: readonly (typeof TYPES)[number]["ext"][] = ["pdf", "jpg", "png", "docx"]) {
   if (file.size === 0) throw new UploadError("The file is empty.");
-  if (file.size > MAX_UPLOAD_BYTES) throw new UploadError("Files must be 10 MB or smaller.");
+  if (file.size > MAX_UPLOAD_BYTES) throw new UploadError("Files must be 4 MB or smaller.");
 
   const bytes = Buffer.from(await file.arrayBuffer());
   const type = TYPES.find((t) => t.magic.every((b, i) => bytes[i] === b));

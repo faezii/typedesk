@@ -17,7 +17,7 @@ import { CustomerPicker, type CustomerOption } from "@/components/customers/cust
 import { findCustomerWorkOrders, uploadDocument } from "@/server/actions/documents";
 import type { DocumentCategory } from "@prisma/client";
 
-const MAX_BYTES = 10 * 1024 * 1024;
+const MAX_BYTES = 4 * 1024 * 1024;
 const ACCEPT = ".pdf,.jpg,.jpeg,.png,.docx";
 const OK_EXT = /\.(pdf|jpe?g|png|docx)$/i;
 
@@ -70,7 +70,7 @@ export function UploadDialog({
   function pick(f: File | undefined) {
     if (!f) return;
     if (!OK_EXT.test(f.name)) return setFileError(t("Only PDF, JPG, PNG and DOCX files are allowed."));
-    if (f.size > MAX_BYTES) return setFileError(t("Files must be 10 MB or smaller."));
+    if (f.size > MAX_BYTES) return setFileError(t("Files must be 4 MB or smaller."));
     setFileError(null);
     setFile(f);
     if (!name) setName(f.name.replace(/\.[^.]+$/, ""));
@@ -111,7 +111,7 @@ export function UploadDialog({
       <DialogContent className="sm:max-w-lg">
         <DialogHeader>
           <DialogTitle>{t("Upload document")}</DialogTitle>
-          <DialogDescription>{t("PDF, JPG, PNG or DOCX, up to 10 MB.")}</DialogDescription>
+          <DialogDescription>{t("PDF, JPG, PNG or DOCX, up to 4 MB.")}</DialogDescription>
         </DialogHeader>
         <form onSubmit={submit} className="space-y-4">
           {/* Drop zone — the hidden input keeps it keyboard and screen-reader accessible. */}

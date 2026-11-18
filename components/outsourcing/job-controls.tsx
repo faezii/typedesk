@@ -85,7 +85,7 @@ export function DeliveryUpload({ id }: { id: string }) {
           const file = e.target.files?.[0];
           e.target.value = "";
           if (!file) return;
-          if (file.size > 10 * 1024 * 1024) return void toast.error(t("Files must be 10 MB or smaller."));
+          if (file.size > 4 * 1024 * 1024) return void toast.error(t("Files must be 4 MB or smaller."));
           const fd = new FormData();
           fd.set("file", file);
           run(() => uploadDelivery(id, fd), "Delivery uploaded");

@@ -3,7 +3,8 @@
 
 import { useT } from "@/components/i18n";
 import { useEffect, useState } from "react";
-import { Check, ChevronsUpDown, X } from "lucide-react";
+import { Check, ChevronsUpDown, UserPlus, X } from "lucide-react";
+import { CustomerFormSheet, EMPTY_CUSTOMER } from "@/components/customers/customer-form-sheet";
 import { Button } from "@/components/ui/button";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -30,6 +31,13 @@ export function CustomerPicker({
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<CustomerOption[]>([]);
+  // The new-customer form, prefilled from the search text; it lives outside the popover so closing the list doesn't unmount it.
+  const [draft, setDraft] = useState<typeof EMPTY_CUSTOMER | null>(null);
+  const typed = query.trim();
+  const startCreate = () => {
+    setOpen(false);
+    setDraft(/^\+?[\d\s-]+$/.test(typed) ? { ...EMPTY_CUSTOMER, phone: typed } : { ...EMPTY_CUSTOMER, name: typed });
+  };
 
   useEffect(() => {
     if (query.trim().length < 2) return;
@@ -83,9 +91,27 @@ export function CustomerPicker({
                 ))}
               </CommandGroup>
             )}
+            {typed.length >= 2 && (
+              <CommandGroup>
+                <CommandItem value="__create" onSelect={startCreate}>
+                  <UserPlus /> {t("Add “{name}” as a new customer", { name: typed })}
+                </CommandItem>
+              </CommandGroup>
+            )}
           </CommandList>
         </Command>
       </PopoverContent>
+      {draft && (
+        <CustomerFormSheet
+          open
+          defaultValues={draft}
+          onOpenChange={(o) => !o && setDraft(null)}
+          onCreated={(c) => {
+            onChange(c);
+            setQuery("");
+          }}
+        />
+      )}
     </Popover>
   );
 }

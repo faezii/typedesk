@@ -1,7 +1,7 @@
 "use client"
 
 
-import { T } from "@/components/i18n";
+import { T, useLang } from "@/components/i18n";
 import * as React from "react"
 import { cn } from "cn"
 import { Dialog as SheetPrimitive } from "radix-ui"
@@ -57,6 +57,8 @@ function SheetContent({
   side?: "top" | "right" | "bottom" | "left"
   showCloseButton?: boolean
 }) {
+  // Arabic mirrors the layout, so a right-hand sheet opens on the left (and the mobile menu on the right).
+  if (useLang() === "ar" && (side === "left" || side === "right")) side = side === "left" ? "right" : "left"
   return (
     <SheetPortal>
       <SheetOverlay />
@@ -74,7 +76,7 @@ function SheetContent({
           <SheetPrimitive.Close data-slot="sheet-close" asChild>
             <Button
               variant="ghost"
-              className="absolute top-3 right-3"
+              className="absolute top-3 end-3"
               size="icon-sm"
             >
               <XIcon

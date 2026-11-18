@@ -11,6 +11,7 @@ export const AR: Record<string, string> = {
   "Customers": "العملاء",
   "Client profiles, identity documents and balances.": "ملفات العملاء ووثائق الهوية والأرصدة.",
   "New customer": "عميل جديد",
+  "Add “{name}” as a new customer": "إضافة «{name}» كعميل جديد",
   "Search name, phone, ID…": "ابحث بالاسم أو الهاتف أو رقم الهوية…",
   "Customer type": "نوع العميل",
   "All types": "جميع الأنواع",
@@ -423,9 +424,7 @@ export const AR: Record<string, string> = {
   "Doha · Qatar": "الدوحة · قطر",
   "Use your staff email and password.": "استخدم بريدك الإلكتروني وكلمة مرور حسابك.",
   "Development logins": "حسابات التطوير",
-  "admin@ · manager@ · finance@ · typist@ · translator@typedesk.qa": "admin@ · manager@ · finance@ · typist@ · translator@typedesk.qa",
   "Password:": "كلمة المرور:",
-  "Password123!": "Password123!",
 
   // components/customers/customer-form-sheet.tsx
   "Customer updated": "تم تحديث العميل",
@@ -507,10 +506,10 @@ export const AR: Record<string, string> = {
 
   // components/documents/upload-dialog.tsx
   "Only PDF, JPG, PNG and DOCX files are allowed.": "يُسمح فقط بملفات PDF وJPG وPNG وDOCX.",
-  "Files must be 10 MB or smaller.": "يجب ألا يزيد حجم الملف عن 10 ميغابايت.",
+  "Files must be 4 MB or smaller.": "يجب ألا يزيد حجم الملف عن 4 ميغابايت.",
   "Document uploaded": "تم رفع المستند",
   "Upload document": "رفع مستند",
-  "PDF, JPG, PNG or DOCX, up to 10 MB.": "PDF أو JPG أو PNG أو DOCX، حتى 10 ميغابايت.",
+  "PDF, JPG, PNG or DOCX, up to 4 MB.": "PDF أو JPG أو PNG أو DOCX، حتى 4 ميغابايت.",
   "{value} KB": "{value} ك.ب",
   "{amount} MB": "{amount} م.ب",
   "Remove file": "إزالة الملف",

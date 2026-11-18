@@ -133,4 +133,9 @@
   html {
     @apply font-sans;
     }
+  /* Arabic UI: a cut-off English name keeps its beginning visible (each line takes its own text's direction). */
+  [dir="rtl"] .truncate {
+    unicode-bidi: plaintext;
+    text-align: right;
+    }
 }

@@ -93,9 +93,9 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
             <div className="bg-muted/50 text-muted-foreground mt-8 rounded-lg border border-dashed p-3.5 text-xs">
               <div className="text-foreground mb-1.5 font-medium">{t("Development logins")}</div>
               <div className="font-mono leading-relaxed">
-                {t("admin@ · manager@ · finance@ · typist@ · translator@typedesk.qa")}</div>
+                <span dir="ltr">admin@ · manager@ · finance@ · typist@ · translator@typedesk.qa</span></div>
               <div className="mt-1">
-                {t("Password:")}{" "}<span className="font-mono">{t("Password123!")}</span>
+                {t("Password:")}{" "}<span className="font-mono" dir="ltr">Password123!</span>
               </div>
             </div>
           )}

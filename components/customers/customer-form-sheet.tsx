@@ -17,7 +17,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { customerSchema, type CustomerData, type CustomerFormValues } from "@/lib/validation/customer";
 import { saveCustomer } from "@/server/actions/customers";
 
-const EMPTY: CustomerFormValues = {
+export const EMPTY_CUSTOMER: CustomerFormValues = {
   type: "INDIVIDUAL",
   name: "",
   companyName: "",
@@ -36,19 +36,32 @@ export function CustomerFormSheet({
   customerId,
   defaultValues,
   children,
+  open: openProp,
+  onOpenChange,
+  onCreated,
 }: {
   /** Omit to create a new customer. */
   customerId?: string;
   defaultValues?: CustomerFormValues;
-  children: React.ReactNode;
+  /** The trigger; omit when opening the form with `open` instead. */
+  children?: React.ReactNode;
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
+  /** Hands the new customer back (e.g. to the customer picker) instead of opening its page. */
+  onCreated?: (customer: { id: string; name: string }) => void;
 }) {
   const t = useT();
-  const [open, setOpen] = useState(false);
+  const [openState, setOpenState] = useState(false);
+  const open = openProp ?? openState;
+  const setOpen = (o: boolean) => {
+    setOpenState(o);
+    onOpenChange?.(o);
+  };
   const [pending, startTransition] = useTransition();
   const router = useRouter();
   const form = useForm<CustomerFormValues, unknown, CustomerData>({
     resolver: zodResolver(customerSchema),
-    defaultValues: defaultValues ?? EMPTY,
+    defaultValues: defaultValues ?? EMPTY_CUSTOMER,
   });
   const isCompany = useWatch({ control: form.control, name: "type" }) === "COMPANY";
 
@@ -67,8 +80,9 @@ export function CustomerFormSheet({
       toast.success(customerId ? t("Customer updated") : t("Customer created"));
       setOpen(false);
       if (customerId) router.refresh();
+      else if (onCreated) onCreated({ id: res.data.id, name: values.name.trim() });
       else {
-        form.reset(EMPTY);
+        form.reset(EMPTY_CUSTOMER);
         router.push(`/customers/${res.data.id}`);
       }
     });
@@ -79,17 +93,22 @@ export function CustomerFormSheet({
       open={open}
       onOpenChange={(o) => {
         setOpen(o);
-        if (o) form.reset(defaultValues ?? EMPTY);
+        if (o) form.reset(defaultValues ?? EMPTY_CUSTOMER);
       }}
     >
-      <SheetTrigger asChild>{children}</SheetTrigger>
+      {children && <SheetTrigger asChild>{children}</SheetTrigger>}
       <SheetContent className="w-full gap-0 sm:max-w-lg">
         <SheetHeader className="border-b">
           <SheetTitle>{customerId ? t("Edit customer") : t("New customer")}</SheetTitle>
           <SheetDescription>{t("Phone numbers and QIDs are checked and formatted automatically.")}</SheetDescription>
         </SheetHeader>
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="flex min-h-0 flex-1 flex-col" noValidate>
+          <form
+            // stopPropagation: opened from another form (work order, invoice), React would bubble this submit to it through the portal.
+            onSubmit={(e) => (e.stopPropagation(), form.handleSubmit(onSubmit)(e))}
+            className="flex min-h-0 flex-1 flex-col"
+            noValidate
+          >
             <div className="flex-1 space-y-5 overflow-y-auto p-4">
               <div className="grid gap-4 sm:grid-cols-2">
                 <FormField

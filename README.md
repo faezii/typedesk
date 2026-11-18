@@ -87,6 +87,8 @@ Vercel functions have no persistent disk, so uploads must go to a bucket.
    Don't run `db:seed` against a production database: it deletes everything first.
 
 3. **File storage.** In Cloudflare, create an R2 bucket (keep it private) and an R2 API token with *Object Read & Write* on that bucket. You need the account ID, access key ID and secret.
+   Or use **Neon Object Storage** in the same Neon project: create a private bucket and a credential with `storage:read` + `storage:write` on the branch; `S3_ENDPOINT` is the branch's storage endpoint, `S3_REGION` its AWS region (e.g. `ap-southeast-1`), `S3_ACCESS_KEY_ID` the `token_id` and `S3_SECRET_ACCESS_KEY` the `s3_secret_access_key`. (The live typedesk.procuregcc.com site uses this, bucket `typedesk-files`.)
+   Uploads are capped at 4 MB because Vercel functions reject request bodies over 4.5 MB.
 
 4. **Vercel.** Import the Git repository (framework preset: Next.js; the default build command runs `prisma generate && next build`). Under *Settings → Environment Variables* add `DATABASE_URL` (pooled), `AUTH_SECRET`, `S3_BUCKET`, `S3_ENDPOINT`, `S3_REGION=auto`, `S3_ACCESS_KEY_ID`, `S3_SECRET_ACCESS_KEY`. Deploy.
 

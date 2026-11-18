@@ -62,7 +62,7 @@ export function KanbanBoard({ cards: initial, canEdit, now }: { cards: BoardCard
         setCards((cs) => cs.map((c) => (c.id === card.id ? { ...c, status: from } : c)));
         toast.error(t(res.error));
       } else {
-        toast.success(`${card.orderNo} → ${t(WORK_ORDER_STATUS_LABEL[to])}`);
+        toast.success(t("{from} → {to}", { from: card.orderNo, to: t(WORK_ORDER_STATUS_LABEL[to]) }));
       }
       router.refresh();
     });

@@ -43,7 +43,7 @@ export function ExpenseDialog({
     fd.set("category", category);
     fd.set("vendorId", vendorId === "none" ? "" : vendorId);
     const receipt = fd.get("receipt");
-    if (receipt instanceof File && receipt.size > 10 * 1024 * 1024) return setErrors({ receipt: t("Files must be 10 MB or smaller.") });
+    if (receipt instanceof File && receipt.size > 4 * 1024 * 1024) return setErrors({ receipt: t("Files must be 4 MB or smaller.") });
     startTransition(async () => {
       const res = await saveExpense(expenseId ?? null, fd);
       if (!res.ok) {

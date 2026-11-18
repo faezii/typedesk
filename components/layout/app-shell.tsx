@@ -87,7 +87,7 @@ export function AppShell({
                 {!collapsed && <span>{t("Collapse")}</span>}
               </Button>
             </TooltipTrigger>
-            <TooltipContent side="right">
+            <TooltipContent side={t.lang === "ar" ? "left" : "right"}>
               {collapsed ? t("Expand sidebar") : t("Collapse sidebar")} <kbd className="ms-1 font-mono">{t("Ctrl B")}</kbd>
             </TooltipContent>
           </Tooltip>

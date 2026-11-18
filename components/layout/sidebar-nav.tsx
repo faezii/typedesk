@@ -65,7 +65,7 @@ export function SidebarNav({
             return collapsed ? (
               <Tooltip key={item.href}>
                 <TooltipTrigger asChild>{link}</TooltipTrigger>
-                <TooltipContent side="right">{t(item.title)}</TooltipContent>
+                <TooltipContent side={t.lang === "ar" ? "left" : "right"}>{t(item.title)}</TooltipContent>
               </Tooltip>
             ) : (
               link
