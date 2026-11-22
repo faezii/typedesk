@@ -8,6 +8,7 @@ import { can } from "@/lib/auth/permissions";
 import { guardAction, type CurrentUser } from "@/lib/auth/session";
 import { generateTempPassword } from "@/lib/passwords";
 import { prisma } from "@/lib/prisma";
+import { basePrisma } from "@/lib/db/base"; // emails are unique across all centers
 import { employeeSchema, type EmployeeFormValues } from "@/lib/validation/team";
 import { HISTORY_COUNT, hasHistory } from "@/server/queries/employees";
 
@@ -35,12 +36,12 @@ export async function createEmployee(input: EmployeeFormValues): Promise<ActionR
   if (!parsed.success) return { ok: false, error: "Please fix the highlighted fields.", fieldErrors: fieldErrors(parsed.error.issues) };
   const d = parsed.data;
   if (!mayManage(user, null, d.role)) return { ok: false, error: "Only an admin can create admin accounts.", fieldErrors: { role: "Not allowed" } };
-  if (await prisma.user.findUnique({ where: { email: d.email }, select: { id: true } })) {
+  if (await basePrisma.user.findUnique({ where: { email: d.email }, select: { id: true } })) {
     return { ok: false, error: "That email is already in use.", fieldErrors: { email: "Already in use" } };
   }
 
   const tempPassword = generateTempPassword();
-  const created = await prisma.user.create({ data: { ...d, passwordHash: await bcrypt.hash(tempPassword, 10), mustChangePassword: true } });
+  const created = await prisma.user.create({ data: { ...d, passwordHash: await bcrypt.hash(tempPassword, 10), mustChangePassword: true, emailVerifiedAt: new Date() } }); // the admin vouches for the address
   await log(user.id, created.id, "created", `Created ${d.role.toLowerCase()} account for ${d.name}`);
   revalidatePath("/employees");
   return { ok: true, data: { id: created.id, tempPassword } };
@@ -60,7 +61,7 @@ export async function updateEmployee(id: string, input: EmployeeFormValues): Pro
   if (target.role === "ADMIN" && d.role !== "ADMIN" && target.isActive && (await otherActiveAdmins(id)) === 0) {
     return { ok: false, error: "This is the last active admin. Make someone else an admin first.", fieldErrors: { role: "Last admin" } };
   }
-  const clash = await prisma.user.findFirst({ where: { email: d.email, id: { not: id } }, select: { id: true } });
+  const clash = await basePrisma.user.findFirst({ where: { email: d.email, id: { not: id } }, select: { id: true } });
   if (clash) return { ok: false, error: "That email is already in use.", fieldErrors: { email: "Already in use" } };
 
   await prisma.user.update({ where: { id }, data: d });

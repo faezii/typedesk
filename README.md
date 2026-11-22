@@ -49,6 +49,7 @@ Every seeded user has the password `Password123!`.
 | `S3_BUCKET` | no | Store files in an S3-compatible bucket instead of on disk. **Required on Vercel.** |
 | `APP_URL` | for email | Public address used in emailed links, e.g. `https://typedesk.procuregcc.com` |
 | `RESEND_API_KEY` | for email | [Resend](https://resend.com) key for forgot-password emails. Without it, production asks users to contact their administrator; development prints emails to the console. |
+| `PLATFORM_ADMIN_EMAILS` | no | Comma-separated owner emails that see every center at `/platform` (extend, activate, suspend trials) |
 | `EMAIL_FROM` | for email | Sender, e.g. `TypeDesk <no-reply@procuregcc.com>` (domain verified in Resend) |
 | `S3_ENDPOINT` | with bucket | R2: `https://<account-id>.r2.cloudflarestorage.com` · AWS: `https://s3.<region>.amazonaws.com` · MinIO: its URL |
 | `S3_REGION` | with bucket | `auto` for R2, the bucket's region for AWS (e.g. `me-central-1`) |
@@ -83,7 +84,7 @@ Vercel functions have no persistent disk, so uploads must go to a bucket.
 
    ```bash
    DATABASE_URL="<direct connection string>" npx prisma migrate deploy
-   DATABASE_URL="<direct connection string>" npm run create-admin -- owner@yourcentre.ae "Your Name"
+   DATABASE_URL="<direct connection string>" npm run create-admin -- owner@yourcentre.ae "Your Name" "Your Center"
    ```
 
    (PowerShell: `$env:DATABASE_URL="<direct connection string>"; npx prisma migrate deploy`.) Note the one-time password it prints.

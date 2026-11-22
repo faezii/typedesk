@@ -3,7 +3,7 @@ import { cache } from "react";
 import { redirect } from "next/navigation";
 import { z } from "zod";
 import { auth } from "@/auth";
-import { prisma } from "@/lib/prisma";
+import { basePrisma } from "@/lib/db/base";
 import { can, type Permission } from "./permissions";
 
 export type CurrentUser = NonNullable<Awaited<ReturnType<typeof getCurrentUser>>>;
@@ -15,17 +15,35 @@ export type CurrentUser = NonNullable<Awaited<ReturnType<typeof getCurrentUser>>
 export const getCurrentUser = cache(async () => {
   const session = await auth();
   if (!session?.user?.id) return null;
-  const user = await prisma.user.findUnique({
+  const user = await basePrisma.user.findUnique({
     where: { id: session.user.id },
-    select: { id: true, name: true, email: true, role: true, department: true, isActive: true, mustChangePassword: true },
+    select: {
+      id: true, name: true, email: true, role: true, department: true, isActive: true, mustChangePassword: true, organizationId: true,
+      organization: { select: { name: true, status: true, trialEndsAt: true } },
+    },
   });
   return user?.isActive ? user : null;
 });
+
+/** The signed-in user's center, for lib/prisma's scoping. Throws outside a signed-in request. */
+export async function currentOrgId() {
+  const user = await getCurrentUser();
+  if (!user) throw new AuthorizationError("Your session has expired. Please sign in again.");
+  return user.organizationId;
+}
+
+/** Why the center can't work right now (trial over, suspended), or null. */
+export function centerBlocked(org: CurrentUser["organization"], now = new Date()): string | null {
+  if (org.status === "SUSPENDED") return "This center's account is suspended.";
+  if (org.status === "TRIAL" && org.trialEndsAt && org.trialEndsAt < now) return "Your free trial has ended.";
+  return null;
+}
 
 /** For pages/layouts: redirect to /login when signed out. */
 export async function requireUser() {
   const user = await getCurrentUser();
   if (!user) redirect("/login");
+  if (centerBlocked(user.organization)) redirect("/blocked"); // before the page loads any data
   return user;
 }
 
@@ -68,6 +86,8 @@ export async function guardAction(
 export async function requirePermission(permission: Permission) {
   const user = await getCurrentUser();
   if (!user) throw new AuthorizationError("Your session has expired. Please sign in again.");
+  const blocked = centerBlocked(user.organization);
+  if (blocked) throw new AuthorizationError(blocked);
   if (!can(user.role, permission)) throw new AuthorizationError();
   return user;
 }

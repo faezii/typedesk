@@ -4,6 +4,7 @@ import { Prisma, type ExpenseCategory, type PaymentMethod } from "@prisma/client
 import { addMonths, startOfQuarter, startOfYear } from "date-fns";
 import { TIMEZONE, zone, endOfTodayLocal, formatLocal, monthsAgoLocal, parseDateInput, startOfMonthLocal, startOfTodayLocal } from "@/lib/dates";
 import { prisma } from "@/lib/prisma";
+import { currentOrgId } from "@/lib/auth/session";
 
 const zero = new Prisma.Decimal(0);
 const plain = (d: Date) => new Date(d.getTime());
@@ -116,9 +117,10 @@ export async function listExpenses(p: ExpenseParams) {
 /** Last 6 Doha months of expense totals (net of VAT) — chart data. */
 export async function expenseTrend(lang?: Lang) {
   const from = monthsAgoLocal(5);
+  const org = await currentOrgId(); // raw SQL isn't center-scoped by lib/prisma
   const rows = await prisma.$queryRaw<{ m: string; total: number }[]>(Prisma.sql`
     SELECT to_char(date_trunc('month', ("date" AT TIME ZONE 'UTC') AT TIME ZONE ${TIMEZONE}), 'YYYY-MM') AS m, SUM(amount)::float8 AS total
-    FROM "Expense" WHERE "date" >= ${from} GROUP BY 1`);
+    FROM "Expense" WHERE "organizationId" = ${org} AND "date" >= ${from} GROUP BY 1`);
   const byMonth = new Map(rows.map((r) => [r.m, r.total]));
   return Array.from({ length: 6 }, (_, i) => {
     const d = monthsAgoLocal(5 - i);
@@ -165,10 +167,11 @@ async function incomeBetween(start: Date, end: Date, basis: Basis) {
     });
     return { income: r._sum.subtotal ?? zero, vat: r._sum.vatAmount ?? zero };
   }
+  const org = await currentOrgId(); // raw SQL isn't center-scoped by lib/prisma
   const [r] = await prisma.$queryRaw<{ net: Prisma.Decimal | null; gross: Prisma.Decimal | null }[]>(Prisma.sql`
     SELECT SUM(p.amount * i.subtotal / NULLIF(i."totalAmount", 0)) AS net, SUM(p.amount) AS gross
     FROM "Payment" p JOIN "Invoice" i ON i.id = p."invoiceId"
-    WHERE i."deletedAt" IS NULL AND p."date" >= ${start} AND p."date" <= ${end}`);
+    WHERE p."organizationId" = ${org} AND i."deletedAt" IS NULL AND p."date" >= ${start} AND p."date" <= ${end}`);
   const net = new Prisma.Decimal(r?.net ?? 0).toDecimalPlaces(2);
   return { income: net, vat: new Prisma.Decimal(r?.gross ?? 0).minus(net) };
 }

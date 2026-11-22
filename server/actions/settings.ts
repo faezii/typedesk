@@ -11,10 +11,10 @@ import { settingsSchema, type SettingsFormValues } from "@/lib/validation/settin
 
 const MAX_LOGO_BYTES = 1024 * 1024; // embedded in every invoice PDF
 
-function setValues(values: Record<string, string>, userId: string, message: string) {
+function setValues(values: Record<string, string>, user: { id: string; organizationId: string }, message: string) {
   return prisma.$transaction([
-    ...Object.entries(values).map(([key, value]) => prisma.setting.upsert({ where: { key }, create: { key, value }, update: { value } })),
-    prisma.activityLog.create({ data: { entityType: "Setting", entityId: "settings", action: "updated", message, userId } }),
+    ...Object.entries(values).map(([key, value]) => prisma.setting.upsert({ where: { organizationId_key: { organizationId: user.organizationId, key } }, create: { key, value }, update: { value } })),
+    prisma.activityLog.create({ data: { entityType: "Setting", entityId: "settings", action: "updated", message, userId: user.id } }),
   ]);
 }
 
@@ -32,9 +32,11 @@ export async function saveSettings(input: SettingsFormValues): Promise<ActionRes
 
   await setValues(
     { ...company, vatRate: vatRate.toString() },
-    user.id,
+    user,
     before.equals(vatRate) ? "Updated company settings" : `Updated company settings; VAT rate ${before.times(100)}% → ${vatPercent}%`,
   );
+  // The center's name (account menu, owner's center list) follows the company name.
+  await prisma.organization.update({ where: { id: user.organizationId }, data: { name: company.companyName } });
   revalidatePath("/", "layout");
   return { ok: true, data: undefined };
 }
@@ -56,7 +58,7 @@ export async function saveLogo(formData: FormData): Promise<ActionResult> {
     }
   }
   // The old file stays in storage (like soft-deleted documents); it's just no longer served.
-  await setValues({ companyLogo: fileUrl }, user.id, fileUrl ? "Uploaded a new company logo" : "Removed the company logo");
+  await setValues({ companyLogo: fileUrl }, user, fileUrl ? "Uploaded a new company logo" : "Removed the company logo");
   revalidatePath("/", "layout");
   return { ok: true, data: undefined };
 }

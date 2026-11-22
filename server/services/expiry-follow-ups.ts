@@ -1,10 +1,11 @@
 import "server-only";
-import type { FollowUpType, Prisma } from "@prisma/client";
+import type { FollowUpType } from "@prisma/client";
 import { subDays } from "date-fns";
 import { EXPIRY_WARNING_DAYS } from "@/lib/expiry";
 import { zone, formatLocal } from "@/lib/dates";
+import type { Tx } from "@/lib/prisma";
 
-type Tx = Prisma.TransactionClient;
+
 type CustomerIds = { id: string; name: string; passportExpiry: Date | null; nationalIdExpiry: Date | null };
 
 const KINDS: { field: "passportExpiry" | "nationalIdExpiry"; key: string; type: FollowUpType; label: string }[] = [

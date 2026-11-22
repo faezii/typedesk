@@ -147,20 +147,62 @@ enum ExpenseCategory {
 
 // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ People â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
+enum OrgStatus {
+  TRIAL
+  ACTIVE
+  SUSPENDED
+}
+
+/// A typing center. Every business row carries organizationId; the app's Prisma client (lib/prisma.ts)
+/// adds the signed-in user's center to every query and write, so centers never see each other's data.
+model Organization {
+  id          String    @id @default(cuid())
+  name        String
+  phone       String?
+  status      OrgStatus @default(TRIAL)
+  trialEndsAt DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  users              User[]
+  customers          Customer[]
+  vendors            Vendor[]
+  services           Service[]
+  workOrders         WorkOrder[]
+  workOrderRevisions WorkOrderRevision[]
+  translationDetails TranslationDetail[]
+  tasks              Task[]
+  outsourcedWork     OutsourcedWork[]
+  documents          Document[]
+  followUps          FollowUp[]
+  quotations         Quotation[]
+  quotationItems     QuotationItem[]
+  invoices           Invoice[]
+  invoiceItems       InvoiceItem[]
+  payments           Payment[]
+  expenses           Expense[]
+  activityLogs       ActivityLog[]
+  settings           Setting[]
+  counters           Counter[]
+}
+
 model User {
-  id           String     @id @default(cuid())
-  name         String
-  email        String     @unique
-  passwordHash String
-  role         Role       @default(STAFF)
-  department   Department
-  phone        String?
-  isActive     Boolean    @default(true)
+  id                 String     @id @default(cuid())
+  organizationId     String     @default("") // set by lib/db/tenant.ts; "" fails the foreign key, so a row can never be saved without a center
+  name               String
+  email              String     @unique
+  passwordHash       String
+  role               Role       @default(STAFF)
+  department         Department
+  phone              String?
+  isActive           Boolean    @default(true)
   /// Set when an admin creates the user or resets their password; cleared when they choose their own.
-  mustChangePassword Boolean @default(false)
-  lastLoginAt  DateTime?
-  createdAt    DateTime   @default(now())
-  updatedAt    DateTime   @updatedAt
+  mustChangePassword Boolean    @default(false)
+  /// Null until the sign-up confirmation link is used; set for staff an admin creates.
+  emailVerifiedAt    DateTime?
+  lastLoginAt        DateTime?
+  createdAt          DateTime   @default(now())
+  updatedAt          DateTime   @updatedAt
 
   workOrders         WorkOrder[]         @relation("WorkOrderAssignee")
   tasks              Task[]              @relation("TaskAssignee")
@@ -172,8 +214,11 @@ model User {
   activity           ActivityLog[]
   authTokens         AuthToken[]
 
+  organization Organization @relation(fields: [organizationId], references: [id])
+
   @@index([role])
   @@index([department])
+  @@index([organizationId])
 }
 
 /// One-time links sent by email (e.g. password reset). Only the SHA-256 of the token is stored.
@@ -193,6 +238,7 @@ model AuthToken {
 
 model Customer {
   id               String       @id @default(cuid())
+  organizationId   String       @default("") // set by lib/db/tenant.ts; "" fails the foreign key, so a row can never be saved without a center
   name             String
   email            String?
   phone            String
@@ -216,56 +262,68 @@ model Customer {
   invoices   Invoice[]
   payments   Payment[]
 
+  organization Organization @relation(fields: [organizationId], references: [id])
+
   @@index([name])
   @@index([phone])
   @@index([nationalId])
   @@index([passportNo])
   @@index([deletedAt])
+  @@index([organizationId])
 }
 
 model Vendor {
-  id        String     @id @default(cuid())
-  name      String
-  type      VendorType @default(FREELANCER)
-  phone     String?
-  email     String?
-  languages String[]
-  notes     String?
-  isActive  Boolean    @default(true)
-  createdAt DateTime   @default(now())
-  updatedAt DateTime   @updatedAt
+  id             String     @id @default(cuid())
+  organizationId String     @default("") // set by lib/db/tenant.ts; "" fails the foreign key, so a row can never be saved without a center
+  name           String
+  type           VendorType @default(FREELANCER)
+  phone          String?
+  email          String?
+  languages      String[]
+  notes          String?
+  isActive       Boolean    @default(true)
+  createdAt      DateTime   @default(now())
+  updatedAt      DateTime   @updatedAt
 
   outsourcedWork OutsourcedWork[]
   expenses       Expense[]
 
+  organization Organization @relation(fields: [organizationId], references: [id])
+
   @@index([name])
+  @@index([organizationId])
 }
 
 // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ Catalogue â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 model Service {
-  id           String          @id @default(cuid())
-  title        String
-  category     ServiceCategory
-  unit         ServiceUnit     @default(PAGE)
-  defaultPrice Decimal         @db.Decimal(12, 2)
-  description  String?
-  isActive     Boolean         @default(true)
-  createdAt    DateTime        @default(now())
-  updatedAt    DateTime        @updatedAt
+  id             String          @id @default(cuid())
+  organizationId String          @default("") // set by lib/db/tenant.ts; "" fails the foreign key, so a row can never be saved without a center
+  title          String
+  category       ServiceCategory
+  unit           ServiceUnit     @default(PAGE)
+  defaultPrice   Decimal         @db.Decimal(12, 2)
+  description    String?
+  isActive       Boolean         @default(true)
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
 
   workOrders     WorkOrder[]
   quotationItems QuotationItem[]
   invoiceItems   InvoiceItem[]
 
+  organization Organization @relation(fields: [organizationId], references: [id])
+
   @@index([category])
+  @@index([organizationId])
 }
 
 // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ Operations â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 model WorkOrder {
   id              String          @id @default(cuid())
-  orderNo         String          @unique // WO-2026-0001
+  organizationId  String          @default("") // set by lib/db/tenant.ts; "" fails the foreign key, so a row can never be saved without a center
+  orderNo         String // WO-2026-0001
   customerId      String
   serviceId       String
   status          WorkOrderStatus @default(RECEIVED)
@@ -292,6 +350,9 @@ model WorkOrder {
   documents    Document[]
   invoiceItems InvoiceItem[]
 
+  organization Organization @relation(fields: [organizationId], references: [id])
+
+  @@unique([organizationId, orderNo])
   @@index([status])
   @@index([customerId])
   @@index([assignedToId])
@@ -301,195 +362,228 @@ model WorkOrder {
 }
 
 model WorkOrderRevision {
-  id            String    @id @default(cuid())
-  workOrderId   String
-  reason        String
-  requestedAt   DateTime  @default(now())
-  requestedById String?
-  resolvedAt    DateTime?
-  resolvedById  String?
-  resolution    String?
+  id             String    @id @default(cuid())
+  organizationId String    @default("") // set by lib/db/tenant.ts; "" fails the foreign key, so a row can never be saved without a center
+  workOrderId    String
+  reason         String
+  requestedAt    DateTime  @default(now())
+  requestedById  String?
+  resolvedAt     DateTime?
+  resolvedById   String?
+  resolution     String?
 
   workOrder   WorkOrder @relation(fields: [workOrderId], references: [id], onDelete: Cascade)
   requestedBy User?     @relation("RevisionRequester", fields: [requestedById], references: [id], onDelete: SetNull)
   resolvedBy  User?     @relation("RevisionResolver", fields: [resolvedById], references: [id], onDelete: SetNull)
 
+  organization Organization @relation(fields: [organizationId], references: [id])
+
   @@index([workOrderId])
   @@index([resolvedAt])
+  @@index([organizationId])
 }
 
 model TranslationDetail {
-  id          String  @id @default(cuid())
-  workOrderId String  @unique
-  wordCount   Int     @default(0)
-  pageCount   Int     @default(0)
-  sourceLang  String
-  targetLang  String
-  isCertified Boolean @default(true) // MOJ-certified legal translation
+  id             String  @id @default(cuid())
+  organizationId String  @default("") // set by lib/db/tenant.ts; "" fails the foreign key, so a row can never be saved without a center
+  workOrderId    String  @unique
+  wordCount      Int     @default(0)
+  pageCount      Int     @default(0)
+  sourceLang     String
+  targetLang     String
+  isCertified    Boolean @default(true) // MOJ-certified legal translation
 
   workOrder WorkOrder @relation(fields: [workOrderId], references: [id], onDelete: Cascade)
 
+  organization Organization @relation(fields: [organizationId], references: [id])
+
   @@index([sourceLang, targetLang])
+  @@index([organizationId])
 }
 
 model Task {
-  id           String     @id @default(cuid())
-  title        String
-  description  String?
-  status       TaskStatus @default(TODO)
-  priority     Priority   @default(NORMAL)
-  deadline     DateTime?
-  completedAt  DateTime?
-  assignedToId String?
-  workOrderId  String?
-  createdAt    DateTime   @default(now())
-  updatedAt    DateTime   @updatedAt
+  id             String     @id @default(cuid())
+  organizationId String     @default("") // set by lib/db/tenant.ts; "" fails the foreign key, so a row can never be saved without a center
+  title          String
+  description    String?
+  status         TaskStatus @default(TODO)
+  priority       Priority   @default(NORMAL)
+  deadline       DateTime?
+  completedAt    DateTime?
+  assignedToId   String?
+  workOrderId    String?
+  createdAt      DateTime   @default(now())
+  updatedAt      DateTime   @updatedAt
 
   assignedTo User?      @relation("TaskAssignee", fields: [assignedToId], references: [id], onDelete: SetNull)
   workOrder  WorkOrder? @relation(fields: [workOrderId], references: [id], onDelete: SetNull)
 
+  organization Organization @relation(fields: [organizationId], references: [id])
+
   @@index([status])
   @@index([assignedToId])
   @@index([deadline])
+  @@index([organizationId])
 }
 
 model OutsourcedWork {
-  id            String           @id @default(cuid())
-  workOrderId   String
-  vendorId      String
-  description   String
-  agreementCost Decimal          @db.Decimal(12, 2)
-  qaStatus      QaStatus         @default(PENDING)
-  paymentStatus SettlementStatus @default(UNPAID)
-  sentAt        DateTime         @default(now())
-  dueAt         DateTime?
-  receivedAt    DateTime?
-  createdAt     DateTime         @default(now())
-  updatedAt     DateTime         @updatedAt
+  id             String           @id @default(cuid())
+  organizationId String           @default("") // set by lib/db/tenant.ts; "" fails the foreign key, so a row can never be saved without a center
+  workOrderId    String
+  vendorId       String
+  description    String
+  agreementCost  Decimal          @db.Decimal(12, 2)
+  qaStatus       QaStatus         @default(PENDING)
+  paymentStatus  SettlementStatus @default(UNPAID)
+  sentAt         DateTime         @default(now())
+  dueAt          DateTime?
+  receivedAt     DateTime?
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
 
-  workOrder WorkOrder @relation(fields: [workOrderId], references: [id], onDelete: Cascade)
-  vendor    Vendor    @relation(fields: [vendorId], references: [id])
+  workOrder WorkOrder  @relation(fields: [workOrderId], references: [id], onDelete: Cascade)
+  vendor    Vendor     @relation(fields: [vendorId], references: [id])
   expense   Expense? // created automatically when marked PAID
   documents Document[]
+
+  organization Organization @relation(fields: [organizationId], references: [id])
 
   @@index([vendorId])
   @@index([workOrderId])
   @@index([qaStatus])
   @@index([paymentStatus])
+  @@index([organizationId])
 }
 
 model Document {
-  id           String           @id @default(cuid())
-  name         String
-  fileUrl      String
-  mimeType     String
-  size         Int // bytes
-  category     DocumentCategory
-  customerId   String?
-  workOrderId  String?
+  id               String           @id @default(cuid())
+  organizationId   String           @default("") // set by lib/db/tenant.ts; "" fails the foreign key, so a row can never be saved without a center
+  name             String
+  fileUrl          String
+  mimeType         String
+  size             Int // bytes
+  category         DocumentCategory
+  customerId       String?
+  workOrderId      String?
   /// Set for files a vendor delivered for an outsourced job.
   outsourcedWorkId String?
-  expiryDate   DateTime?
-  uploadedById String
-  deletedAt    DateTime?
-  createdAt    DateTime         @default(now())
+  expiryDate       DateTime?
+  uploadedById     String
+  deletedAt        DateTime?
+  createdAt        DateTime         @default(now())
 
   customer       Customer?       @relation(fields: [customerId], references: [id], onDelete: SetNull)
   workOrder      WorkOrder?      @relation(fields: [workOrderId], references: [id], onDelete: SetNull)
   outsourcedWork OutsourcedWork? @relation(fields: [outsourcedWorkId], references: [id], onDelete: SetNull)
-  uploadedBy User       @relation("DocumentUploader", fields: [uploadedById], references: [id])
+  uploadedBy     User            @relation("DocumentUploader", fields: [uploadedById], references: [id])
+
+  organization Organization @relation(fields: [organizationId], references: [id])
 
   @@index([category])
   @@index([customerId])
   @@index([workOrderId])
   @@index([expiryDate])
   @@index([deletedAt])
+  @@index([organizationId])
 }
 
 model FollowUp {
-  id           String         @id @default(cuid())
-  title        String
-  type         FollowUpType   @default(GENERAL)
-  status       FollowUpStatus @default(PENDING)
-  deadline     DateTime
-  customerId   String?
-  invoiceId    String? // set for auto-created PAYMENT_REMINDER follow-ups
+  id             String         @id @default(cuid())
+  organizationId String         @default("") // set by lib/db/tenant.ts; "" fails the foreign key, so a row can never be saved without a center
+  title          String
+  type           FollowUpType   @default(GENERAL)
+  status         FollowUpStatus @default(PENDING)
+  deadline       DateTime
+  customerId     String?
+  invoiceId      String? // set for auto-created PAYMENT_REMINDER follow-ups
   /// Identifies system-generated follow-ups so they are updated, not duplicated
   /// (e.g. "customer:<id>:passport", "customer:<id>:nationalId").
-  autoKey      String?        @unique
-  notes        String?
-  assignedToId String?
-  createdAt    DateTime       @default(now())
-  updatedAt    DateTime       @updatedAt
+  autoKey        String?        @unique
+  notes          String?
+  assignedToId   String?
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
 
   customer   Customer? @relation(fields: [customerId], references: [id], onDelete: Cascade)
   invoice    Invoice?  @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
   assignedTo User?     @relation("FollowUpAssignee", fields: [assignedToId], references: [id], onDelete: SetNull)
 
+  organization Organization @relation(fields: [organizationId], references: [id])
+
   @@index([deadline])
   @@index([status])
   @@index([type])
   @@index([customerId])
+  @@index([organizationId])
 }
 
 // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ Finance â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 model Quotation {
-  id          String          @id @default(cuid())
-  quoteNo     String          @unique // QT-2026-0001
-  customerId  String
-  status      QuotationStatus @default(DRAFT)
-  subtotal    Decimal         @db.Decimal(12, 2)
-  vatRate     Decimal         @default(0) @db.Decimal(5, 4)
-  vatAmount   Decimal         @db.Decimal(12, 2)
-  totalAmount Decimal         @db.Decimal(12, 2)
-  issueDate   DateTime        @default(now())
-  validUntil  DateTime?
-  notes       String?
-  createdAt   DateTime        @default(now())
-  updatedAt   DateTime        @updatedAt
+  id             String          @id @default(cuid())
+  organizationId String          @default("") // set by lib/db/tenant.ts; "" fails the foreign key, so a row can never be saved without a center
+  quoteNo        String // QT-2026-0001
+  customerId     String
+  status         QuotationStatus @default(DRAFT)
+  subtotal       Decimal         @db.Decimal(12, 2)
+  vatRate        Decimal         @default(0) @db.Decimal(5, 4)
+  vatAmount      Decimal         @db.Decimal(12, 2)
+  totalAmount    Decimal         @db.Decimal(12, 2)
+  issueDate      DateTime        @default(now())
+  validUntil     DateTime?
+  notes          String?
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
 
   customer Customer        @relation(fields: [customerId], references: [id])
   items    QuotationItem[]
   invoices Invoice[]
 
+  organization Organization @relation(fields: [organizationId], references: [id])
+
+  @@unique([organizationId, quoteNo])
   @@index([customerId])
   @@index([status])
 }
 
 model QuotationItem {
-  id          String  @id @default(cuid())
-  quotationId String
-  serviceId   String?
-  description String
-  quantity    Decimal @db.Decimal(10, 2)
-  unitPrice   Decimal @db.Decimal(12, 2)
-  lineTotal   Decimal @db.Decimal(12, 2)
-  sortOrder   Int     @default(0)
+  id             String  @id @default(cuid())
+  organizationId String  @default("") // set by lib/db/tenant.ts; "" fails the foreign key, so a row can never be saved without a center
+  quotationId    String
+  serviceId      String?
+  description    String
+  quantity       Decimal @db.Decimal(10, 2)
+  unitPrice      Decimal @db.Decimal(12, 2)
+  lineTotal      Decimal @db.Decimal(12, 2)
+  sortOrder      Int     @default(0)
 
   quotation Quotation @relation(fields: [quotationId], references: [id], onDelete: Cascade)
   service   Service?  @relation(fields: [serviceId], references: [id], onDelete: SetNull)
 
+  organization Organization @relation(fields: [organizationId], references: [id])
+
   @@index([quotationId])
+  @@index([organizationId])
 }
 
 model Invoice {
-  id          String        @id @default(cuid())
-  invoiceNo   String        @unique // INV-2026-0001
-  customerId  String
-  quotationId String?
-  status      InvoiceStatus @default(UNPAID)
-  subtotal    Decimal       @db.Decimal(12, 2)
-  vatRate     Decimal       @default(0) @db.Decimal(5, 4)
-  vatAmount   Decimal       @db.Decimal(12, 2)
-  totalAmount Decimal       @db.Decimal(12, 2)
-  amountPaid  Decimal       @default(0) @db.Decimal(12, 2)
-  issueDate   DateTime      @default(now())
-  dueDate     DateTime?
-  notes       String?
-  deletedAt   DateTime?
-  createdAt   DateTime      @default(now())
-  updatedAt   DateTime      @updatedAt
+  id             String        @id @default(cuid())
+  organizationId String        @default("") // set by lib/db/tenant.ts; "" fails the foreign key, so a row can never be saved without a center
+  invoiceNo      String // INV-2026-0001
+  customerId     String
+  quotationId    String?
+  status         InvoiceStatus @default(UNPAID)
+  subtotal       Decimal       @db.Decimal(12, 2)
+  vatRate        Decimal       @default(0) @db.Decimal(5, 4)
+  vatAmount      Decimal       @db.Decimal(12, 2)
+  totalAmount    Decimal       @db.Decimal(12, 2)
+  amountPaid     Decimal       @default(0) @db.Decimal(12, 2)
+  issueDate      DateTime      @default(now())
+  dueDate        DateTime?
+  notes          String?
+  deletedAt      DateTime?
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
 
   customer  Customer      @relation(fields: [customerId], references: [id])
   quotation Quotation?    @relation(fields: [quotationId], references: [id], onDelete: SetNull)
@@ -497,6 +591,9 @@ model Invoice {
   payments  Payment[]
   followUps FollowUp[]
 
+  organization Organization @relation(fields: [organizationId], references: [id])
+
+  @@unique([organizationId, invoiceNo])
   @@index([customerId])
   @@index([status])
   @@index([issueDate])
@@ -505,48 +602,57 @@ model Invoice {
 }
 
 model InvoiceItem {
-  id          String  @id @default(cuid())
-  invoiceId   String
-  description String
-  serviceId   String?
-  workOrderId String?
-  quantity    Decimal @db.Decimal(10, 2)
-  unitPrice   Decimal @db.Decimal(12, 2)
-  lineTotal   Decimal @db.Decimal(12, 2)
-  sortOrder   Int     @default(0)
+  id             String  @id @default(cuid())
+  organizationId String  @default("") // set by lib/db/tenant.ts; "" fails the foreign key, so a row can never be saved without a center
+  invoiceId      String
+  description    String
+  serviceId      String?
+  workOrderId    String?
+  quantity       Decimal @db.Decimal(10, 2)
+  unitPrice      Decimal @db.Decimal(12, 2)
+  lineTotal      Decimal @db.Decimal(12, 2)
+  sortOrder      Int     @default(0)
 
   invoice   Invoice    @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
   service   Service?   @relation(fields: [serviceId], references: [id], onDelete: SetNull)
   workOrder WorkOrder? @relation(fields: [workOrderId], references: [id], onDelete: SetNull)
 
+  organization Organization @relation(fields: [organizationId], references: [id])
+
   @@index([invoiceId])
   @@index([workOrderId])
+  @@index([organizationId])
 }
 
 model Payment {
-  id           String        @id @default(cuid())
-  invoiceId    String
-  customerId   String
-  amount       Decimal       @db.Decimal(12, 2)
-  method       PaymentMethod
-  reference    String?
-  date         DateTime      @default(now())
-  receivedById String?
-  notes        String?
-  createdAt    DateTime      @default(now())
+  id             String        @id @default(cuid())
+  organizationId String        @default("") // set by lib/db/tenant.ts; "" fails the foreign key, so a row can never be saved without a center
+  invoiceId      String
+  customerId     String
+  amount         Decimal       @db.Decimal(12, 2)
+  method         PaymentMethod
+  reference      String?
+  date           DateTime      @default(now())
+  receivedById   String?
+  notes          String?
+  createdAt      DateTime      @default(now())
 
   invoice    Invoice  @relation(fields: [invoiceId], references: [id])
   customer   Customer @relation(fields: [customerId], references: [id])
   receivedBy User?    @relation("PaymentReceiver", fields: [receivedById], references: [id], onDelete: SetNull)
 
+  organization Organization @relation(fields: [organizationId], references: [id])
+
   @@index([invoiceId])
   @@index([customerId])
   @@index([date])
   @@index([method])
+  @@index([organizationId])
 }
 
 model Expense {
   id               String          @id @default(cuid())
+  organizationId   String          @default("") // set by lib/db/tenant.ts; "" fails the foreign key, so a row can never be saved without a center
   category         ExpenseCategory
   amount           Decimal         @db.Decimal(12, 2) // net, excl. VAT
   vatAmount        Decimal         @default(0) @db.Decimal(12, 2) // recoverable input VAT
@@ -561,36 +667,53 @@ model Expense {
   vendor         Vendor?         @relation(fields: [vendorId], references: [id], onDelete: SetNull)
   outsourcedWork OutsourcedWork? @relation(fields: [outsourcedWorkId], references: [id], onDelete: SetNull)
 
+  organization Organization @relation(fields: [organizationId], references: [id])
+
   @@index([category])
   @@index([date])
+  @@index([organizationId])
 }
 
 // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ System â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 model ActivityLog {
-  id         String   @id @default(cuid())
-  entityType String // "WorkOrder" | "Invoice" | "Task" | ...
-  entityId   String
-  action     String // "created" | "status_changed" | "revision_requested" | ...
-  message    String
-  userId     String?
-  createdAt  DateTime @default(now())
+  id             String   @id @default(cuid())
+  organizationId String   @default("") // set by lib/db/tenant.ts; "" fails the foreign key, so a row can never be saved without a center
+  entityType     String // "WorkOrder" | "Invoice" | "Task" | ...
+  entityId       String
+  action         String // "created" | "status_changed" | "revision_requested" | ...
+  message        String
+  userId         String?
+  createdAt      DateTime @default(now())
 
   user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
 
+  organization Organization @relation(fields: [organizationId], references: [id])
+
   @@index([entityType, entityId, createdAt])
   @@index([userId])
+  @@index([organizationId])
 }
 
 model Setting {
-  key       String   @id
-  value     String
-  updatedAt DateTime @updatedAt
+  organizationId String   @default("") // set by lib/db/tenant.ts; "" fails the foreign key, so a row can never be saved without a center
+  key            String
+  value          String
+  updatedAt      DateTime @updatedAt
+
+  organization Organization @relation(fields: [organizationId], references: [id])
+
+  @@id([organizationId, key])
 }
 
 // Atomic document-number sequences, one row per prefix per year.
 model Counter {
-  key   String @id // e.g. "INV-2026"
-  year  Int
-  value Int    @default(0)
+  organizationId String @default("") // set by lib/db/tenant.ts; "" fails the foreign key, so a row can never be saved without a center
+  key            String // e.g. "INV-2026"
+  year           Int
+  value          Int    @default(0)
+
+  organization Organization @relation(fields: [organizationId], references: [id])
+
+  @@id([organizationId, key])
 }

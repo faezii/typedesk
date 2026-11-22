@@ -21,11 +21,14 @@ export function AppShell({
   user,
   defaultCollapsed,
   mustChangePassword = false,
+  trialDaysLeft = null,
   children,
 }: {
   user: ShellUser;
   defaultCollapsed: boolean;
   mustChangePassword?: boolean;
+  /** Days left in the free trial; null for paying centers. */
+  trialDaysLeft?: number | null;
   children: React.ReactNode;
 }) {
   const t = useT();
@@ -129,6 +132,11 @@ export function AppShell({
             {t("You're signed in with a temporary password.")}{" "}
             <Link href="/account" className="font-medium underline underline-offset-2">
               {t("Choose your own password")}</Link>
+          </div>
+        )}
+        {trialDaysLeft !== null && (
+          <div role="status" className="border-b border-sky-500/30 bg-sky-500/10 px-4 py-2 text-sm sm:px-6 lg:px-8">
+            {trialDaysLeft <= 1 ? t("Your free trial ends today.") : t("Free trial: {days} days left.", { days: trialDaysLeft })}
           </div>
         )}
         <main className="flex-1 px-4 py-6 sm:px-6 lg:px-8">{children}</main>

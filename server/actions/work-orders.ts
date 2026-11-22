@@ -75,7 +75,7 @@ export async function saveWorkOrder(id: string | null, input: WorkOrderFormValue
   const saved = await prisma.$transaction(async (tx) => {
     const wo = id
       ? await tx.workOrder.update({ where: { id }, data })
-      : await tx.workOrder.create({ data: { ...data, orderNo: await nextNumber(tx, "WO") } });
+      : await tx.workOrder.create({ data: { ...data, orderNo: await nextNumber(tx, g.user.organizationId, "WO") } });
 
     if (translation) {
       const tData = {

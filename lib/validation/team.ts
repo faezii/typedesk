@@ -58,7 +58,7 @@ export const employeeSchema = z.object({
 });
 export type EmployeeFormValues = z.input<typeof employeeSchema>;
 
-const newPassword = z
+export const newPassword = z
   .string()
   .min(8, "At least 8 characters")
   .max(200)

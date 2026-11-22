@@ -9,12 +9,12 @@ import { guardAction } from "@/lib/auth/session";
 import { zone, formatLocal, parseDateInput } from "@/lib/dates";
 import { computeTotals, paymentStatus } from "@/lib/invoice-math";
 import { nextNumber } from "@/lib/numbering";
-import { prisma } from "@/lib/prisma";
+import { prisma, type Tx } from "@/lib/prisma";
 import { DEFAULT_PAYMENT_DAYS, getSettings } from "@/lib/settings";
 import { documentSchema, paymentSchema, type DocumentFormValues, type PaymentFormValues } from "@/lib/validation/finance";
 import { uninvoicedWorkOrders } from "@/server/queries/invoices";
 
-type Tx = Prisma.TransactionClient;
+
 type ParsedDoc = z.output<typeof documentSchema>;
 
 const fail = (error: string, fieldErrors?: Record<string, string>) => ({ ok: false as const, error, fieldErrors });
@@ -95,7 +95,7 @@ export async function saveInvoice(id: string | null, input: DocumentFormValues):
       await tx.invoiceItem.deleteMany({ where: { invoiceId: id } });
       inv = await tx.invoice.update({ where: { id }, data: { ...fields, items: { create: lineData } } });
     } else {
-      inv = await tx.invoice.create({ data: { ...fields, invoiceNo: await nextNumber(tx, "INV", issueDate), status: "UNPAID", items: { create: lineData } } });
+      inv = await tx.invoice.create({ data: { ...fields, invoiceNo: await nextNumber(tx, user.organizationId, "INV", issueDate), status: "UNPAID", items: { create: lineData } } });
     }
     await logInvoice(tx, inv.id, user.id, id ? "updated" : "created", `${id ? "Updated" : "Issued"} ${inv.invoiceNo} — QAR ${inv.totalAmount.toFixed(2)}`, woIds);
     return inv;
@@ -232,7 +232,7 @@ export async function saveQuotation(id: string | null, input: DocumentFormValues
       await tx.quotationItem.deleteMany({ where: { quotationId: id } });
       q = await tx.quotation.update({ where: { id }, data: { ...fields, items: { create: lineData } } });
     } else {
-      q = await tx.quotation.create({ data: { ...fields, quoteNo: await nextNumber(tx, "QT", issueDate), status: "DRAFT", items: { create: lineData } } });
+      q = await tx.quotation.create({ data: { ...fields, quoteNo: await nextNumber(tx, user.organizationId, "QT", issueDate), status: "DRAFT", items: { create: lineData } } });
     }
     await tx.activityLog.create({
       data: { entityType: "Quotation", entityId: q.id, action: id ? "updated" : "created", message: `${id ? "Updated" : "Created"} ${q.quoteNo} — QAR ${q.totalAmount.toFixed(2)}`, userId: user.id },
@@ -268,7 +268,7 @@ export async function convertQuotation(id: string): Promise<ActionResult<{ invoi
     const issueDate = new Date();
     const inv = await tx.invoice.create({
       data: {
-        invoiceNo: await nextNumber(tx, "INV", issueDate),
+        invoiceNo: await nextNumber(tx, user.organizationId, "INV", issueDate),
         customerId: q.customerId,
         quotationId: q.id,
         status: "UNPAID",

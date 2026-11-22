@@ -1,6 +1,6 @@
 # TypeDesk — project guide
 
-Business management app for a translation & typing center in Qatar (switched from UAE; other GCC countries may follow, so country rules stay in one place). Built phase by phase (see the phase prompts); keep each phase shippable.
+Business management app for translation & typing centers in Qatar (multi-center: each center signs up and sees only its own data) (switched from UAE; other GCC countries may follow, so country rules stay in one place). Built phase by phase (see the phase prompts); keep each phase shippable.
 
 **Scope: work only inside this folder (`C:\Projects\TypeDesk`).** `C:\Projects\ProcureFlow` is a separate, unrelated project — never read, modify or delete it.
 
@@ -11,11 +11,13 @@ Business management app for a translation & typing center in Qatar (switched fro
 - Auth.js v5 (Credentials + bcryptjs), Zod, react-hook-form, TanStack Table, dnd-kit, Recharts, @react-pdf/renderer, xlsx (SheetJS CDN build), date-fns + @date-fns/tz
 
 ## Conventions
+- **Centers (multi-tenant)**: every business table has `organizationId`. `prisma` from `lib/prisma.ts` is center-scoped (`lib/db/tenant.ts`): it adds the signed-in user's center to every `where` and stamps it on every created row, including nested `create`s; other nested writes (`connect`, `upsert`…) throw. Outside a signed-in request it throws. `basePrisma` (`lib/db/base.ts`) is unscoped: only for sign-in, sign-up, password/email tokens and the owner's `/platform`; set `organizationId` explicitly there. **Raw SQL is not scoped**: filter `"organizationId" = ${await currentOrgId()}` yourself. Postgres triggers `same_center_fk` refuse a row pointing at another center's row; a migration that adds a relation between business tables must add its trigger. Unique numbers/keys are per center (`@@unique([organizationId, …])`); emails are unique across all centers.
+- **Sign-up & trial**: `/signup` creates a center (TRIAL, 30 days, `TRIAL_DAYS`) and its ADMIN; sign-in requires `emailVerifiedAt` (link to `/verify-email`, 48 h; staff an admin creates are verified). `requireUser()` sends a center whose trial ended or that is SUSPENDED to `/blocked`; `requirePermission()` refuses its actions; the file/PDF/report routes check `centerBlocked()`. The owner (`PLATFORM_ADMIN_EMAILS`) sees every center at `/platform` (extend trial, activate, suspend).
 - **Currency**: QAR (`formatMoney`). Money columns are `Decimal @db.Decimal(12,2)`. Never do money math in floats on the client for persisted values — totals are recomputed server-side.
 - **VAT**: Qatar has none today, so `Setting` key `vatRate` defaults to `0`; the machinery stays for when it arrives (expected 5%). Invoice = subtotal + VAT = total. While the rate is 0, invoices print as "Invoice" (not "Tax Invoice"), VAT lines are hidden and the VAT report is not listed.
 - **Timezone**: all "today / this week / this month" logic uses `Asia/Qatar` (`TIMEZONE`, `zone`) — use the helpers in `lib/dates.ts` (`startOfTodayLocal`, `monthsAgoLocal`, `formatLocal`, …) and `lib/format.ts` (`formatMoney`, `formatDate`); enum display labels live in `lib/labels.ts`.
 - **Charts**: series colors are `var(--chart-1..4)` (emerald, sky, amber, violet; validated for colour-blindness and contrast in both themes). Assign in that order, never by rank.
-- **Numbering**: `Counter` table, atomic upsert-increment → `WO-2026-0001`, `INV-2026-0001`, `QT-2026-0001`. Use `nextNumber(tx, prefix)` from `lib/numbering.ts` inside the creating transaction.
+- **Numbering**: `Counter` table, atomic upsert-increment → `WO-2026-0001`, `INV-2026-0001`, `QT-2026-0001`. Use `nextNumber(tx, user.organizationId, prefix)` from `lib/numbering.ts` inside the creating transaction; each center numbers from 0001.
 - **Money math**: `lineTotal()` in `lib/money.ts` (exact `Prisma.Decimal`, half-up to 2 decimals) — server only. Client forms may show a display-only estimate. Shared money/quantity regex is `DECIMAL_RE` in `lib/validation/work-order.ts` (keep `@prisma/client` out of client bundles).
 - **Work orders**: stage changes go through `moveWorkOrder(id, from, to)` (optimistic-concurrency on `from`, writes ActivityLog). Orders with an open revision can't change stage. Deadlines render with `DeadlineText` (`components/shared/work-order-badges.tsx`).
 - **Country formats** (`lib/validation/country.ts`, Qatar): phones `+974 5512 3456` (8 digits; mobiles 3/5/6/7, landlines 4); national ID = QID, 11 digits, stored in `Customer.nationalId` / document category `NATIONAL_ID`; `taxNo` = CR / tax number (free format, 3–20 chars). Field names are country-neutral on purpose.
@@ -66,7 +68,7 @@ All seeded users use password `Password123!` (development only):
 
 ## Commands
 - `npm run dev` · `npm run build` · `npm run lint` · `npm run typecheck` · `npm test`
-- `npm run db:migrate` (dev migration) · `npm run db:seed` (wipes all data first; refuses non-local hosts unless `ALLOW_REMOTE_SEED=1`) · `npm run db:reset` (drop, migrate, seed; asks to confirm) · `npm run create-admin -- <email> "<name>"` (first admin on a production DB)
+- `npm run db:migrate` (dev migration) · `npm run db:seed` (wipes all data first; refuses non-local hosts unless `ALLOW_REMOTE_SEED=1`) · `npm run db:reset` (drop, migrate, seed; asks to confirm) · `npm run create-admin -- <email> "<name>" ["<center>"]` (an admin and an active center on a production DB)
 - **Real data**: `.env` `DATABASE_URL` points at the Neon project *typedesk.procuregcc.com* (`red-cloud-02850771`, Singapore), which holds live data. Never seed, reset or run destructive SQL against it; use a local or branch database for development.
 - `typedesk.cmd` (project root) is the user's launcher: builds when the git commit changes, runs `next start -p 3000`, opens Edge in app mode.
 - Setup, env vars and Vercel + Neon/Supabase + R2 deployment: `README.md`.

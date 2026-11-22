@@ -1,5 +1,5 @@
 import { can } from "@/lib/auth/permissions";
-import { getCurrentUser } from "@/lib/auth/session";
+import { centerBlocked, getCurrentUser } from "@/lib/auth/session";
 import { prisma } from "@/lib/prisma";
 import { getSettings } from "@/lib/settings";
 import { fileUrlFor, mimeForKey, readKey } from "@/lib/storage";
@@ -7,7 +7,7 @@ import { fileUrlFor, mimeForKey, readKey } from "@/lib/storage";
 /** Serves uploaded files to signed-in users: the company logo, live documents (documents:view) and expense receipts (finance:view). */
 export async function GET(req: Request, { params }: { params: Promise<{ key: string[] }> }) {
   const user = await getCurrentUser();
-  if (!user) return new Response("Not found", { status: 404 });
+  if (!user || centerBlocked(user.organization)) return new Response("Not found", { status: 404 });
 
   const key = (await params).key.join("/");
   const fileUrl = fileUrlFor(key);

@@ -1,7 +1,7 @@
 import { renderToBuffer } from "@react-pdf/renderer";
 import { ReportPdf } from "@/components/reports/report-pdf";
 import { can } from "@/lib/auth/permissions";
-import { getCurrentUser } from "@/lib/auth/session";
+import { centerBlocked, getCurrentUser } from "@/lib/auth/session";
 import { formatLocal } from "@/lib/dates";
 import { toXlsx } from "@/lib/report-xlsx";
 import { toCsv } from "@/lib/reports";
@@ -11,7 +11,7 @@ import { getReport, runReport } from "@/server/queries/reports";
 /** GET /api/reports/<slug>?format=csv|xlsx|pdf&from=yyyy-mm-dd&to=yyyy-mm-dd */
 export async function GET(req: Request, { params }: { params: Promise<{ slug: string }> }) {
   const user = await getCurrentUser();
-  if (!user || !can(user.role, "reports:view")) return new Response("Not found", { status: 404 });
+  if (!user || centerBlocked(user.organization) || !can(user.role, "reports:view")) return new Response("Not found", { status: 404 });
   const def = getReport((await params).slug);
   if (!def) return new Response("Not found", { status: 404 });
 

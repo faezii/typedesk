@@ -2,7 +2,7 @@ import NextAuth, { CredentialsSignin } from "next-auth";
 import Credentials from "next-auth/providers/credentials";
 import bcrypt from "bcryptjs";
 import { z } from "zod";
-import { prisma } from "@/lib/prisma";
+import { basePrisma as prisma } from "@/lib/db/base";
 import { authConfig } from "./auth.config";
 
 const credentialsSchema = z.object({
@@ -36,6 +36,11 @@ class TooManyAttempts extends CredentialsSignin {
   code = "rate_limited";
 }
 
+/** Right password, but the sign-up confirmation link hasn't been used yet. */
+class EmailNotConfirmed extends CredentialsSignin {
+  code = "unconfirmed";
+}
+
 // Compared against when the email is unknown, so response time doesn't reveal which emails exist.
 const DUMMY_HASH = bcrypt.hashSync("timing-equaliser", 10);
 
@@ -59,6 +64,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         }
 
         failures.delete(email);
+        if (!user.emailVerifiedAt) throw new EmailNotConfirmed();
         await prisma.user.update({ where: { id: user.id }, data: { lastLoginAt: new Date() } });
         return { id: user.id, name: user.name, email: user.email, role: user.role, department: user.department };
       },

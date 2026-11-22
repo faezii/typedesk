@@ -1,7 +1,9 @@
 import { getT } from "@/lib/i18n/server";
+import Link from "next/link";
 import { redirect } from "next/navigation";
 import { AuthShell } from "@/components/layout/auth-shell";
 import { getCurrentUser } from "@/lib/auth/session";
+import { TRIAL_DAYS } from "@/lib/validation/signup";
 import { LoginForm } from "./login-form";
 
 export async function generateMetadata() {
@@ -33,6 +35,11 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
       <p className="text-muted-foreground mt-1.5 text-sm">{t("Use your staff email and password.")}</p>
 
       <LoginForm callbackUrl={next} />
+
+      <p className="text-muted-foreground mt-6 text-sm">
+        {t("New typing center?")}{" "}
+        <Link href="/signup" className="text-foreground font-medium hover:underline">{t("Start a free {days}-day trial", { days: TRIAL_DAYS })}</Link>
+      </p>
 
       {showDemo && (
         <div className="bg-muted/50 text-muted-foreground mt-8 rounded-lg border border-dashed p-3.5 text-xs">

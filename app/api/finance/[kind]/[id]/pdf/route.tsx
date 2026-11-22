@@ -1,7 +1,7 @@
 import { renderToBuffer } from "@react-pdf/renderer";
 import { InvoicePdf, type PdfDoc } from "@/components/finance/invoice-pdf";
 import { can } from "@/lib/auth/permissions";
-import { getCurrentUser } from "@/lib/auth/session";
+import { centerBlocked, getCurrentUser } from "@/lib/auth/session";
 import { getSettings } from "@/lib/settings";
 import { keyFromUrl, readKey } from "@/lib/storage";
 import { getInvoice, getQuotation } from "@/server/queries/invoices";
@@ -9,7 +9,7 @@ import { getInvoice, getQuotation } from "@/server/queries/invoices";
 /** GET /api/finance/invoice/<id>/pdf (or /quotation/…); add ?download for an attachment. */
 export async function GET(req: Request, { params }: { params: Promise<{ kind: string; id: string }> }) {
   const user = await getCurrentUser();
-  if (!user || !can(user.role, "finance:view")) return new Response("Not found", { status: 404 });
+  if (!user || centerBlocked(user.organization) || !can(user.role, "finance:view")) return new Response("Not found", { status: 404 });
   const { kind, id } = await params;
 
   let doc: PdfDoc | null = null;

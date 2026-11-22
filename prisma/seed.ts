@@ -18,9 +18,13 @@ import { addDays, addHours, differenceInCalendarDays, format, startOfDay, startO
 import { mkdirSync, writeFileSync } from "node:fs";
 import { WORK_ORDER_STATUS_LABEL } from "../lib/labels";
 import { s3, s3Put } from "../lib/s3";
+import { withTenant } from "../lib/db/tenant";
 import path from "node:path";
 
-const prisma = new PrismaClient();
+const base = new PrismaClient();
+/** All demo data belongs to one center; `prisma` stamps it on every row like the app does. */
+const DEMO_ORG = "org_demo";
+const prisma = withTenant(base, () => DEMO_ORG);
 
 // ───────────── deterministic randomness (stable demo data) ─────────────
 let seed = 20260927;
@@ -141,26 +145,28 @@ function nextNo(prefix: "WO" | "INV" | "QT", date: Date) {
 
 async function reset() {
   // children first
-  await prisma.activityLog.deleteMany();
-  await prisma.followUp.deleteMany();
-  await prisma.payment.deleteMany();
-  await prisma.invoiceItem.deleteMany();
-  await prisma.invoice.deleteMany();
-  await prisma.quotationItem.deleteMany();
-  await prisma.quotation.deleteMany();
-  await prisma.expense.deleteMany();
-  await prisma.outsourcedWork.deleteMany();
-  await prisma.document.deleteMany();
-  await prisma.task.deleteMany();
-  await prisma.workOrderRevision.deleteMany();
-  await prisma.translationDetail.deleteMany();
-  await prisma.workOrder.deleteMany();
-  await prisma.vendor.deleteMany();
-  await prisma.service.deleteMany();
-  await prisma.customer.deleteMany();
-  await prisma.user.deleteMany();
-  await prisma.setting.deleteMany();
-  await prisma.counter.deleteMany();
+  await base.activityLog.deleteMany();
+  await base.followUp.deleteMany();
+  await base.payment.deleteMany();
+  await base.invoiceItem.deleteMany();
+  await base.invoice.deleteMany();
+  await base.quotationItem.deleteMany();
+  await base.quotation.deleteMany();
+  await base.expense.deleteMany();
+  await base.outsourcedWork.deleteMany();
+  await base.document.deleteMany();
+  await base.task.deleteMany();
+  await base.workOrderRevision.deleteMany();
+  await base.translationDetail.deleteMany();
+  await base.workOrder.deleteMany();
+  await base.vendor.deleteMany();
+  await base.service.deleteMany();
+  await base.customer.deleteMany();
+  await base.user.deleteMany();
+  await base.setting.deleteMany();
+  await base.counter.deleteMany();
+  await base.authToken.deleteMany();
+  await base.organization.deleteMany();
 }
 
 async function main() {
@@ -171,6 +177,7 @@ async function main() {
   }
   console.log("Resetting data…");
   await reset();
+  await base.organization.create({ data: { id: DEMO_ORG, name: "TypeDesk Legal Translation & Typing Center", status: "ACTIVE" } });
 
   // ───────────── Settings ─────────────
   await prisma.setting.createMany({
@@ -196,7 +203,7 @@ async function main() {
     { name: "Karim Mansour", email: "translator@typedesk.qa", role: "STAFF", department: "TRANSLATION", phone: "+974 7077 3350" },
   ] as const;
   const users = await Promise.all(
-    userSeeds.map((u) => prisma.user.create({ data: { ...u, passwordHash, lastLoginAt: subDays(NOW, int(0, 3)) } })),
+    userSeeds.map((u) => prisma.user.create({ data: { ...u, passwordHash, emailVerifiedAt: NOW, lastLoginAt: subDays(NOW, int(0, 3)) } })),
   );
   const [admin, manager, finance, typist, translator] = users;
   const operators = [manager, typist, translator, translator, typist];
@@ -834,4 +841,4 @@ main()
     console.error(e);
     process.exit(1);
   })
-  .finally(() => prisma.$disconnect());
+  .finally(() => base.$disconnect());

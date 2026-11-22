@@ -2,6 +2,7 @@ import "server-only";
 import type { Lang } from "@/lib/i18n/translate";
 import { Prisma, type WorkOrderStatus } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
+import { currentOrgId } from "@/lib/auth/session";
 import { can } from "@/lib/auth/permissions";
 import type { CurrentUser } from "@/lib/auth/session";
 import {
@@ -79,19 +80,20 @@ export type RevenuePoint = { month: string; label: string; invoiced: number; col
 /** Last 6 months (incl. current), grouped by Doha calendar month. Numbers are for charting only. */
 export async function getRevenueSeries(lang?: Lang): Promise<RevenuePoint[]> {
   const from = monthsAgoLocal(5);
+  const org = await currentOrgId(); // raw SQL isn't center-scoped by lib/prisma
   // Timestamps are stored as UTC without zone; convert before truncating to the Doha month.
   const [collected, invoiced] = await Promise.all([
     prisma.$queryRaw<{ m: string; total: number }[]>(Prisma.sql`
       SELECT to_char(date_trunc('month', (p."date" AT TIME ZONE 'UTC') AT TIME ZONE ${TIMEZONE}), 'YYYY-MM') AS m,
              SUM(p.amount)::float8 AS total
       FROM "Payment" p JOIN "Invoice" i ON i.id = p."invoiceId"
-      WHERE i."deletedAt" IS NULL AND p."date" >= ${from}
+      WHERE p."organizationId" = ${org} AND i."deletedAt" IS NULL AND p."date" >= ${from}
       GROUP BY 1`),
     prisma.$queryRaw<{ m: string; total: number }[]>(Prisma.sql`
       SELECT to_char(date_trunc('month', ("issueDate" AT TIME ZONE 'UTC') AT TIME ZONE ${TIMEZONE}), 'YYYY-MM') AS m,
              SUM("totalAmount")::float8 AS total
       FROM "Invoice"
-      WHERE "deletedAt" IS NULL AND status <> 'CANCELLED' AND "issueDate" >= ${from}
+      WHERE "organizationId" = ${org} AND "deletedAt" IS NULL AND status <> 'CANCELLED' AND "issueDate" >= ${from}
       GROUP BY 1`),
   ]);
   const byMonth = (rows: { m: string; total: number }[]) => new Map(rows.map((r) => [r.m, r.total]));

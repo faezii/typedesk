@@ -1,18 +1,14 @@
 "use server";
 
-import { createHash, randomBytes } from "node:crypto";
 import { after } from "next/server";
 import bcrypt from "bcryptjs";
 import { z } from "zod";
+import { claimToken, issueToken } from "@/lib/auth/tokens";
+import { basePrisma as prisma } from "@/lib/db/base";
 import { appUrl, emailConfigured, sendEmail } from "@/lib/email";
-import { prisma } from "@/lib/prisma";
 import { passwordResetSchema } from "@/lib/validation/team";
 
-const PURPOSE = "password_reset";
 const VALID_MINUTES = 30;
-const MAX_PER_HOUR = 3;
-
-const sha256 = (token: string) => createHash("sha256").update(token).digest("hex");
 
 export type ForgotState = { sent?: boolean; error?: string; email?: string };
 
@@ -26,13 +22,8 @@ export async function requestPasswordReset(_prev: ForgotState, formData: FormDat
   after(async () => {
     const user = await prisma.user.findUnique({ where: { email }, select: { id: true, name: true, isActive: true } });
     if (!user?.isActive) return;
-    const recent = await prisma.authToken.count({ where: { userId: user.id, purpose: PURPOSE, createdAt: { gt: new Date(Date.now() - 60 * 60 * 1000) } } });
-    if (recent >= MAX_PER_HOUR) return;
-
-    const token = randomBytes(32).toString("base64url");
-    await prisma.authToken.create({
-      data: { userId: user.id, purpose: PURPOSE, tokenHash: sha256(token), expiresAt: new Date(Date.now() + VALID_MINUTES * 60 * 1000) },
-    });
+    const token = await issueToken(user.id, "password_reset", VALID_MINUTES, 3);
+    if (!token) return;
     await sendEmail({
       to: email,
       subject: "Reset your TypeDesk password",
@@ -63,16 +54,14 @@ export async function resetPassword(_prev: ResetState, formData: FormData): Prom
   }
 
   const passwordHash = await bcrypt.hash(parsed.data.next, 10);
-  const userId = await prisma.$transaction(async (tx) => {
-    const row = await tx.authToken.findUnique({ where: { tokenHash: sha256(parsed.data.token) }, include: { user: { select: { isActive: true } } } });
-    if (!row || row.purpose !== PURPOSE || row.expiresAt < new Date() || !row.user.isActive) return null;
-    // Claim the token first: of two simultaneous submits, only one sees count = 1.
-    const claimed = await tx.authToken.updateMany({ where: { id: row.id, usedAt: null }, data: { usedAt: new Date() } });
-    if (claimed.count === 0) return null;
-    await tx.user.update({ where: { id: row.userId }, data: { passwordHash, mustChangePassword: false } });
-    await tx.authToken.deleteMany({ where: { userId: row.userId, purpose: PURPOSE, id: { not: row.id } } });
-    await tx.activityLog.create({ data: { entityType: "User", entityId: row.userId, action: "password_reset", message: "Reset password with an emailed link", userId: row.userId } });
-    return row.userId;
+  const done = await prisma.$transaction(async (tx) => {
+    const user = await claimToken(tx, parsed.data.token, "password_reset");
+    if (!user) return false;
+    // A working reset link also proves the address, so it confirms an unconfirmed sign-up too.
+    const { emailVerifiedAt } = await tx.user.findUniqueOrThrow({ where: { id: user.id }, select: { emailVerifiedAt: true } });
+    await tx.user.update({ where: { id: user.id }, data: { passwordHash, mustChangePassword: false, emailVerifiedAt: emailVerifiedAt ?? new Date() } });
+    await tx.activityLog.create({ data: { organizationId: user.organizationId, entityType: "User", entityId: user.id, action: "password_reset", message: "Reset password with an emailed link", userId: user.id } });
+    return true;
   });
-  return userId ? { done: true } : { error: INVALID };
+  return done ? { done: true } : { error: INVALID };
 }

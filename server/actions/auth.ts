@@ -1,6 +1,9 @@
 "use server";
 
 import { AuthError } from "next-auth";
+import { after } from "next/server";
+import { sendConfirmationEmail } from "@/lib/auth/confirm-email";
+import { basePrisma } from "@/lib/db/base";
 import { z } from "zod";
 import { signIn, signOut } from "@/auth";
 
@@ -32,6 +35,14 @@ export async function login(_prev: LoginState, formData: FormData): Promise<Logi
   } catch (error) {
     if (error instanceof AuthError) {
       const code = "code" in error ? (error as { code?: string }).code : undefined;
+      if (code === "unconfirmed") {
+        // Only reached with the right password, so saying the account exists reveals nothing new.
+        after(async () => {
+          const user = await basePrisma.user.findUnique({ where: { email: parsed.data.email.trim().toLowerCase() }, select: { id: true, name: true, email: true } });
+          if (user) await sendConfirmationEmail(user);
+        });
+        return { email, error: "Confirm your email first: we've sent a new confirmation link. Check your inbox." };
+      }
       return {
         email,
         error:

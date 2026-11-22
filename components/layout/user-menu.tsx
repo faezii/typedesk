@@ -3,7 +3,7 @@
 
 import { useSwitchLanguage, useT } from "@/components/i18n";
 import Link from "next/link";
-import { KeyRound, Languages, LogOut } from "lucide-react";
+import { Building2, KeyRound, Languages, LogOut } from "lucide-react";
 import type { Department, Role } from "@prisma/client";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -18,7 +18,7 @@ import {
 import { initials } from "@/lib/format";
 import { logout } from "@/server/actions/auth";
 
-export type ShellUser = { name: string; email: string; role: Role; department: Department };
+export type ShellUser = { name: string; email: string; role: Role; department: Department; center: string; platformAdmin?: boolean };
 
 const ROLE_LABEL: Record<Role, string> = { ADMIN: "Admin", MANAGER: "Manager", FINANCE: "Finance", STAFF: "Staff" };
 const DEPT_LABEL: Record<Department, string> = {
@@ -48,8 +48,15 @@ export function UserMenu({ user }: { user: ShellUser }) {
           <div className="text-muted-foreground mt-1.5 text-xs">
             {t(ROLE_LABEL[user.role])} · {t(DEPT_LABEL[user.department])}
           </div>
+          <div className="text-muted-foreground truncate text-xs">{user.center}</div>
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
+        {user.platformAdmin && (
+          <DropdownMenuItem asChild>
+            <Link href="/platform">
+              <Building2 /> {t("All centers")}</Link>
+          </DropdownMenuItem>
+        )}
         <DropdownMenuItem asChild>
           <Link href="/account">
             <KeyRound /> {t("Account & password")}</Link>

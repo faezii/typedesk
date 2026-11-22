@@ -4,6 +4,7 @@ import { startOfYear } from "date-fns";
 import { TIMEZONE, zone, endOfTodayLocal, formatLocal, monthsAgoLocal, parseDateInput, startOfMonthLocal } from "@/lib/dates";
 import { EXPENSE_CATEGORY_LABEL, PAYMENT_METHOD_LABEL, WORK_ORDER_STATUS_LABEL } from "@/lib/labels";
 import { prisma } from "@/lib/prisma";
+import { currentOrgId } from "@/lib/auth/session";
 import { round2, pct, type ReportResult, type ReportRow } from "@/lib/reports";
 import { WORK_ORDER_FLOW } from "@/lib/work-orders";
 import { profitAndLoss } from "./finance";
@@ -38,16 +39,17 @@ export function reportRange(def: Pick<ReportDef, "defaultRange">, p: ReportParam
 
 /** Invoiced (by issue date) and collected (by payment date) grouped by Doha day or month. */
 async function salesByPeriod({ start, end }: Range, fmt: "YYYY-MM-DD" | "YYYY-MM"): Promise<ReportResult> {
+  const org = await currentOrgId(); // raw SQL isn't center-scoped by lib/prisma
   const [invoiced, collected] = await Promise.all([
     prisma.$queryRaw<{ k: string; cnt: number; sub: Prisma.Decimal; vat: Prisma.Decimal; tot: Prisma.Decimal }[]>(Prisma.sql`
       SELECT to_char(("issueDate" AT TIME ZONE 'UTC') AT TIME ZONE ${TIMEZONE}, ${fmt}) AS k, count(*)::int AS cnt,
              sum(subtotal) AS sub, sum("vatAmount") AS vat, sum("totalAmount") AS tot
-      FROM "Invoice" WHERE "deletedAt" IS NULL AND status <> 'CANCELLED' AND "issueDate" BETWEEN ${start} AND ${end}
+      FROM "Invoice" WHERE "organizationId" = ${org} AND "deletedAt" IS NULL AND status <> 'CANCELLED' AND "issueDate" BETWEEN ${start} AND ${end}
       GROUP BY 1`),
     prisma.$queryRaw<{ k: string; amt: Prisma.Decimal }[]>(Prisma.sql`
       SELECT to_char((p."date" AT TIME ZONE 'UTC') AT TIME ZONE ${TIMEZONE}, ${fmt}) AS k, sum(p.amount) AS amt
       FROM "Payment" p JOIN "Invoice" i ON i.id = p."invoiceId"
-      WHERE i."deletedAt" IS NULL AND p."date" BETWEEN ${start} AND ${end} GROUP BY 1`),
+      WHERE p."organizationId" = ${org} AND i."deletedAt" IS NULL AND p."date" BETWEEN ${start} AND ${end} GROUP BY 1`),
   ]);
   const keys = [...new Set([...invoiced.map((r) => r.k), ...collected.map((r) => r.k)])].sort();
   const inv = new Map(invoiced.map((r) => [r.k, r]));
@@ -155,6 +157,7 @@ async function paymentCollection({ start, end }: Range): Promise<ReportResult> {
 // ───────────── Operations ─────────────
 
 async function employeeProductivity({ start, end }: Range): Promise<ReportResult> {
+  const org = await currentOrgId(); // raw SQL isn't center-scoped by lib/prisma
   const [users, delivered, tasks] = await Promise.all([
     prisma.user.findMany({ where: { isActive: true }, orderBy: { name: "asc" }, select: { id: true, name: true } }),
     prisma.$queryRaw<{ uid: string; delivered: number; revenue: Prisma.Decimal; pages: number; words: number; timed: number; on_time: number }[]>(Prisma.sql`
@@ -163,7 +166,7 @@ async function employeeProductivity({ start, end }: Range): Promise<ReportResult
              (count(*) FILTER (WHERE w.deadline IS NOT NULL))::int AS timed,
              (count(*) FILTER (WHERE w.deadline IS NOT NULL AND w."deliveredAt" <= w.deadline))::int AS on_time
       FROM "WorkOrder" w LEFT JOIN "TranslationDetail" t ON t."workOrderId" = w.id
-      WHERE w."deletedAt" IS NULL AND w."assignedToId" IS NOT NULL AND w."deliveredAt" BETWEEN ${start} AND ${end}
+      WHERE w."organizationId" = ${org} AND w."deletedAt" IS NULL AND w."assignedToId" IS NOT NULL AND w."deliveredAt" BETWEEN ${start} AND ${end}
       GROUP BY 1`),
     prisma.task.groupBy({ by: ["assignedToId"], where: { status: "DONE", completedAt: { gte: start, lte: end } }, _count: true }),
   ]);
