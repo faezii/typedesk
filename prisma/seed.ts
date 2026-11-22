@@ -102,6 +102,10 @@ const DOC_TITLES: Record<ServiceCategory, string[]> = {
   TYPING: ["Visa Application", "Labour Contract", "Tenancy Contract", "Trade License Application", "Family Visa Application", "Legal Memo"],
   ATTESTATION: ["Degree Certificate", "Commercial Invoice", "Salary Certificate", "Birth Certificate"],
   COURT_SUBMISSION: ["Rental Dispute Filing", "Labour Case Memo", "Execution Request", "Appeal Submission"],
+  COMPANY_FORMATION: ["Trade License Application", "Chamber Registration"],
+  PRO_SERVICES: ["Bank Account Opening Letter", "WPS Registration"],
+  EMBASSY_SERVICES: ["Visa Application", "Passport Renewal"],
+  DOCUMENTATION: ["Classification Certificate", "Clinical License Application"],
   OTHER: ["Notarised POA", "Board Resolution"],
 };
 

@@ -51,8 +51,8 @@ export type WorkOrderData = z.output<typeof workOrderSchema>;
 
 export const serviceSchema = z.object({
   title: z.string().trim().min(2, "Enter a title").max(120),
-  category: z.enum(["LEGAL_TRANSLATION", "GENERAL_TRANSLATION", "TYPING", "ATTESTATION", "COURT_SUBMISSION", "OTHER"]),
-  unit: z.enum(["PAGE", "WORD", "DOCUMENT", "HOUR"]),
+  category: z.enum(["LEGAL_TRANSLATION", "GENERAL_TRANSLATION", "TYPING", "ATTESTATION", "COURT_SUBMISSION", "COMPANY_FORMATION", "PRO_SERVICES", "EMBASSY_SERVICES", "DOCUMENTATION", "OTHER"]),
+  unit: z.enum(["PAGE", "WORD", "DOCUMENT", "HOUR", "SERVICE"]),
   defaultPrice: z
     .string()
     .trim()

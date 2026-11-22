@@ -58,15 +58,22 @@ export const employeeSchema = z.object({
 });
 export type EmployeeFormValues = z.input<typeof employeeSchema>;
 
+const newPassword = z
+  .string()
+  .min(8, "At least 8 characters")
+  .max(200)
+  .refine((v) => /[A-Za-z]/.test(v) && /\d/.test(v), "Use letters and at least one number");
+
 export const passwordChangeSchema = z
   .object({
     current: z.string().min(1, "Enter your current password"),
-    next: z
-      .string()
-      .min(8, "At least 8 characters")
-      .max(200)
-      .refine((v) => /[A-Za-z]/.test(v) && /\d/.test(v), "Use letters and at least one number"),
+    next: newPassword,
     confirm: z.string(),
   })
   .refine((v) => v.next === v.confirm, { path: ["confirm"], message: "Passwords don't match" })
   .refine((v) => v.next !== v.current, { path: ["next"], message: "Choose a different password" });
+
+/** The forgot-password link's form: the emailed token plus the new password. */
+export const passwordResetSchema = z
+  .object({ token: z.string().min(20).max(200), next: newPassword, confirm: z.string() })
+  .refine((v) => v.next === v.confirm, { path: ["confirm"], message: "Passwords don't match" });

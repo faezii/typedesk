@@ -23,6 +23,10 @@ const CATEGORY_TONE: Record<ServiceCategory, Tone> = {
   TYPING: "violet",
   ATTESTATION: "amber",
   COURT_SUBMISSION: "red",
+  COMPANY_FORMATION: "blue",
+  PRO_SERVICES: "violet",
+  EMBASSY_SERVICES: "amber",
+  DOCUMENTATION: "green",
   OTHER: "gray",
 };
 

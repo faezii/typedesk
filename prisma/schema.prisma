@@ -38,6 +38,10 @@ enum ServiceCategory {
   ATTESTATION
   COURT_SUBMISSION
   OTHER
+  COMPANY_FORMATION
+  PRO_SERVICES
+  EMBASSY_SERVICES
+  DOCUMENTATION
 }
 
 enum ServiceUnit {
@@ -45,6 +49,7 @@ enum ServiceUnit {
   WORD
   DOCUMENT
   HOUR
+  SERVICE
 }
 
 enum WorkOrderStatus {
@@ -165,9 +170,25 @@ model User {
   revisionsRequested WorkOrderRevision[] @relation("RevisionRequester")
   revisionsResolved  WorkOrderRevision[] @relation("RevisionResolver")
   activity           ActivityLog[]
+  authTokens         AuthToken[]
 
   @@index([role])
   @@index([department])
+}
+
+/// One-time links sent by email (e.g. password reset). Only the SHA-256 of the token is stored.
+model AuthToken {
+  id        String    @id @default(cuid())
+  userId    String
+  purpose   String // "password_reset"
+  tokenHash String    @unique
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, purpose, createdAt])
 }
 
 model Customer {

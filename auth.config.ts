@@ -1,7 +1,7 @@
 import type { NextAuthConfig } from "next-auth";
 import { canAccessPath } from "@/lib/auth/permissions";
 
-const PUBLIC_PATHS = ["/login"];
+const PUBLIC_PATHS = ["/login", "/forgot-password", "/reset-password"];
 
 /**
  * Edge/proxy-safe Auth.js config — no database or bcrypt imports here.

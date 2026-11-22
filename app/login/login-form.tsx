@@ -3,6 +3,7 @@
 
 import { useT } from "@/components/i18n";
 import { useActionState, useState } from "react";
+import Link from "next/link";
 import { AlertCircle, Eye, EyeOff, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -24,7 +25,7 @@ export function LoginForm({ callbackUrl }: { callbackUrl: string }) {
           className="border-destructive/30 bg-destructive/5 text-destructive flex items-start gap-2 rounded-lg border px-3 py-2.5 text-sm"
         >
           <AlertCircle className="mt-0.5 size-4 shrink-0" />
-          {state.error}
+          {t(state.error)}
         </div>
       )}
 
@@ -45,7 +46,12 @@ export function LoginForm({ callbackUrl }: { callbackUrl: string }) {
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="password">{t("Password")}</Label>
+        <div className="flex items-center justify-between gap-2">
+          <Label htmlFor="password">{t("Password")}</Label>
+          <Link href="/forgot-password" className="text-muted-foreground hover:text-foreground text-xs underline-offset-4 hover:underline">
+            {t("Forgot password?")}
+          </Link>
+        </div>
         <div className="relative">
           <Input
             id="password"

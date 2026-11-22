@@ -47,6 +47,9 @@ Every seeded user has the password `Password123!`.
 | `AUTH_SECRET` | yes | Signs session cookies. Generate with `npx auth secret` and keep it secret; changing it signs everyone out. |
 | `UPLOAD_DIR` | no | Folder for uploaded files when no bucket is configured (default `./uploads`) |
 | `S3_BUCKET` | no | Store files in an S3-compatible bucket instead of on disk. **Required on Vercel.** |
+| `APP_URL` | for email | Public address used in emailed links, e.g. `https://typedesk.procuregcc.com` |
+| `RESEND_API_KEY` | for email | [Resend](https://resend.com) key for forgot-password emails. Without it, production asks users to contact their administrator; development prints emails to the console. |
+| `EMAIL_FROM` | for email | Sender, e.g. `TypeDesk <no-reply@procuregcc.com>` (domain verified in Resend) |
 | `S3_ENDPOINT` | with bucket | R2: `https://<account-id>.r2.cloudflarestorage.com` · AWS: `https://s3.<region>.amazonaws.com` · MinIO: its URL |
 | `S3_REGION` | with bucket | `auto` for R2, the bucket's region for AWS (e.g. `me-central-1`) |
 | `S3_ACCESS_KEY_ID`, `S3_SECRET_ACCESS_KEY` | with bucket | A key limited to read/write on that bucket |
@@ -90,7 +93,7 @@ Vercel functions have no persistent disk, so uploads must go to a bucket.
    Or use **Neon Object Storage** in the same Neon project: create a private bucket and a credential with `storage:read` + `storage:write` on the branch; `S3_ENDPOINT` is the branch's storage endpoint, `S3_REGION` its AWS region (e.g. `ap-southeast-1`), `S3_ACCESS_KEY_ID` the `token_id` and `S3_SECRET_ACCESS_KEY` the `s3_secret_access_key`. (The live typedesk.procuregcc.com site uses this, bucket `typedesk-files`.)
    Uploads are capped at 4 MB because Vercel functions reject request bodies over 4.5 MB.
 
-4. **Vercel.** Import the Git repository (framework preset: Next.js; the default build command runs `prisma generate && next build`). Under *Settings → Environment Variables* add `DATABASE_URL` (pooled), `AUTH_SECRET`, `S3_BUCKET`, `S3_ENDPOINT`, `S3_REGION=auto`, `S3_ACCESS_KEY_ID`, `S3_SECRET_ACCESS_KEY`. Deploy.
+4. **Vercel.** Import the Git repository (framework preset: Next.js; the default build command runs `prisma generate && next build`). Under *Settings → Environment Variables* add `DATABASE_URL` (pooled), `AUTH_SECRET`, `S3_BUCKET`, `S3_ENDPOINT`, `S3_REGION=auto`, `S3_ACCESS_KEY_ID`, `S3_SECRET_ACCESS_KEY`, and for forgot-password emails `APP_URL`, `RESEND_API_KEY`, `EMAIL_FROM`. Deploy.
 
 5. **First sign-in.** Sign in with the admin and one-time password, choose a new password, then fill in **Settings** (company details, CR / tax number, logo, VAT rate — leave at 0 — and invoice terms), add your **Services** and price list, and create **Employees** (each gets a one-time password).
 

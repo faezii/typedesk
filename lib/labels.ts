@@ -75,10 +75,14 @@ export const SERVICE_CATEGORY_LABEL: Record<ServiceCategory, string> = {
   TYPING: "Typing",
   ATTESTATION: "Attestation",
   COURT_SUBMISSION: "Court submission",
+  COMPANY_FORMATION: "Company formation",
+  PRO_SERVICES: "PRO services",
+  EMBASSY_SERVICES: "Embassy services",
+  DOCUMENTATION: "Documentation",
   OTHER: "Other",
 };
 
-export const SERVICE_UNIT_LABEL: Record<ServiceUnit, string> = { PAGE: "page", WORD: "word", DOCUMENT: "document", HOUR: "hour" };
+export const SERVICE_UNIT_LABEL: Record<ServiceUnit, string> = { PAGE: "page", WORD: "word", DOCUMENT: "document", HOUR: "hour", SERVICE: "service" };
 
 export const LANGUAGES = [
   "Arabic",

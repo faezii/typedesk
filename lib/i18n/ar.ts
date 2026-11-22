@@ -923,6 +923,10 @@ export const AR: Record<string, string> = {
   "General translation": "ترجمة عامة",
   "Attestation": "تصديق",
   "Court submission": "تقديم للمحاكم",
+  "Company formation": "تأسيس الشركات",
+  "PRO services": "خدمات المعقّب (PRO)",
+  "Embassy services": "خدمات السفارات",
+  "Documentation": "خدمات التوثيق",
 
   // lib/nav.ts
   "Team": "الفريق",
@@ -1209,5 +1213,23 @@ export const AR: Record<string, string> = {
   "word": "كلمة",
   "document": "مستند",
   "hour": "ساعة",
+  "service": "خدمة",
   "CRM": "العملاء",
+
+  // forgot / reset password
+  "Forgot password?": "نسيت كلمة المرور؟",
+  "Forgot password": "نسيت كلمة المرور",
+  "Enter your email and we'll send you a link to choose a new password.": "أدخل بريدك الإلكتروني وسنرسل إليك رابطًا لاختيار كلمة مرور جديدة.",
+  "Send reset link": "إرسال رابط إعادة التعيين",
+  "Back to sign in": "العودة إلى تسجيل الدخول",
+  "Check your email": "تحقق من بريدك الإلكتروني",
+  "If {email} has a TypeDesk account, we've sent it a link to choose a new password. The link works for 30 minutes.": "إذا كان للبريد {email} حساب في TypeDesk، فقد أرسلنا إليه رابطًا لاختيار كلمة مرور جديدة. يعمل الرابط لمدة 30 دقيقة.",
+  "Nothing arrived? Check spam, or ask your administrator to reset your password.": "لم يصلك شيء؟ تحقق من مجلد الرسائل غير المرغوب فيها، أو اطلب من المسؤول إعادة تعيين كلمة المرور.",
+  "Password reset by email isn't set up yet. Ask your administrator to reset your password.": "إعادة تعيين كلمة المرور عبر البريد غير مفعّلة بعد. اطلب من المسؤول إعادة تعيين كلمة المرور.",
+  "Choose a new password": "اختر كلمة مرور جديدة",
+  "At least 8 characters, with letters and a number.": "8 أحرف على الأقل، تتضمن حروفًا ورقمًا.",
+  "Save new password": "حفظ كلمة المرور الجديدة",
+  "Sign in with your new password.": "سجّل الدخول بكلمة المرور الجديدة.",
+  "This reset link is invalid or has expired. Request a new one.": "رابط إعادة التعيين غير صالح أو منتهي الصلاحية. اطلب رابطًا جديدًا.",
+  "Request a new link": "طلب رابط جديد",
 };
