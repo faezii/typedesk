@@ -1287,4 +1287,12 @@ export const AR: Record<string, string> = {
   "You don't have permission to do that.": "ليست لديك صلاحية للقيام بذلك.",
   "Invalid request.": "طلب غير صالح.",
   "Account paused": "الحساب متوقف مؤقتًا",
+
+  // sessions, sign-up protection, owner menu
+  "Center management": "إدارة المراكز",
+  "Password changed. For your security you were signed out everywhere; sign in with your new password.": "تم تغيير كلمة المرور. لأمانك تم تسجيل خروجك من جميع الأجهزة؛ سجّل الدخول بكلمة المرور الجديدة.",
+  "Please complete the security check and try again.": "يرجى إكمال التحقق الأمني والمحاولة مرة أخرى.",
+  "Too many sign-ups from your network. Please try again in an hour.": "عدد كبير من عمليات التسجيل من شبكتك. يرجى المحاولة بعد ساعة.",
+  "Too many requests from your network. Please try again in an hour.": "عدد كبير من الطلبات من شبكتك. يرجى المحاولة بعد ساعة.",
+  "Change your own password under Account & password.": "غيّر كلمة مرورك من صفحة «الحساب وكلمة المرور».",
 };

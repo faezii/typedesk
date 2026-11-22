@@ -1,5 +1,6 @@
 import {
   BarChart3,
+  Building2,
   BellRing,
   BookOpen,
   ClipboardList,
@@ -20,7 +21,8 @@ import {
 import type { Role } from "@prisma/client";
 import { canAccessPath } from "@/lib/auth/permissions";
 
-export type NavItem = { title: string; href: string; icon: LucideIcon; keywords?: string[] };
+/** `platformOnly`: shown only to the TypeDesk owners (PLATFORM_ADMIN_EMAILS), whatever their role. */
+export type NavItem = { title: string; href: string; icon: LucideIcon; keywords?: string[]; platformOnly?: boolean };
 export type NavGroup = { label: string; items: NavItem[] };
 
 export const NAV_GROUPS: NavGroup[] = [
@@ -54,12 +56,18 @@ export const NAV_GROUPS: NavGroup[] = [
     ],
   },
   { label: "Reports", items: [{ title: "Reports", href: "/reports", icon: BarChart3, keywords: ["analytics", "export", "vat report"] }] },
-  { label: "Admin", items: [{ title: "Settings", href: "/settings", icon: Settings, keywords: ["company", "vat rate", "cr number", "logo", "invoice terms"] }] },
+  {
+    label: "Admin",
+    items: [
+      { title: "Settings", href: "/settings", icon: Settings, keywords: ["company", "vat rate", "cr number", "logo", "invoice terms"] },
+      { title: "Center management", href: "/platform", icon: Building2, keywords: ["centers", "trials", "sign-ups", "platform"], platformOnly: true },
+    ],
+  },
 ];
 
-/** Navigation filtered to what the role may open; empty groups are dropped. */
-export function navForRole(role: Role): NavGroup[] {
-  return NAV_GROUPS.map((g) => ({ ...g, items: g.items.filter((i) => canAccessPath(role, i.href)) })).filter(
+/** Navigation filtered to what the role may open (owner-only items only for owners); empty groups are dropped. */
+export function navForRole(role: Role, platformAdmin = false): NavGroup[] {
+  return NAV_GROUPS.map((g) => ({ ...g, items: g.items.filter((i) => canAccessPath(role, i.href) && (!i.platformOnly || platformAdmin)) })).filter(
     (g) => g.items.length > 0,
   );
 }

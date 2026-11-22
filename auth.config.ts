@@ -31,6 +31,7 @@ export const authConfig = {
         token.id = user.id!;
         token.role = user.role;
         token.department = user.department;
+        token.sessionVersion = user.sessionVersion;
       }
       return token;
     },
@@ -38,6 +39,7 @@ export const authConfig = {
       session.user.id = token.id;
       session.user.role = token.role;
       session.user.department = token.department;
+      session.user.sessionVersion = token.sessionVersion ?? 0;
       return session;
     },
   },

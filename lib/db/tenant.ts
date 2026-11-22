@@ -7,7 +7,7 @@ import { Prisma, type PrismaClient } from "@prisma/client";
  * Cross-center links (a work order pointing at another center's customer) are refused by the
  * `same_center_fk` triggers in the database, which run inside the same transaction.
  */
-const UNSCOPED = new Set(["Organization", "AuthToken"]);
+const UNSCOPED = new Set(["Organization", "AuthToken", "RateLimit"]);
 
 const MODELS = new Map(Prisma.dmmf.datamodel.models.map((m) => [m.name, m]));
 export const isTenantModel = (model: string) => MODELS.has(model) && !UNSCOPED.has(model);

@@ -1,5 +1,5 @@
 import { can } from "@/lib/auth/permissions";
-import { centerBlocked, getCurrentUser } from "@/lib/auth/session";
+import { centerBlocked, getCurrentUser, withCenter, type CurrentUser } from "@/lib/auth/session";
 import { prisma } from "@/lib/prisma";
 import { getSettings } from "@/lib/settings";
 import { fileUrlFor, mimeForKey, readKey } from "@/lib/storage";
@@ -8,7 +8,11 @@ import { fileUrlFor, mimeForKey, readKey } from "@/lib/storage";
 export async function GET(req: Request, { params }: { params: Promise<{ key: string[] }> }) {
   const user = await getCurrentUser();
   if (!user || centerBlocked(user.organization)) return new Response("Not found", { status: 404 });
+  // One user lookup per request: queries below reuse the pinned center (React's cache doesn't dedupe in route handlers).
+  return withCenter(user.organizationId, () => serveFile(req, { params }, user));
+}
 
+async function serveFile(req: Request, { params }: { params: Promise<{ key: string[] }> }, user: CurrentUser) {
   const key = (await params).key.join("/");
   const fileUrl = fileUrlFor(key);
   const doc =

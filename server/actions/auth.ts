@@ -3,6 +3,7 @@
 import { AuthError } from "next-auth";
 import { after } from "next/server";
 import { sendConfirmationEmail } from "@/lib/auth/confirm-email";
+import { rateLimited } from "@/lib/auth/rate-limit";
 import { basePrisma } from "@/lib/db/base";
 import { z } from "zod";
 import { signIn, signOut } from "@/auth";
@@ -37,7 +38,7 @@ export async function login(_prev: LoginState, formData: FormData): Promise<Logi
       const code = "code" in error ? (error as { code?: string }).code : undefined;
       if (code === "unconfirmed") {
         // Only reached with the right password, so saying the account exists reveals nothing new.
-        after(async () => {
+        if (!(await rateLimited("confirm_email"))) after(async () => {
           const user = await basePrisma.user.findUnique({ where: { email: parsed.data.email.trim().toLowerCase() }, select: { id: true, name: true, email: true } });
           if (user) await sendConfirmationEmail(user);
         });

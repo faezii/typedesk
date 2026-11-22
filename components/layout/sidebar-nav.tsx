@@ -11,16 +11,18 @@ import { cn } from "@/lib/utils";
 
 export function SidebarNav({
   role,
+  platformAdmin = false,
   collapsed = false,
   onNavigate,
 }: {
   role: Role;
+  platformAdmin?: boolean;
   collapsed?: boolean;
   onNavigate?: () => void;
 }) {
   const t = useT();
   const pathname = usePathname();
-  const groups = navForRole(role);
+  const groups = navForRole(role, platformAdmin);
 
   return (
     <nav aria-label={t("Main")} className="flex flex-col gap-5 px-3 py-4">

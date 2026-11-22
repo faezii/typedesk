@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import bcrypt from "bcryptjs";
 import type { ActionResult } from "@/lib/action-result";
+import { signOut } from "@/auth";
 import { getCurrentUser } from "@/lib/auth/session";
 import { prisma } from "@/lib/prisma";
 import { passwordChangeSchema } from "@/lib/validation/team";
@@ -18,8 +19,10 @@ export async function changePassword(input: { current: string; next: string; con
   if (!row || !(await bcrypt.compare(parsed.data.current, row.passwordHash))) {
     return { ok: false, error: "Your current password is incorrect.", fieldErrors: { current: "Incorrect password" } };
   }
-  await prisma.user.update({ where: { id: user.id }, data: { passwordHash: await bcrypt.hash(parsed.data.next, 10), mustChangePassword: false } });
   await prisma.activityLog.create({ data: { entityType: "User", entityId: user.id, action: "password_changed", message: "Changed own password", userId: user.id } });
+  // Last write: the new sessionVersion ends every session of this user, this one included, so no scoped query may follow.
+  await prisma.user.update({ where: { id: user.id }, data: { passwordHash: await bcrypt.hash(parsed.data.next, 10), mustChangePassword: false, sessionVersion: { increment: 1 } } });
   revalidatePath("/", "layout");
+  await signOut({ redirectTo: "/login?passwordChanged=1" });
   return { ok: true, data: undefined };
 }

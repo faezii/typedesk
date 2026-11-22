@@ -49,6 +49,7 @@ Every seeded user has the password `Password123!`.
 | `S3_BUCKET` | no | Store files in an S3-compatible bucket instead of on disk. **Required on Vercel.** |
 | `APP_URL` | for email | Public address used in emailed links, e.g. `https://typedesk.procuregcc.com` |
 | `RESEND_API_KEY` | for email | [Resend](https://resend.com) key for forgot-password emails. Without it, production asks users to contact their administrator; development prints emails to the console. |
+| `TURNSTILE_SITE_KEY`, `TURNSTILE_SECRET_KEY` | for sign-up | Cloudflare Turnstile bot check on `/signup`. Development skips it when unset; production keeps sign-up closed until both are set. |
 | `PLATFORM_ADMIN_EMAILS` | no | Comma-separated owner emails that see every center at `/platform` (extend, activate, suspend trials) |
 | `EMAIL_FROM` | for email | Sender, e.g. `TypeDesk <no-reply@procuregcc.com>` (domain verified in Resend) |
 | `S3_ENDPOINT` | with bucket | R2: `https://<account-id>.r2.cloudflarestorage.com` · AWS: `https://s3.<region>.amazonaws.com` · MinIO: its URL |
@@ -101,6 +102,10 @@ Vercel functions have no persistent disk, so uploads must go to a bucket.
 **Later releases** that add a migration: run step 2's `prisma migrate deploy` (direct connection) before the new version goes live.
 
 **A demo site** instead of a real one: after step 2, run `npm run db:seed` with the direct `DATABASE_URL`, `ALLOW_REMOTE_SEED=1` and the `S3_*` variables set, so the sample documents land in the bucket.
+
+## Sign-up protection
+
+Open sign-up has three guards: Cloudflare **Turnstile** on `/signup` (set `TURNSTILE_SITE_KEY` and `TURNSTILE_SECRET_KEY`), a hidden honeypot field, and **per-IP rate limits** stored in the database (`RateLimit` table, so all server instances share them): 5 sign-ups, 10 password-reset requests and 10 confirmation-email resends per IP per hour. Rows older than a day are deleted automatically. New centers must confirm their email before signing in; each confirmation emails the owners in `PLATFORM_ADMIN_EMAILS`.
 
 ## Tests
 

@@ -1,16 +1,17 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useCallback, useEffect, useRef } from "react";
+import Script from "next/script";
 import Link from "next/link";
 import { AlertCircle, Loader2, MailCheck } from "lucide-react";
-import { useT } from "@/components/i18n";
+import { useLang, useT } from "@/components/i18n";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { TRIAL_DAYS } from "@/lib/validation/signup";
 import { signUp, type SignUpState } from "@/server/actions/signup";
 
-export function SignUpForm() {
+export function SignUpForm({ turnstileSiteKey }: { turnstileSiteKey: string }) {
   const t = useT();
   const [state, action, pending] = useActionState<SignUpState, FormData>(signUp, {});
 
@@ -55,6 +56,7 @@ export function SignUpForm() {
         {field("phone", t("Phone (optional)"), { type: "tel", autoComplete: "tel", placeholder: "+974 5512 3456" })}
         {field("password", t("Password"), { type: "password", required: true, autoComplete: "new-password" })}
         {field("confirm", t("Confirm password"), { type: "password", required: true, autoComplete: "new-password" })}
+        {turnstileSiteKey && <Turnstile siteKey={turnstileSiteKey} resetOn={state} />}
         {/* Honeypot: hidden from people and screen readers, filled in by bots. */}
         <input type="text" name="website" tabIndex={-1} autoComplete="off" aria-hidden className="hidden" />
         <Button type="submit" className="h-10 w-full" disabled={pending}>
@@ -67,5 +69,31 @@ export function SignUpForm() {
         <Link href="/login" className="text-foreground font-medium hover:underline">{t("Sign in")}</Link>
       </p>
     </div>
+  );
+}
+
+declare global {
+  interface Window {
+    turnstile?: { render: (el: HTMLElement, opts: { sitekey: string; language?: string }) => string; reset: (id?: string) => void };
+  }
+}
+
+/** Cloudflare's bot check. It adds a hidden "cf-turnstile-response" field to the form; each token works once, so it resets after every reply. */
+function Turnstile({ siteKey, resetOn }: { siteKey: string; resetOn: unknown }) {
+  const lang = useLang();
+  const box = useRef<HTMLDivElement>(null);
+  const widget = useRef<string | null>(null);
+  const render = useCallback(() => {
+    if (box.current && window.turnstile && widget.current === null) widget.current = window.turnstile.render(box.current, { sitekey: siteKey, language: lang });
+  }, [siteKey, lang]);
+  useEffect(render, [render]);
+  useEffect(() => {
+    if (widget.current !== null) window.turnstile?.reset(widget.current);
+  }, [resetOn]);
+  return (
+    <>
+      <Script src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit" onReady={render} />
+      <div ref={box} className="min-h-[65px]" />
+    </>
   );
 }

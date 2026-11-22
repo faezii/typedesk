@@ -74,7 +74,7 @@ export function AppShell({
             collapsed ? "[scrollbar-width:none]" : "[scrollbar-width:thin]",
           )}
         >
-          <SidebarNav role={user.role} collapsed={collapsed} />
+          <SidebarNav role={user.role} platformAdmin={user.platformAdmin} collapsed={collapsed} />
         </div>
         <div className={cn("border-sidebar-border border-t p-3", collapsed && "flex justify-center")}>
           <Tooltip>
@@ -109,7 +109,7 @@ export function AppShell({
             <Brand />
           </div>
           <div className="flex-1 overflow-y-auto">
-            <SidebarNav role={user.role} onNavigate={() => setMobileOpen(false)} />
+            <SidebarNav role={user.role} platformAdmin={user.platformAdmin} onNavigate={() => setMobileOpen(false)} />
           </div>
         </SheetContent>
       </Sheet>
@@ -120,7 +120,7 @@ export function AppShell({
             <Menu />
           </Button>
           <div className="min-w-0 flex-1">
-            <GlobalSearch role={user.role} />
+            <GlobalSearch role={user.role} platformAdmin={user.platformAdmin} />
           </div>
           <div className="flex items-center gap-1">
             <ThemeToggle />

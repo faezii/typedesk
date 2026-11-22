@@ -31,7 +31,7 @@ function useIsMac() {
   );
 }
 
-export function GlobalSearch({ role }: { role: Role }) {
+export function GlobalSearch({ role, platformAdmin = false }: { role: Role; platformAdmin?: boolean }) {
   const t = useT();
   const router = useRouter();
   const isMac = useIsMac();
@@ -75,10 +75,10 @@ export function GlobalSearch({ role }: { role: Role }) {
 
   const pages = useMemo(() => {
     const q = query.trim().toLowerCase();
-    const items = navForRole(role).flatMap((g) => g.items);
+    const items = navForRole(role, platformAdmin).flatMap((g) => g.items);
     if (!q) return items;
     return items.filter((i) => [i.title, ...(i.keywords ?? [])].some((k) => k.toLowerCase().includes(q)));
-  }, [query, role]);
+  }, [query, role, platformAdmin]);
 
   function go(href: string) {
     setOpen(false);

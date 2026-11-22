@@ -53,4 +53,9 @@ describe("navForRole", () => {
     expect(titles("ADMIN")).toContain("Settings");
   });
   it("drops empty groups", () => expect(navForRole("STAFF").every((g) => g.items.length > 0)).toBe(true));
+
+  it("shows Center management only to TypeDesk owners", () => {
+    expect(titles("ADMIN")).not.toContain("Center management");
+    expect(navForRole("STAFF", true).flatMap((g) => g.items.map((i) => i.title))).toContain("Center management");
+  });
 });

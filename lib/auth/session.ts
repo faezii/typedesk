@@ -1,4 +1,5 @@
 import "server-only";
+import { AsyncLocalStorage } from "node:async_hooks";
 import { cache } from "react";
 import { redirect } from "next/navigation";
 import { z } from "zod";
@@ -18,15 +19,26 @@ export const getCurrentUser = cache(async () => {
   const user = await basePrisma.user.findUnique({
     where: { id: session.user.id },
     select: {
-      id: true, name: true, email: true, role: true, department: true, isActive: true, mustChangePassword: true, organizationId: true,
+      id: true, name: true, email: true, role: true, department: true, isActive: true, mustChangePassword: true, organizationId: true, sessionVersion: true,
       organization: { select: { name: true, status: true, trialEndsAt: true } },
     },
   });
-  return user?.isActive ? user : null;
+  // A token issued before the last password change, reset or deactivation no longer counts.
+  return user?.isActive && user.sessionVersion === session.user.sessionVersion ? user : null;
 });
+
+const pinnedCenter = new AsyncLocalStorage<string>();
+
+/**
+ * Route handlers: React's `cache` doesn't dedupe there, so every query would look the user up again.
+ * Run the handler's work inside this once the user is known, and queries reuse their center.
+ */
+export const withCenter = <T>(organizationId: string, work: () => Promise<T>) => pinnedCenter.run(organizationId, work);
 
 /** The signed-in user's center, for lib/prisma's scoping. Throws outside a signed-in request. */
 export async function currentOrgId() {
+  const pinned = pinnedCenter.getStore();
+  if (pinned) return pinned;
   const user = await getCurrentUser();
   if (!user) throw new AuthorizationError("Your session has expired. Please sign in again.");
   return user.organizationId;

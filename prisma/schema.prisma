@@ -200,6 +200,8 @@ model User {
   mustChangePassword Boolean    @default(false)
   /// Null until the sign-up confirmation link is used; set for staff an admin creates.
   emailVerifiedAt    DateTime?
+  /// Bumped to sign out every session of this user (password change or reset, deactivation); carried in the JWT.
+  sessionVersion     Int        @default(0)
   lastLoginAt        DateTime?
   createdAt          DateTime   @default(now())
   updatedAt          DateTime   @updatedAt
@@ -219,6 +221,16 @@ model User {
   @@index([role])
   @@index([department])
   @@index([organizationId])
+}
+
+/// Per-IP counters for sign-up, password-reset and confirmation emails (lib/auth/rate-limit.ts). Platform data, not a center's.
+model RateLimit {
+  id        String   @id @default(cuid())
+  key       String // "<action>:<ip>"
+  createdAt DateTime @default(now())
+
+  @@index([key, createdAt])
+  @@index([createdAt])
 }
 
 /// One-time links sent by email (e.g. password reset). Only the SHA-256 of the token is stored.

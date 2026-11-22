@@ -3,6 +3,7 @@
 import { after } from "next/server";
 import bcrypt from "bcryptjs";
 import { z } from "zod";
+import { rateLimited } from "@/lib/auth/rate-limit";
 import { claimToken, issueToken } from "@/lib/auth/tokens";
 import { basePrisma as prisma } from "@/lib/db/base";
 import { appUrl, emailConfigured, sendEmail } from "@/lib/email";
@@ -16,6 +17,7 @@ export async function requestPasswordReset(_prev: ForgotState, formData: FormDat
   const email = String(formData.get("email") ?? "").trim().toLowerCase();
   if (!z.email().safeParse(email).success) return { error: "Enter a valid email address", email };
   if (!emailConfigured()) return { error: "Password reset by email isn't set up yet. Ask your administrator to reset your password.", email };
+  if (await rateLimited("password_reset")) return { error: "Too many requests from your network. Please try again in an hour.", email };
 
   // The lookup and the email run after the response, so the reply (and its timing) is the same
   // whether or not the address has an account.
@@ -59,7 +61,7 @@ export async function resetPassword(_prev: ResetState, formData: FormData): Prom
     if (!user) return false;
     // A working reset link also proves the address, so it confirms an unconfirmed sign-up too.
     const { emailVerifiedAt } = await tx.user.findUniqueOrThrow({ where: { id: user.id }, select: { emailVerifiedAt: true } });
-    await tx.user.update({ where: { id: user.id }, data: { passwordHash, mustChangePassword: false, emailVerifiedAt: emailVerifiedAt ?? new Date() } });
+    await tx.user.update({ where: { id: user.id }, data: { passwordHash, mustChangePassword: false, emailVerifiedAt: emailVerifiedAt ?? new Date(), sessionVersion: { increment: 1 } } });
     await tx.activityLog.create({ data: { organizationId: user.organizationId, entityType: "User", entityId: user.id, action: "password_reset", message: "Reset password with an emailed link", userId: user.id } });
     return true;
   });

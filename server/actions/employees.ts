@@ -80,7 +80,7 @@ export async function setEmployeeActive(id: string, active: boolean): Promise<Ac
   if (!mayManage(user, target.role)) return { ok: false, error: "Only an admin can deactivate an admin." };
   if (!active && target.role === "ADMIN" && (await otherActiveAdmins(id)) === 0) return { ok: false, error: "This is the last active admin." };
 
-  await prisma.user.update({ where: { id }, data: { isActive: Boolean(active) } });
+  await prisma.user.update({ where: { id }, data: { isActive: Boolean(active), ...(active ? {} : { sessionVersion: { increment: 1 } }) } });
   await log(user.id, id, active ? "activated" : "deactivated", `${active ? "Reactivated" : "Deactivated"} ${target.name}`);
   revalidatePath("/employees");
   return { ok: true, data: undefined };
@@ -111,12 +111,14 @@ export async function deleteEmployee(id: string): Promise<ActionResult> {
 export async function resetEmployeePassword(id: string): Promise<ActionResult<{ tempPassword: string }>> {
   const { user, error } = await guardAction("employees:edit", id);
   if (!user) return { ok: false, error };
+  // Resetting ends the target's sessions; for yourself that would end this one mid-action. /account is the place.
+  if (id === user.id) return { ok: false, error: "Change your own password under Account & password." };
   const target = await prisma.user.findUnique({ where: { id }, select: { role: true, name: true } });
   if (!target) return { ok: false, error: "Employee not found." };
   if (!mayManage(user, target.role)) return { ok: false, error: "Only an admin can reset an admin's password." };
 
   const tempPassword = generateTempPassword();
-  await prisma.user.update({ where: { id }, data: { passwordHash: await bcrypt.hash(tempPassword, 10), mustChangePassword: true } });
+  await prisma.user.update({ where: { id }, data: { passwordHash: await bcrypt.hash(tempPassword, 10), mustChangePassword: true, sessionVersion: { increment: 1 } } });
   await log(user.id, id, "password_reset", `Reset password for ${target.name}`);
   revalidatePath("/employees");
   return { ok: true, data: { tempPassword } };

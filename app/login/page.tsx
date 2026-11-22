@@ -10,9 +10,9 @@ export async function generateMetadata() {
   return { title: (await getT())("Sign in") };
 }
 
-export default async function LoginPage({ searchParams }: { searchParams: Promise<{ callbackUrl?: string }> }) {
+export default async function LoginPage({ searchParams }: { searchParams: Promise<{ callbackUrl?: string; passwordChanged?: string }> }) {
   const t = await getT();
-  const [user, { callbackUrl }] = await Promise.all([getCurrentUser(), searchParams]);
+  const [user, { callbackUrl, passwordChanged }] = await Promise.all([getCurrentUser(), searchParams]);
   if (user) redirect("/");
 
   // callbackUrl may be absolute (Auth.js adds the origin). Keep only path + query so it can never
@@ -33,6 +33,11 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
     <AuthShell>
       <h1 className="text-2xl font-semibold tracking-tight">{t("Sign in")}</h1>
       <p className="text-muted-foreground mt-1.5 text-sm">{t("Use your staff email and password.")}</p>
+      {passwordChanged && (
+        <p role="status" className="mt-4 rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-3 py-2.5 text-sm">
+          {t("Password changed. For your security you were signed out everywhere; sign in with your new password.")}
+        </p>
+      )}
 
       <LoginForm callbackUrl={next} />
 

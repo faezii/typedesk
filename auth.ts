@@ -66,7 +66,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         failures.delete(email);
         if (!user.emailVerifiedAt) throw new EmailNotConfirmed();
         await prisma.user.update({ where: { id: user.id }, data: { lastLoginAt: new Date() } });
-        return { id: user.id, name: user.name, email: user.email, role: user.role, department: user.department };
+        return { id: user.id, name: user.name, email: user.email, role: user.role, department: user.department, sessionVersion: user.sessionVersion };
       },
     }),
   ],

@@ -3,7 +3,6 @@
 
 import { useT } from "@/components/i18n";
 import { useState, useTransition } from "react";
-import { useRouter } from "next/navigation";
 import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -19,7 +18,6 @@ const FIELDS = [
 
 export function ChangePasswordForm() {
   const t = useT();
-  const router = useRouter();
   const [pending, startTransition] = useTransition();
   const [errors, setErrors] = useState<Record<string, string>>({});
 
@@ -28,18 +26,14 @@ export function ChangePasswordForm() {
       className="space-y-4"
       onSubmit={(e) => {
         e.preventDefault();
-        const form = e.currentTarget;
-        const fd = new FormData(form);
+        const fd = new FormData(e.currentTarget);
         startTransition(async () => {
+          // On success the action signs out and redirects to /login, so only failures come back here.
           const res = await changePassword({ current: String(fd.get("current")), next: String(fd.get("next")), confirm: String(fd.get("confirm")) });
-          if (!res.ok) {
+          if (res && !res.ok) {
             setErrors(res.fieldErrors ?? {});
-            return void toast.error(t(res.error));
+            toast.error(t(res.error));
           }
-          setErrors({});
-          form.reset();
-          toast.success(t("Password changed"));
-          router.refresh();
         });
       }}
     >

@@ -1,7 +1,7 @@
 import { renderToBuffer } from "@react-pdf/renderer";
 import { ReportPdf } from "@/components/reports/report-pdf";
 import { can } from "@/lib/auth/permissions";
-import { centerBlocked, getCurrentUser } from "@/lib/auth/session";
+import { centerBlocked, getCurrentUser, withCenter } from "@/lib/auth/session";
 import { formatLocal } from "@/lib/dates";
 import { toXlsx } from "@/lib/report-xlsx";
 import { toCsv } from "@/lib/reports";
@@ -12,6 +12,11 @@ import { getReport, runReport } from "@/server/queries/reports";
 export async function GET(req: Request, { params }: { params: Promise<{ slug: string }> }) {
   const user = await getCurrentUser();
   if (!user || centerBlocked(user.organization) || !can(user.role, "reports:view")) return new Response("Not found", { status: 404 });
+  // One user lookup per request: queries below reuse the pinned center (React's cache doesn't dedupe in route handlers).
+  return withCenter(user.organizationId, () => serveReport(req, { params }));
+}
+
+async function serveReport(req: Request, { params }: { params: Promise<{ slug: string }> }) {
   const def = getReport((await params).slug);
   if (!def) return new Response("Not found", { status: 404 });
 
